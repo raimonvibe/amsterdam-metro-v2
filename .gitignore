@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+*.local
+
+# GTFS data (downloaded/derived at runtime)
+backend/data/*.zip
+backend/data/cache/
+
+# Env
+.env
+.env.*
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Claude Code local config
+.claude/

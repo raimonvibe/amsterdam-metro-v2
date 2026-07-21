@@ -1,0 +1,21 @@
+from pathlib import Path
+
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+CACHE_DIR = DATA_DIR / "cache"
+
+GTFS_STATIC_URL = "https://gtfs.ovapi.nl/nl/gtfs-nl.zip"
+GTFS_STATIC_ZIP = DATA_DIR / "gtfs-nl.zip"
+GTFS_CACHE_FILE = CACHE_DIR / "gvb_metro.json"
+GTFS_MAX_AGE_HOURS = 24
+
+TRIP_UPDATES_URL = "https://gtfs.ovapi.nl/nl/tripUpdates.pb"
+RT_POLL_SECONDS = 30
+
+# GVB metro lines and display colors (roughly GVB branding, dark-map friendly)
+METRO_LINES = {
+    "50": {"name": "Gein - Isolatorweg", "color": "#3CB44B"},
+    "51": {"name": "Centraal Station - Isolatorweg", "color": "#F58231"},
+    "52": {"name": "Noord - Zuid", "color": "#4363D8"},
+    "53": {"name": "Centraal Station - Gaasperplas", "color": "#E6194B"},
+    "54": {"name": "Centraal Station - Gein", "color": "#FFE119"},
+}
