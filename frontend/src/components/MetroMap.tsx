@@ -39,17 +39,20 @@ const TRAIL_SECONDS = 25;
 const TRAIL_SAMPLE_MS = 700;
 
 const INTRO_START = {
-  longitude: 4.9041,
-  latitude: 52.34,
-  zoom: 10.3,
+  longitude: 4.9004,
+  latitude: 52.3778,
+  zoom: 10.8,
   pitch: 0,
   bearing: 0,
 };
+// Centraal Station: hub of lines 52/53/54 (and 51's terminus), ringed by the
+// dense old-city building fabric — the busiest, most 3D-building-dense spot
+// in the network to open on.
 const INTRO_END = {
-  center: [4.9041, 52.35] as [number, number],
-  zoom: 12.3,
-  pitch: 54,
-  bearing: -14,
+  center: [4.9035, 52.373] as [number, number],
+  zoom: 15.1,
+  pitch: 58,
+  bearing: 20,
 };
 
 const hexToRgb = (hex: string): [number, number, number] => {
