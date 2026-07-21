@@ -35,17 +35,11 @@ export function pointAt(shape: ShapeGeom, d: number): [number, number, number] {
 }
 
 /**
- * Dead-reckon a train's current position: advance from the backend-computed
- * distance along its track shape at its segment speed, capped so it never
- * overshoots the next station before fresh data arrives.
+ * Dead-reckon the train's current distance along its shape: advance from the
+ * backend-computed distance at segment speed, capped so it never overshoots
+ * the next station before fresh data arrives.
  */
-export function currentPosition(
-  train: AnimatedTrain,
-  shapes: Record<string, ShapeGeom>,
-  nowMs: number,
-): [number, number, number] {
-  const shape = shapes[train.shape_id];
-  if (!shape) return [train.longitude, train.latitude, train.bearing];
+export function currentDistance(train: AnimatedTrain, nowMs: number): number {
   let d = train.distance_m;
   if (train.status === "moving" && train.speed_m_s > 0) {
     let dt = (nowMs - train.fetchedAt) / 1000;
@@ -55,5 +49,30 @@ export function currentPosition(
     }
     d += train.speed_m_s * dt;
   }
-  return pointAt(shape, d);
+  return d;
+}
+
+/**
+ * Sub-polyline between distances d0..d1 along a shape — used to draw trains
+ * as pill-shaped segments that bend with the track. Includes interpolated
+ * endpoints plus any shape vertices in between.
+ */
+export function pathBetween(
+  shape: ShapeGeom,
+  d0: number,
+  d1: number,
+): [number, number][] {
+  const { coords, cum } = shape;
+  const n = cum.length;
+  if (n < 2) return coords.slice(0, 1) as [number, number][];
+  const lo = Math.max(Math.min(d0, d1), 0);
+  const hi = Math.min(Math.max(d0, d1), cum[n - 1]);
+  const [x0, y0] = pointAt(shape, lo);
+  const [x1, y1] = pointAt(shape, hi);
+  const path: [number, number][] = [[x0, y0]];
+  for (let i = 0; i < n; i++) {
+    if (cum[i] > lo && cum[i] < hi) path.push(coords[i]);
+  }
+  path.push([x1, y1]);
+  return path;
 }

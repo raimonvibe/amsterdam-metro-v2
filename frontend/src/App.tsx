@@ -10,11 +10,13 @@ import {
   fetchTrains,
 } from "./api";
 import { AnimatedTrain, Line, ShapeGeom, Station, Status } from "./types";
+import { useTheme } from "./theme";
 
 const TRAINS_POLL_MS = 5000;
 const STATUS_POLL_MS = 30000;
 
 export default function App() {
+  const [theme, toggleTheme] = useTheme();
   const [lines, setLines] = useState<Line[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
   const [shapes, setShapes] = useState<Record<string, ShapeGeom>>({});
@@ -91,7 +93,7 @@ export default function App() {
     );
 
   return (
-    <div className="flex h-screen bg-gray-950 text-gray-100">
+    <div className="flex h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <Sidebar
         lines={lines}
         visibleLines={visibleLines}
@@ -101,6 +103,8 @@ export default function App() {
         hoveredTrain={hoveredTrain}
         hoveredStation={hoveredStation}
         lastUpdated={lastUpdated}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
       <main className="relative flex-1">
         {error && (
@@ -114,6 +118,7 @@ export default function App() {
           trains={trains}
           shapes={shapes}
           visibleLines={visibleLines}
+          theme={theme}
           onTrainHover={setHoveredTrain}
           onStationHover={setHoveredStation}
         />
