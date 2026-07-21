@@ -68,6 +68,12 @@ async def trains():
     return _metro().trains(realtime.state)
 
 
+@app.get("/api/departures")
+async def departures(station: str, limit: int = 8):
+    """Upcoming departures for a station (by grouped station name)."""
+    return _metro().departures(station, realtime.state, limit=limit)
+
+
 @app.get("/api/shapes")
 async def shapes():
     """Track geometries with cumulative distances, for client-side animation."""

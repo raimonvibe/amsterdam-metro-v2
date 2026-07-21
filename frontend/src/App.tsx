@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { MetroMap } from "./components/MetroMap";
 import { Sidebar } from "./components/Sidebar";
 import { LiveBadge } from "./components/LiveBadge";
+import { DepartureBoard } from "./components/DepartureBoard";
+import { FollowChip } from "./components/FollowChip";
 import {
   fetchLines,
   fetchShapes,
@@ -26,7 +28,20 @@ export default function App() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [hoveredTrain, setHoveredTrain] = useState<AnimatedTrain | null>(null);
   const [hoveredStation, setHoveredStation] = useState<Station | null>(null);
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+  const [followedTrainId, setFollowedTrainId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setFollowedTrainId(null);
+        setSelectedStation(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -119,10 +134,32 @@ export default function App() {
           shapes={shapes}
           visibleLines={visibleLines}
           theme={theme}
+          followedTrainId={followedTrainId}
           onTrainHover={setHoveredTrain}
           onStationHover={setHoveredStation}
+          onTrainClick={(t) => setFollowedTrainId(t.id)}
+          onStationClick={setSelectedStation}
+          onStopFollow={() => setFollowedTrainId(null)}
         />
         <LiveBadge status={status} />
+        {selectedStation && (
+          <DepartureBoard
+            station={selectedStation}
+            lines={lines}
+            onClose={() => setSelectedStation(null)}
+          />
+        )}
+        {followedTrainId &&
+          (() => {
+            const train = trains.find((t) => t.id === followedTrainId);
+            return train ? (
+              <FollowChip
+                train={train}
+                lines={lines}
+                onStop={() => setFollowedTrainId(null)}
+              />
+            ) : null;
+          })()}
       </main>
     </div>
   );

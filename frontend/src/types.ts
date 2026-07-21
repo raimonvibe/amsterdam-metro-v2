@@ -49,3 +49,12 @@ export interface Status {
 export interface AnimatedTrain extends Train {
   fetchedAt: number; // ms epoch when this position was computed
 }
+
+export interface Departure {
+  trip_id: string;
+  line: string;
+  headsign: string;
+  departure_ts: number;
+  delay_s: number;
+  realtime: boolean;
+}

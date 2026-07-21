@@ -1,4 +1,4 @@
-import { Line, ShapeGeom, Station, Status, Train } from "./types";
+import { Departure, Line, ShapeGeom, Station, Status, Train } from "./types";
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`/api${path}`);
@@ -11,3 +11,5 @@ export const fetchStations = () => get<Station[]>("/stations");
 export const fetchTrains = () => get<Train[]>("/trains");
 export const fetchShapes = () => get<Record<string, ShapeGeom>>("/shapes");
 export const fetchStatus = () => get<Status>("/status");
+export const fetchDepartures = (station: string) =>
+  get<Departure[]>(`/departures?station=${encodeURIComponent(station)}`);

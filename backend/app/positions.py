@@ -168,6 +168,48 @@ class MetroData:
             for name, g in grouped.items()
         ]
 
+    def departures(
+        self, station_name: str, rt: RealtimeState,
+        now: Optional[float] = None, limit: int = 8,
+    ) -> List[dict]:
+        """Upcoming departures at a station (all platforms), soonest first."""
+        now = now or time.time()
+        target_stops = {
+            sid for sid, st in self.stops.items() if st["name"] == station_name
+        }
+        if not target_stops:
+            return []
+        horizon = now + 45 * 60
+        out: List[dict] = []
+        # RT overrides carry absolute times, so the same trip can produce
+        # identical entries for each of its service dates — dedupe on the run.
+        seen: set = set()
+        for trip_id, t in self.trips.items():
+            stop_ids = {s[1] for s in t["stops"]}
+            if not (stop_ids & target_stops):
+                continue
+            rt_trip = rt.trip_updates.get(trip_id)
+            for date in self.service_dates.get(t["service_id"], []):
+                times = self._effective_times(t, date, rt_trip)
+                for i, (seq, stop_id, *_rest) in enumerate(t["stops"]):
+                    if stop_id in target_stops:
+                        arr, dep, _dist, delay = times[i]
+                        if now - 30 <= dep <= horizon and i < len(t["stops"]) - 1:
+                            key = (t["line"], t["headsign"], int(dep))
+                            if key in seen:
+                                continue
+                            seen.add(key)
+                            out.append({
+                                "trip_id": trip_id,
+                                "line": t["line"],
+                                "headsign": t["headsign"],
+                                "departure_ts": int(dep),
+                                "delay_s": delay,
+                                "realtime": rt_trip is not None,
+                            })
+        out.sort(key=lambda d: d["departure_ts"])
+        return out[:limit]
+
     def trains(self, rt: RealtimeState, now: Optional[float] = None) -> List[TrainOut]:
         now = now or time.time()
         out: List[TrainOut] = []
@@ -181,17 +223,16 @@ class MetroData:
                     break
         return out
 
-    def _solve(self, trip_id: str, t: dict, date: str, rt_trip: Optional[dict],
-               now: float) -> Optional[TrainOut]:
+    def _effective_times(
+        self, t: dict, date: str, rt_trip: Optional[dict],
+    ) -> List[Tuple[float, float, float, int]]:
+        """Per-stop (arr, dep, dist, delay): schedule overridden by RT where
+        present; a known delay propagates to later stops without updates."""
         base = service_date_epoch(date)
-        stops = t["stops"]
-
-        # Effective per-stop times: schedule, overridden by RT where present;
-        # a known delay propagates to later stops without explicit updates.
-        times: List[Tuple[float, float, float]] = []  # (arr, dep, dist)
+        times: List[Tuple[float, float, float, int]] = []
         delay = 0
         rt_stops = rt_trip["stops"] if rt_trip else {}
-        for seq, stop_id, arr_s, dep_s, dist in stops:
+        for seq, _stop_id, arr_s, dep_s, dist in t["stops"]:
             arr = base + arr_s
             dep = base + dep_s
             rec = rt_stops.get(seq)
@@ -202,7 +243,13 @@ class MetroData:
             else:
                 arr += delay
                 dep += delay
-            times.append((arr, dep, dist))
+            times.append((arr, dep, dist, delay))
+        return times
+
+    def _solve(self, trip_id: str, t: dict, date: str, rt_trip: Optional[dict],
+               now: float) -> Optional[TrainOut]:
+        stops = t["stops"]
+        times = self._effective_times(t, date, rt_trip)
 
         first_dep = times[0][1]
         last_arr = times[-1][0]
@@ -211,9 +258,9 @@ class MetroData:
 
         shape = self.shapes[t["shape_id"]]
         for i in range(len(times)):
-            arr, dep, dist = times[i]
+            arr, dep, dist, delay = times[i]
             if now < arr:
-                p_arr, p_dep, p_dist = times[i - 1]
+                _p_arr, p_dep, p_dist, _p_delay = times[i - 1]
                 span = arr - p_dep
                 progress = 0.0 if span <= 0 else (now - p_dep) / span
                 progress = min(max(progress, 0.0), 1.0)
@@ -242,3 +289,4 @@ class MetroData:
                     realtime=rt_trip is not None,
                 )
         return None
+

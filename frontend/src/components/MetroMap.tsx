@@ -3,8 +3,9 @@ import { Map, useControl } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import { MapboxOverlay, MapboxOverlayProps } from "@deck.gl/mapbox";
 import { PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
+import { TripsLayer } from "@deck.gl/geo-layers";
 import { AnimatedTrain, Line, ShapeGeom, Station } from "../types";
-import { currentDistance, pathBetween } from "../animate";
+import { currentDistance, pathBetween, pointAt } from "../animate";
 import { MAP_THEME, Theme } from "../theme";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -23,13 +24,19 @@ interface MetroMapProps {
   shapes: Record<string, ShapeGeom>;
   visibleLines: string[];
   theme: Theme;
+  followedTrainId: string | null;
   onTrainHover: (train: AnimatedTrain | null) => void;
   onStationHover: (station: Station | null) => void;
+  onTrainClick: (train: AnimatedTrain) => void;
+  onStationClick: (station: Station) => void;
+  onStopFollow: () => void;
 }
 
 /** Amsterdam metro trainsets are ~90-116m; 100m reads well at city zoom. */
 const TRAIN_LENGTH_M = 100;
 const DELAY_THRESHOLD_S = 120;
+const TRAIL_SECONDS = 25;
+const TRAIL_SAMPLE_MS = 700;
 
 const INTRO_START = {
   longitude: 4.9041,
@@ -57,6 +64,12 @@ interface PositionedTrain extends AnimatedTrain {
   color: [number, number, number];
 }
 
+interface Trail {
+  line: string;
+  path: [number, number][];
+  timestamps: number[];
+}
+
 export function MetroMap({
   lines,
   stations,
@@ -64,13 +77,19 @@ export function MetroMap({
   shapes,
   visibleLines,
   theme,
+  followedTrainId,
   onTrainHover,
   onStationHover,
+  onTrainClick,
+  onStationClick,
+  onStopFollow,
 }: MetroMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [zoom, setZoom] = useState(INTRO_START.zoom);
   const [tick, setTick] = useState(0);
   const introDone = useRef(false);
+  const trailsRef = useRef<Record<string, Trail>>({});
+  const lastSampleRef = useRef(0);
   const t = MAP_THEME[theme];
 
   // ~30fps animation clock for dead-reckoned train movement
@@ -154,11 +173,69 @@ export function MetroMap({
       return { ...tr, path, color: lineColor[tr.line] ?? [255, 255, 255] };
     });
 
+  // Fading motion trails: sample each train's head position on a slow clock
+  if (nowMs - lastSampleRef.current > TRAIL_SAMPLE_MS) {
+    lastSampleRef.current = nowMs;
+    const nowS = nowMs / 1000;
+    const alive = new Set<string>();
+    for (const tr of positioned) {
+      alive.add(tr.id);
+      const head = tr.path[tr.path.length - 1];
+      const trail = (trailsRef.current[tr.id] ??= {
+        line: tr.line,
+        path: [],
+        timestamps: [],
+      });
+      trail.path.push(head);
+      trail.timestamps.push(nowS);
+      while (trail.timestamps.length && trail.timestamps[0] < nowS - TRAIL_SECONDS) {
+        trail.path.shift();
+        trail.timestamps.shift();
+      }
+    }
+    for (const id of Object.keys(trailsRef.current)) {
+      if (!alive.has(id)) delete trailsRef.current[id];
+    }
+  }
+
+  // Follow-cam: glide toward the followed train; any manual drag exits
+  useEffect(() => {
+    if (!followedTrainId) return;
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+    const stop = () => onStopFollow();
+    map.on("dragstart", stop);
+    const id = setInterval(() => {
+      const tr = trains.find((x) => x.id === followedTrainId);
+      if (!tr) {
+        onStopFollow();
+        return;
+      }
+      const shape = shapes[tr.shape_id];
+      const d = currentDistance(tr, Date.now());
+      const [lon, lat] = shape ? pointAt(shape, d) : [tr.longitude, tr.latitude];
+      map.easeTo({
+        center: [lon, lat],
+        zoom: Math.max(map.getZoom(), 14.2),
+        duration: 750,
+        easing: (x) => x,
+      });
+    }, 700);
+    return () => {
+      clearInterval(id);
+      map.off("dragstart", stop);
+    };
+  }, [followedTrainId, trains, shapes, onStopFollow]);
+
   const visibleLineData = lines.filter((l) => visibleLines.includes(l.id));
   const visibleStations = stations.filter((s) =>
     s.lines.some((l) => visibleLines.includes(l)),
   );
   const showLabels = zoom >= 12.8;
+
+  const trailData = Object.values(trailsRef.current).filter(
+    (tr) => tr.path.length > 1 && visibleLines.includes(tr.line),
+  );
 
   const layers = [
     // soft halo under every line — the classic dark transit-map glow
@@ -191,6 +268,25 @@ export function MetroMap({
       updateTriggers: { data: [visibleLines], getColor: [theme] },
     }),
 
+    // fading movement trails behind trains
+    new TripsLayer({
+      id: "train-trails",
+      data: trailData,
+      getPath: (d: Trail) => d.path,
+      getTimestamps: (d: Trail) => d.timestamps,
+      getColor: (d: Trail) =>
+        [...(lineColor[d.line] ?? [255, 255, 255]), 160] as [number, number, number, number],
+      currentTime: nowMs / 1000,
+      trailLength: TRAIL_SECONDS,
+      fadeTrail: true,
+      getWidth: 14,
+      widthMinPixels: 3,
+      widthMaxPixels: 12,
+      capRounded: true,
+      jointRounded: true,
+      updateTriggers: { getColor: [theme] },
+    }),
+
     // stations: interchange-style ring + fill
     new ScatterplotLayer({
       id: "stations",
@@ -205,6 +301,9 @@ export function MetroMap({
       stroked: true,
       pickable: true,
       onHover: (info) => onStationHover((info.object as Station) || null),
+      onClick: (info) => {
+        if (info.object) onStationClick(info.object as Station);
+      },
       updateTriggers: {
         data: [stations, visibleLines],
         getFillColor: [theme],
@@ -279,6 +378,9 @@ export function MetroMap({
       jointRounded: true,
       pickable: true,
       onHover: (info) => onTrainHover((info.object as AnimatedTrain) || null),
+      onClick: (info) => {
+        if (info.object) onTrainClick(info.object as AnimatedTrain);
+      },
     }),
   ];
 
@@ -294,7 +396,12 @@ export function MetroMap({
         onLoad={handleLoad}
         onMove={(e) => setZoom(e.viewState.zoom)}
       >
-        <DeckGLOverlay layers={layers} />
+        <DeckGLOverlay
+          layers={layers}
+          getCursor={({ isHovering, isDragging }) =>
+            isDragging ? "grabbing" : isHovering ? "pointer" : "grab"
+          }
+        />
       </Map>
     </div>
   );
