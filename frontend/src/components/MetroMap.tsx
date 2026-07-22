@@ -33,6 +33,7 @@ interface MetroMapProps {
   onTrainClick: (train: AnimatedTrain) => void;
   onStationClick: (station: Station) => void;
   onStopFollow: () => void;
+  onMapBackgroundClick?: () => void;
 }
 
 /** Amsterdam metro trainsets are ~90-116m; 100m reads well at city zoom. */
@@ -89,8 +90,10 @@ export function MetroMap({
   onTrainClick,
   onStationClick,
   onStopFollow,
+  onMapBackgroundClick,
 }: MetroMapProps) {
   const mapRef = useRef<MapRef>(null);
+  const deckPickRef = useRef(false);
   const [zoom, setZoom] = useState(INTRO_START.zoom);
   const [tick, setTick] = useState(0);
   const [webglError, setWebglError] = useState<string | null>(() => {
@@ -312,7 +315,10 @@ export function MetroMap({
       pickable: true,
       onHover: (info) => onStationHover((info.object as Station) || null),
       onClick: (info) => {
-        if (info.object) onStationClick(info.object as Station);
+        if (info.object) {
+          deckPickRef.current = true;
+          onStationClick(info.object as Station);
+        }
       },
       updateTriggers: {
         data: [stations, visibleLines],
@@ -389,7 +395,10 @@ export function MetroMap({
       pickable: true,
       onHover: (info) => onTrainHover((info.object as AnimatedTrain) || null),
       onClick: (info) => {
-        if (info.object) onTrainClick(info.object as AnimatedTrain);
+        if (info.object) {
+          deckPickRef.current = true;
+          onTrainClick(info.object as AnimatedTrain);
+        }
       },
     }),
   ];
@@ -422,6 +431,13 @@ export function MetroMap({
         maxPitch={72}
         onLoad={handleLoad}
         onMove={(e) => setZoom(e.viewState.zoom)}
+        onClick={() => {
+          if (!onMapBackgroundClick) return;
+          setTimeout(() => {
+            if (!deckPickRef.current) onMapBackgroundClick();
+            deckPickRef.current = false;
+          }, 0);
+        }}
         onError={(e) => setWebglError(e.error?.message ?? "WebGL map failed to start")}
       >
         <DeckGLOverlay

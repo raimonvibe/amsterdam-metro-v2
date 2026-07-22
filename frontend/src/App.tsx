@@ -134,15 +134,11 @@ export default function App() {
 
   return (
     <div className="flex h-dvh min-h-0 overflow-hidden bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-      <button
-        type="button"
-        aria-label={nl.menuClose}
+      <div
         aria-hidden={!sidebarOpen}
-        tabIndex={sidebarOpen ? 0 : -1}
-        className={`fixed inset-0 z-40 bg-black/45 backdrop-blur-[1px] transition-opacity duration-300 ease-in-out md:hidden ${
-          sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        className={`pointer-events-none fixed inset-0 z-40 bg-black/45 backdrop-blur-[1px] transition-opacity duration-300 ease-in-out md:hidden ${
+          sidebarOpen ? "opacity-100" : "opacity-0"
         }`}
-        onClick={closeSidebar}
       />
       <div
         className={`fixed inset-y-0 left-0 z-50 w-[min(18rem,calc(100vw-env(safe-area-inset-left)-env(safe-area-inset-right)))] max-w-[min(18rem,100vw)] overflow-hidden transition-transform duration-300 ease-in-out md:static md:z-auto md:max-w-none md:shrink-0 md:overflow-hidden md:transition-[width] md:duration-300 md:ease-in-out ${
@@ -167,16 +163,6 @@ export default function App() {
         />
       </div>
       <main className="relative min-h-0 min-w-0 flex-1">
-        <button
-          type="button"
-          aria-label={nl.menuClose}
-          aria-hidden={!sidebarOpen}
-          tabIndex={sidebarOpen ? 0 : -1}
-          className={`absolute inset-0 z-10 hidden bg-transparent transition-opacity duration-300 ease-in-out md:block ${
-            sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
-          onClick={closeSidebar}
-        />
         <button
           type="button"
           onClick={openSidebar}
@@ -211,6 +197,7 @@ export default function App() {
           onTrainClick={(t) => setFollowedTrainId(t.id)}
           onStationClick={setSelectedStation}
           onStopFollow={() => setFollowedTrainId(null)}
+          onMapBackgroundClick={sidebarOpen ? closeSidebar : undefined}
         />
         <LiveBadge status={status} />
         {selectedStation && (
