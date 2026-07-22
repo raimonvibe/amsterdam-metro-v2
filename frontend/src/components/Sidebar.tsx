@@ -1,9 +1,11 @@
-import { Clock, Moon, PanelLeftClose, Sun, TrainFront } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, ChevronUp, Clock, Moon, PanelLeftClose, Sun, TrainFront } from "lucide-react";
 import { AnimatedTrain, Line, Station, Status } from "../types";
 import { Theme } from "../theme";
+import { nl } from "../i18n/nl";
+import { compactLineName } from "../format";
 import { SocialIcons } from "./SocialIcons";
 import { Credits } from "./Credits";
-import { compactLineName } from "../format";
 
 interface SidebarProps {
   lines: Line[];
@@ -21,7 +23,7 @@ interface SidebarProps {
 }
 
 function delayLabel(s: number): string {
-  if (Math.abs(s) < 30) return "on time";
+  if (Math.abs(s) < 30) return nl.onTime;
   const m = Math.round(Math.abs(s) / 60);
   return s > 0 ? `+${m || 1} min` : `-${m || 1} min`;
 }
@@ -51,20 +53,19 @@ export function Sidebar({
   onOpenPrivacy,
   onClose,
 }: SidebarProps) {
+  const [infoOpen, setInfoOpen] = useState(false);
   const colorOf = (id: string) => lines.find((l) => l.id === id)?.color ?? "#999";
 
   return (
     <aside className="flex h-full w-full min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-contain border-r border-gray-200 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-4 pt-[max(1rem,env(safe-area-inset-top))] text-gray-900 backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 dark:text-gray-100 md:w-72">
       <div className="mb-1 flex items-start justify-between gap-2">
-        <h1 className="min-w-0 text-base font-bold tracking-tight sm:text-lg">
-          Amsterdam Metro Live
-        </h1>
+        <h1 className="min-w-0 text-base font-bold tracking-tight sm:text-lg">{nl.appName}</h1>
         <div className="flex shrink-0 items-center gap-0.5">
           <button
             type="button"
             onClick={onClose}
-            title="Hide sidebar"
-            aria-label="Hide sidebar"
+            title={nl.sidebarHide}
+            aria-label={nl.sidebarHide}
             className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
           >
             <PanelLeftClose size={16} />
@@ -72,17 +73,15 @@ export function Sidebar({
           <button
             type="button"
             onClick={onToggleTheme}
-            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={theme === "dark" ? nl.themeLight : nl.themeDark}
+            aria-label={theme === "dark" ? nl.themeLight : nl.themeDark}
             className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
           >
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           </button>
         </div>
       </div>
-      <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-        Real trains, real tracks, real time
-      </p>
+      <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">{nl.tagline}</p>
 
       <div className="mb-5 min-w-0 space-y-1.5">
         {lines.map((line) => {
@@ -118,18 +117,18 @@ export function Sidebar({
           <TrainFront size={15} className="text-gray-500 dark:text-gray-400" />
           <span>
             <span className="font-semibold tabular-nums">{trains.length}</span>{" "}
-            trains in service
+            {nl.trainsInService}
           </span>
         </div>
         {status && (
           <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {status.rt_trip_count} live trip updates
+            {status.rt_trip_count} {nl.liveTripUpdates}
           </div>
         )}
         {lastUpdated && (
           <div className="mt-1 flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
             <Clock size={11} />
-            {lastUpdated.toLocaleTimeString()}
+            {lastUpdated.toLocaleTimeString("nl-NL")}
           </div>
         )}
       </div>
@@ -142,7 +141,9 @@ export function Sidebar({
           </div>
           <div className="space-y-0.5 text-xs text-gray-600 dark:text-gray-300">
             {hoveredTrain.status === "dwelling" ? (
-              <div>At {hoveredTrain.prev_station?.replace(/^Amsterdam, /, "")}</div>
+              <div>
+                {nl.atStation} {hoveredTrain.prev_station?.replace(/^Amsterdam, /, "")}
+              </div>
             ) : (
               <div>
                 {hoveredTrain.prev_station?.replace(/^Amsterdam, /, "")} →{" "}
@@ -150,7 +151,7 @@ export function Sidebar({
               </div>
             )}
             <div>
-              {Math.round(hoveredTrain.speed_m_s * 3.6)} km/h ·{" "}
+              {Math.round(hoveredTrain.speed_m_s * 3.6)} km/u ·{" "}
               <span
                 className={
                   hoveredTrain.delay_s > 60
@@ -162,9 +163,7 @@ export function Sidebar({
               </span>
             </div>
             {!hoveredTrain.realtime && (
-              <div className="text-gray-400 dark:text-gray-500">
-                scheduled (no live signal)
-              </div>
+              <div className="text-gray-400 dark:text-gray-500">{nl.scheduledNoRt}</div>
             )}
           </div>
         </div>
@@ -183,17 +182,28 @@ export function Sidebar({
         </div>
       )}
 
-      <div className="mt-6 space-y-4">
-        <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:hidden">
-          Pinch & drag to explore · tap stations for departures.
-        </p>
-        <p className="hidden text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:block">
-          Right-drag to orbit · zoom in for buildings.
-        </p>
-        <Credits onOpenPrivacy={onOpenPrivacy} />
-        <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
-          <SocialIcons />
-        </div>
+      <div className="mt-auto border-t border-gray-200 pt-4 dark:border-gray-800">
+        <button
+          type="button"
+          onClick={() => setInfoOpen((v) => !v)}
+          aria-expanded={infoOpen}
+          className="flex w-full items-center justify-between gap-2 rounded-lg px-1 py-2 text-left text-xs font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
+        >
+          <span>{nl.infoToggle}</span>
+          {infoOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </button>
+        {infoOpen && (
+          <div className="mt-2 space-y-4">
+            <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:hidden">
+              {nl.helpMobile}
+            </p>
+            <p className="hidden text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:block">
+              {nl.helpDesktop}
+            </p>
+            <Credits onOpenPrivacy={onOpenPrivacy} />
+            <SocialIcons />
+          </div>
+        )}
       </div>
     </aside>
   );

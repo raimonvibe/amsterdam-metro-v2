@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { nl } from "../i18n/nl";
 import { AnimatedTrain, Line } from "../types";
 
 interface FollowChipProps {
@@ -17,12 +18,14 @@ export function FollowChip({ train, lines, onStop }: FollowChipProps) {
       >
         {train.line}
       </span>
-      <span className="truncate">Following → {train.headsign}</span>
+      <span className="truncate">
+        {nl.following} → {train.headsign}
+      </span>
       <button
         type="button"
         onClick={onStop}
-        title="Stop following (Esc)"
-        aria-label="Stop following train"
+        title={nl.stopFollowTitle}
+        aria-label={nl.stopFollow}
         className="flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
       >
         <X size={13} />

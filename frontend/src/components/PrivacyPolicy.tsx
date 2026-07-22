@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { PRIVACY_POLICY_VERSION, SITE_OPERATOR } from "../legal/site";
+import { nl } from "../i18n/nl";
 
 interface PrivacyPolicyProps {
   onClose: () => void;
@@ -20,20 +21,20 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 rounded-full p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-          aria-label="Close privacy policy"
+          aria-label={nl.closePrivacy}
         >
           <X size={18} />
         </button>
 
         <header className="mb-6 pr-8">
           <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            Privacy Policy
+            {nl.privacyPolicy}
           </p>
           <h1 id="privacy-title" className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
             {o.appName}
           </h1>
           <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            Last updated: {PRIVACY_POLICY_VERSION} ·{" "}
+            Laatst bijgewerkt: {PRIVACY_POLICY_VERSION} ·{" "}
             <a
               href={o.appUrl}
               className="underline underline-offset-2"
@@ -47,14 +48,14 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
 
         <div className="space-y-5 text-[13px]">
           <section>
-            <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">1. Who we are</h2>
+            <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">1. Wie wij zijn</h2>
             <p>
-              This privacy policy applies to <strong>{o.appName}</strong> ({o.appUrl}), an
-              unofficial live map of the Amsterdam GVB metro operated by{" "}
+              Dit privacybeleid geldt voor <strong>{o.appName}</strong> ({o.appUrl}), een
+              onofficiële live metrokaart van de Amsterdamse GVB-metro, beheerd door{" "}
               <strong>{o.businessName}</strong> ({o.businessUrl}).
             </p>
             <p className="mt-2">
-              <strong>Data controller</strong>
+              <strong>Verwerkingsverantwoordelijke</strong>
               <br />
               {o.contactName} / {o.businessName}
               <br />
@@ -62,7 +63,7 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
               <br />
               {o.postalCode} {o.city}, {o.country}
               <br />
-              Email:{" "}
+              E-mail:{" "}
               <a href={`mailto:${o.email}`} className="underline underline-offset-2">
                 {o.email}
               </a>
@@ -71,74 +72,75 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
 
           <section>
             <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">
-              2. What this app does with your data
+              2. Wat deze app met uw gegevens doet
             </h2>
             <p>
-              {o.appName} is designed to collect as little personal data as possible. We do not
-              require an account, we do not use advertising cookies, and we do not run analytics
-              or marketing trackers in the app.
+              {o.appName} is ontworpen om zo weinig mogelijk persoonsgegevens te verzamelen. Wij
+              vragen geen account, gebruiken geen advertentiecookies en plaatsen geen analytics- of
+              marketingtrackers in de app.
             </p>
           </section>
 
           <section>
             <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">
-              3. Data we process
+              3. Gegevens die wij verwerken
             </h2>
             <ul className="list-disc space-y-2 pl-5">
               <li>
-                <strong>Theme preference (localStorage):</strong> If you switch dark/light mode,
-                your choice is stored in your browser&apos;s local storage only. We do not receive
-                this data on our servers.
+                <strong>Themavoorkeur (localStorage):</strong> Als u wisselt tussen donker/licht
+                thema, wordt uw keuze alleen in de localStorage van uw browser opgeslagen. Wij
+                ontvangen deze gegevens niet op onze servers.
               </li>
               <li>
-                <strong>Technical logs (hosting):</strong> When you load the app or call our API,
-                our hosting provider may process technical data such as your IP address, browser
-                type, requested URL, and timestamp in server or HTTP access logs for security and
-                operations.
+                <strong>Technische logs (hosting):</strong> Wanneer u de app laadt of onze API
+                aanroept, kan onze hostingprovider technische gegevens verwerken, zoals uw
+                IP-adres, browsertype, opgevraagde URL en tijdstempel in server- of
+                HTTP-toegangslogs voor beveiliging en bedrijfsvoering.
               </li>
               <li>
-                <strong>Map and transit data:</strong> Your browser loads map tiles and transit
-                information directly from third-party services (see section 5). Those providers may
-                process technical connection data according to their own policies.
+                <strong>Kaart- en vervoersdata:</strong> Uw browser laadt kaarttegels en
+                vervoersinformatie rechtstreeks van derden (zie sectie 5). Die partijen kunnen
+                technische verbindingsgegevens verwerken volgens hun eigen beleid.
               </li>
             </ul>
             <p className="mt-2">
-              We do not intentionally collect names, email addresses, precise location, payment
-              data, or other directly identifying information through normal use of the app.
+              Wij verzamelen bewust geen namen, e-mailadressen, precieze locatie, betaalgegevens
+              of andere direct identificerende informatie via normaal gebruik van de app.
             </p>
           </section>
 
           <section>
             <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">
-              4. Purposes and legal basis (GDPR)
+              4. Doeleinden en rechtsgrond (AVG)
             </h2>
             <ul className="list-disc space-y-2 pl-5">
               <li>
-                <strong>Providing the service</strong> (Art. 6(1)(f) GDPR — legitimate interest):
-                operating the live metro map, API, and website.
+                <strong>Dienstverlening</strong> (art. 6 lid 1 onder f AVG — gerechtvaardigd
+                belang): het aanbieden van de live metrokaart, API en website.
               </li>
               <li>
-                <strong>Security and abuse prevention</strong> (Art. 6(1)(f) GDPR): short-term
-                server logs to keep the service reliable and secure.
+                <strong>Beveiliging en misbruikpreventie</strong> (art. 6 lid 1 onder f AVG):
+                kortetermijnserverlogs om de dienst betrouwbaar en veilig te houden.
               </li>
               <li>
-                <strong>Theme preference</strong> (Art. 6(1)(a) GDPR — consent by action): stored
-                locally when you choose a theme; you can clear it in your browser settings.
+                <strong>Themavoorkeur</strong> (art. 6 lid 1 onder a AVG — toestemming door
+                handelen): lokaal opgeslagen wanneer u een thema kiest; u kunt dit wissen in uw
+                browserinstellingen.
               </li>
             </ul>
           </section>
 
           <section>
             <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">
-              5. Third-party services (processors &amp; recipients)
+              5. Derde partijen (verwerkers &amp; ontvangers)
             </h2>
-            <p className="mb-2">We use the following categories of third parties:</p>
+            <p className="mb-2">Wij gebruiken de volgende categorieën derde partijen:</p>
             <ul className="list-disc space-y-2 pl-5">
               <li>
-                <strong>Render Services, Inc.</strong> — cloud hosting for the API backend (and
-                static site). May process IP addresses and request metadata in logs. Region: EU
-                (Frankfurt) where configured; processing may involve transfers to the United
-                States under Render&apos;s{" "}
+                <strong>Render Services, Inc.</strong> — cloudhosting voor de API-backend (en
+                statische site). Kan IP-adressen en requestmetadata in logs verwerken. Regio: EU
+                (Frankfurt) waar geconfigureerd; verwerking kan doorgang naar de Verenigde Staten
+                inhouden onder Render&apos;s{" "}
                 <a
                   href="https://render.com/dpa"
                   className="underline underline-offset-2"
@@ -147,66 +149,68 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
                 >
                   Data Processing Addendum
                 </a>{" "}
-                and applicable safeguards.
+                en toepasselijke waarborgen.
               </li>
               <li>
-                <strong>OpenFreeMap / OpenStreetMap / OpenMapTiles</strong> — map tiles loaded in
-                your browser.
+                <strong>OpenFreeMap / OpenStreetMap / OpenMapTiles</strong> — kaarttegels geladen
+                in uw browser.
               </li>
               <li>
-                <strong>OVapi / openOV / NDOV</strong> — open public-transport data fetched by our
-                backend; no personal data is sent to them by us beyond normal HTTP requests from
-                our server.
+                <strong>OVapi / openOV / NDOV</strong> — openbaarvervoersdata opgehaald door onze
+                backend; wij sturen geen persoonsgegevens naar hen behalve normale HTTP-verzoeken
+                vanaf onze server.
               </li>
             </ul>
             <p className="mt-2">
-              We do not sell your personal data. We do not share personal data with advertisers.
+              Wij verkopen uw persoonsgegevens niet. Wij delen geen persoonsgegevens met
+              adverteerders.
             </p>
           </section>
 
           <section>
             <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">
-              6. Cookies and similar technologies
+              6. Cookies en vergelijkbare technieken
             </h2>
             <p>
-              This app does <strong>not</strong> set tracking or advertising cookies. The only
-              client-side storage we use is <strong>localStorage</strong> for your theme
-              preference. You can remove it at any time via your browser settings.
+              Deze app plaatst <strong>geen</strong> tracking- of advertentiecookies. De enige
+              opslag aan clientzijde is <strong>localStorage</strong> voor uw themavoorkeur. U kunt
+              dit op elk moment verwijderen via uw browserinstellingen.
             </p>
           </section>
 
           <section>
-            <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">7. Retention</h2>
+            <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">7. Bewaartermijnen</h2>
             <ul className="list-disc space-y-2 pl-5">
               <li>
-                <strong>localStorage (theme):</strong> until you clear site data or change the
-                value.
+                <strong>localStorage (thema):</strong> totdat u sitegegevens wist of de waarde
+                wijzigt.
               </li>
               <li>
-                <strong>Hosting logs:</strong> retained by Render according to your hosting plan
-                (typically 7–30 days), then automatically deleted unless streamed elsewhere.
+                <strong>Hostinglogs:</strong> bewaard door Render volgens uw hostingabonnement
+                (doorgaans 7–30 dagen), daarna automatisch verwijderd tenzij elders gestreamd.
               </li>
             </ul>
           </section>
 
           <section>
-            <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">8. Your rights</h2>
+            <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">8. Uw rechten</h2>
             <p>
-              If you are in the European Economic Area or UK, you may have the right to access,
-              rectify, erase, restrict, or object to processing of your personal data, and to data
-              portability where applicable. You may also withdraw consent at any time (for
-              example, by clearing localStorage).
+              Als u in de Europese Economische Ruimte of het Verenigd Koninkrijk bent, heeft u
+              mogelijk het recht op inzage, rectificatie, wissing, beperking of bezwaar tegen
+              verwerking van uw persoonsgegevens, en op dataportabiliteit waar van toepassing. U
+              kunt toestemming te allen tijde intrekken (bijvoorbeeld door localStorage te
+              wissen).
             </p>
             <p className="mt-2">
-              To exercise your rights, contact us at{" "}
+              Neem contact met ons op via{" "}
               <a href={`mailto:${o.email}`} className="underline underline-offset-2">
                 {o.email}
-              </a>
-              . We will respond within the time limits required by applicable law (generally one
-              month under the GDPR).
+              </a>{" "}
+              om uw rechten uit te oefenen. Wij reageren binnen de wettelijke termijn (doorgaans
+              één maand onder de AVG).
             </p>
             <p className="mt-2">
-              You have the right to lodge a complaint with the Dutch supervisory authority:
+              U heeft het recht een klacht in te dienen bij de Nederlandse toezichthouder:
               <br />
               <strong>Autoriteit Persoonsgegevens (AP)</strong> —{" "}
               <a
@@ -221,37 +225,37 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
           </section>
 
           <section>
-            <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">9. Security</h2>
+            <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">9. Beveiliging</h2>
             <p>
-              We use HTTPS, restrict CORS in production, and rely on reputable hosting
-              infrastructure. No method of transmission over the Internet is 100% secure; we cannot
-              guarantee absolute security.
+              Wij gebruiken HTTPS, beperken CORS in productie en vertrouwen op betrouwbare
+              hostinginfrastructuur. Geen enkele methode van verzending via internet is 100% veilig;
+              absolute beveiliging kunnen wij niet garanderen.
             </p>
           </section>
 
           <section>
-            <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">10. Children</h2>
+            <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">10. Kinderen</h2>
             <p>
-              The app is not directed at children under 16 and we do not knowingly collect personal
-              data from children.
+              De app is niet gericht op kinderen onder 16 jaar en wij verzamelen bewust geen
+              persoonsgegevens van kinderen.
             </p>
           </section>
 
           <section>
             <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">
-              11. Changes to this policy
+              11. Wijzigingen in dit beleid
             </h2>
             <p>
-              We may update this privacy policy from time to time. The &quot;Last updated&quot;
-              date at the top will change when we do. Continued use of the app after changes
-              constitutes acceptance of the updated policy.
+              Wij kunnen dit privacybeleid van tijd tot tijd bijwerken. De datum
+              &quot;Laatst bijgewerkt&quot; bovenaan wijzigt wanneer wij dat doen. Voortgezet
+              gebruik van de app na wijzigingen geldt als acceptatie van het bijgewerkte beleid.
             </p>
           </section>
 
           <section>
             <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">12. Contact</h2>
             <p>
-              Questions about this privacy policy or our data practices:
+              Vragen over dit privacybeleid of onze gegevensverwerking:
               <br />
               {o.contactName} —{" "}
               <a href={`mailto:${o.email}`} className="underline underline-offset-2">
@@ -265,8 +269,8 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
           <section className="rounded-lg border border-amber-200/80 bg-amber-50/80 p-3 text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
             <p className="font-medium">Disclaimer</p>
             <p className="mt-1">
-              {o.appName} is an unofficial fan project. It is not affiliated with, endorsed by, or
-              operated by GVB (Gemeentelijk Vervoerbedrijf) or the City of Amsterdam.
+              {o.appName} is een onofficieel fanproject. Het is niet gelieerd aan, onderschreven
+              door of beheerd door GVB (Gemeentelijk Vervoerbedrijf) of de gemeente Amsterdam.
             </p>
           </section>
         </div>
@@ -277,7 +281,7 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             onClick={onClose}
             className="rounded-lg bg-gray-900 px-4 py-2 text-xs font-medium text-white hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white"
           >
-            Back to map
+            {nl.backToMap}
           </button>
         </footer>
       </article>

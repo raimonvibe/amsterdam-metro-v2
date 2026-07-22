@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { fetchDepartures } from "../api";
+import { nl } from "../i18n/nl";
 import { Departure, Line, Station } from "../types";
 
 interface DepartureBoardProps {
@@ -11,8 +12,8 @@ interface DepartureBoardProps {
 
 function countdown(ts: number, nowMs: number): string {
   const s = ts - nowMs / 1000;
-  if (s < 45) return "now";
-  return `${Math.round(s / 60)} min`;
+  if (s < 45) return nl.now;
+  return `${Math.round(s / 60)} ${nl.min}`;
 }
 
 export function DepartureBoard({ station, lines, onClose }: DepartureBoardProps) {
@@ -54,7 +55,7 @@ export function DepartureBoard({ station, lines, onClose }: DepartureBoardProps)
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close departures"
+          aria-label={nl.closeDepartures}
           className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100 sm:min-h-0 sm:min-w-0 sm:p-1"
         >
           <X size={14} />
@@ -63,12 +64,12 @@ export function DepartureBoard({ station, lines, onClose }: DepartureBoardProps)
 
       {departures === null && (
         <div className="py-3 text-center text-xs text-gray-500 dark:text-gray-400">
-          Loading departures…
+          {nl.loadingDepartures}
         </div>
       )}
       {departures?.length === 0 && (
         <div className="py-3 text-center text-xs text-gray-500 dark:text-gray-400">
-          No departures in the next 45 minutes
+          {nl.noDepartures}
         </div>
       )}
       {departures && departures.length > 0 && (

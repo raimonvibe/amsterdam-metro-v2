@@ -17,6 +17,7 @@ import { AnimatedTrain, Line, ShapeGeom, Station, Status } from "./types";
 import { useTheme } from "./theme";
 import { usePrivacyRoute } from "./hooks/usePrivacyRoute";
 import { useSidebarOpen } from "./hooks/useSidebarOpen";
+import { nl } from "./i18n/nl";
 
 const TRAINS_POLL_MS = 5000;
 const STATUS_POLL_MS = 30000;
@@ -67,7 +68,7 @@ export default function App() {
         setVisibleLines(l.map((x) => x.id));
         setError(null);
       } catch {
-        setError("Backend not reachable — is it running on :8020?");
+        setError(nl.backendError);
       }
     })();
   }, []);
@@ -136,7 +137,7 @@ export default function App() {
       {sidebarOpen && (
         <button
           type="button"
-          aria-label="Close menu"
+          aria-label={nl.menuClose}
           className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[1px] md:hidden"
           onClick={closeSidebar}
         />
@@ -168,12 +169,12 @@ export default function App() {
           <button
             type="button"
             onClick={openSidebar}
-            title="Show sidebar"
-            aria-label="Show sidebar"
+            title={nl.menu}
+            aria-label={nl.menu}
             className="absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-20 flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-3 py-2 text-sm font-medium text-gray-800 shadow-md backdrop-blur transition hover:bg-white dark:border-gray-700 dark:bg-gray-900/95 dark:text-gray-100 dark:hover:bg-gray-900"
           >
             <PanelLeftOpen size={16} />
-            <span className="hidden sm:inline">Menu</span>
+            <span className="hidden sm:inline">{nl.menu}</span>
           </button>
         )}
         {error && (

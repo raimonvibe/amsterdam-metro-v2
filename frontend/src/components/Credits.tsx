@@ -1,17 +1,17 @@
-/** Third-party services and data sources used by Amsterdam Metro Live. */
+/** Bronvermelding en gebruikte diensten. */
 
 export const CREDITS = [
   {
-    label: "Transit data",
+    label: "Reizigersinfo",
     items: [
       { name: "OVapi", href: "https://gtfs.ovapi.nl/" },
       { name: "openOV", href: "https://openov.nl/" },
       { name: "NDOV", href: "https://ndov.nl/" },
     ],
-    note: "CC0 open data via Stichting OpenGeo / OVapi. Unofficial — not affiliated with or endorsed by GVB.",
+    note: "CC0 open data via Stichting OpenGeo / OVapi. Geen officieel GVB-product.",
   },
   {
-    label: "Map tiles",
+    label: "Kaarttegels",
     items: [
       { name: "OpenFreeMap", href: "https://openfreemap.org/" },
       { name: "OpenStreetMap", href: "https://www.openstreetmap.org/copyright" },
@@ -19,31 +19,31 @@ export const CREDITS = [
     ],
   },
   {
-    label: "Map & 3D",
+    label: "Kaart & 3D",
     items: [
       { name: "MapLibre GL JS", href: "https://maplibre.org/" },
       { name: "deck.gl", href: "https://deck.gl/" },
     ],
   },
   {
-    label: "Icons",
+    label: "Pictogrammen",
     items: [
       {
         name: "Font Awesome Free",
         href: "https://fontawesome.com/license/free",
       },
     ],
-    note: "Icons by Fonticons, Inc.",
+    note: "Pictogrammen door Fonticons, Inc.",
   },
   {
-    label: "Inspiration",
+    label: "Inspiratie",
     items: [
       {
         name: "londonunderground.live",
         href: "https://www.londonunderground.live/",
       },
     ],
-    note: "By Ben James.",
+    note: "Door Ben James.",
   },
 ] as const;
 
@@ -54,10 +54,10 @@ export function Credits({ onOpenPrivacy }: { onOpenPrivacy: () => void }) {
   return (
     <div className="text-xs leading-relaxed text-gray-600 dark:text-gray-300 sm:text-[13px]">
       <p className="mb-2 text-gray-600 dark:text-gray-300">
-        Unofficial fan project — not affiliated with GVB or the City of Amsterdam.
+        Geen officieel GVB-project — niet gelieerd aan GVB of de gemeente Amsterdam.
       </p>
       <p className="mb-2 font-medium uppercase tracking-wide text-gray-700 dark:text-gray-200">
-        Credits
+        Bronvermelding
       </p>
       <ul className="space-y-2.5">
         {CREDITS.map((section) => (
@@ -83,9 +83,9 @@ export function Credits({ onOpenPrivacy }: { onOpenPrivacy: () => void }) {
         ))}
       </ul>
       <p className="mt-2.5 text-gray-600 dark:text-gray-300">
-        Theme preference stored locally only.{" "}
+        Thema wordt alleen lokaal opgeslagen.{" "}
         <button type="button" onClick={onOpenPrivacy} className={creditLink}>
-          Privacy Policy
+          Privacybeleid
         </button>
       </p>
       <p className="mt-2 text-gray-600 dark:text-gray-300">

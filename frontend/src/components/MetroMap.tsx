@@ -8,6 +8,7 @@ import { AnimatedTrain, Line, ShapeGeom, Station } from "../types";
 import { currentDistance, pathBetween, pointAt } from "../animate";
 import { MAP_THEME, Theme } from "../theme";
 import { getWebGLStatus } from "../webgl";
+import { nl } from "../i18n/nl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 // deck.gl attached as a maplibre overlay control: shares the map camera, so
@@ -396,24 +397,13 @@ export function MetroMap({
     return (
       <div className="flex h-full min-h-0 w-full items-center justify-center bg-gray-950 p-4 text-gray-100 sm:p-8">
         <div className="max-w-lg space-y-4 text-sm leading-relaxed">
-          <h2 className="text-lg font-semibold text-white">3D map needs WebGL</h2>
+          <h2 className="text-lg font-semibold text-white">{nl.webglTitle}</h2>
           <p>{webglError}</p>
-          <p className="text-gray-400">
-            Chrome blocked GPU rendering on this machine. Try:
-          </p>
+          <p className="text-gray-400">{nl.webglHint}</p>
           <ol className="list-decimal space-y-2 pl-5 text-gray-300">
-            <li>
-              Open <code className="text-amber-200">chrome://settings/system</code>{" "}
-              and turn on <strong>Use hardware acceleration</strong>, then restart Chrome.
-            </li>
-            <li>
-              Open <code className="text-amber-200">chrome://flags/#enable-unsafe-swiftshader</code>{" "}
-              and enable it for software WebGL fallback.
-            </li>
-            <li>
-              Check <code className="text-amber-200">chrome://gpu</code> — WebGL should not say
-              &quot;Unavailable&quot; or &quot;Disabled&quot;.
-            </li>
+            <li>{nl.webglStep1}</li>
+            <li>{nl.webglStep2}</li>
+            <li>{nl.webglStep3}</li>
           </ol>
         </div>
       </div>

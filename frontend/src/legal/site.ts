@@ -1,4 +1,4 @@
-/** Operator / data-controller details for legal pages. */
+/** Operator / verwerkingsverantwoordelijke voor juridische pagina's. */
 export const SITE_OPERATOR = {
   businessName: "raimonvibe",
   businessUrl: "https://raimonvibe.eu",
@@ -6,9 +6,9 @@ export const SITE_OPERATOR = {
   addressLine: "Timpaan 1-B",
   postalCode: "1628 MT",
   city: "Hoorn",
-  country: "Netherlands",
+  country: "Nederland",
   email: "info@raimonvibe.com",
-  appName: "Amsterdam Metro Live",
+  appName: "Metro Amsterdam Live",
   appUrl: "https://amsterdammetro.nl",
 } as const;
 

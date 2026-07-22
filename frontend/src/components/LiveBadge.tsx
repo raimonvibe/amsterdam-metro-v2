@@ -1,4 +1,5 @@
 import { Status } from "../types";
+import { nl } from "../i18n/nl";
 
 export function LiveBadge({ status }: { status: Status | null }) {
   const live = status?.is_live ?? false;
@@ -9,7 +10,7 @@ export function LiveBadge({ status }: { status: Status | null }) {
           live ? "bg-emerald-500 dark:bg-emerald-400" : "bg-amber-500 dark:bg-amber-400"
         }`}
       />
-      {live ? "LIVE" : "SCHEDULE"}
+      {live ? nl.live : nl.schedule}
     </div>
   );
 }
