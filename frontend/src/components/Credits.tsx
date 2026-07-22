@@ -47,19 +47,22 @@ export const CREDITS = [
   },
 ] as const;
 
+const creditLink =
+  "underline decoration-gray-300 underline-offset-2 hover:text-gray-800 dark:text-gray-200 dark:decoration-gray-600 dark:hover:text-white";
+
 export function Credits({ onOpenPrivacy }: { onOpenPrivacy: () => void }) {
   return (
-    <div className="text-[10px] leading-relaxed text-gray-400 dark:text-gray-600">
-      <p className="mb-2 text-[10px] leading-relaxed text-gray-400 dark:text-gray-600">
+    <div className="text-xs leading-relaxed text-gray-600 dark:text-gray-300 sm:text-[13px]">
+      <p className="mb-2 text-gray-600 dark:text-gray-300">
         Unofficial fan project — not affiliated with GVB or the City of Amsterdam.
       </p>
-      <p className="mb-2 font-medium uppercase tracking-wide text-gray-500 dark:text-gray-500">
+      <p className="mb-2 font-medium uppercase tracking-wide text-gray-700 dark:text-gray-200">
         Credits
       </p>
-      <ul className="space-y-2">
+      <ul className="space-y-2.5">
         {CREDITS.map((section) => (
           <li key={section.label}>
-            <span className="text-gray-500 dark:text-gray-500">{section.label}: </span>
+            <span className="text-gray-700 dark:text-gray-200">{section.label}: </span>
             {section.items.map((item, i) => (
               <span key={item.href}>
                 {i > 0 && ", "}
@@ -67,34 +70,27 @@ export function Credits({ onOpenPrivacy }: { onOpenPrivacy: () => void }) {
                   href={item.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-600 underline decoration-gray-300 underline-offset-2 hover:text-gray-800 dark:text-gray-400 dark:decoration-gray-700 dark:hover:text-gray-200"
+                  className={creditLink}
                 >
                   {item.name}
                 </a>
               </span>
             ))}
             {"note" in section && section.note && (
-              <span className="block text-gray-400 dark:text-gray-600">{section.note}</span>
+              <span className="mt-0.5 block text-gray-500 dark:text-gray-400">{section.note}</span>
             )}
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-gray-400 dark:text-gray-600">
+      <p className="mt-2.5 text-gray-600 dark:text-gray-300">
         Theme preference stored locally only.{" "}
-        <button
-          type="button"
-          onClick={onOpenPrivacy}
-          className="underline decoration-gray-300 underline-offset-2 hover:text-gray-600 dark:hover:text-gray-300"
-        >
+        <button type="button" onClick={onOpenPrivacy} className={creditLink}>
           Privacy Policy
         </button>
       </p>
-      <p className="mt-2 text-gray-400 dark:text-gray-600">
+      <p className="mt-2 text-gray-600 dark:text-gray-300">
         © {new Date().getFullYear()}{" "}
-        <a
-          href="https://amsterdammetro.nl"
-          className="underline decoration-gray-300 underline-offset-2 hover:text-gray-600 dark:hover:text-gray-300"
-        >
+        <a href="https://amsterdammetro.nl" className={creditLink}>
           amsterdammetro.nl
         </a>
         {" · "}
@@ -102,7 +98,7 @@ export function Credits({ onOpenPrivacy }: { onOpenPrivacy: () => void }) {
           href="https://github.com/raimonvibe/amsterdam-metro-v2"
           target="_blank"
           rel="noopener noreferrer"
-          className="underline decoration-gray-300 underline-offset-2 hover:text-gray-600 dark:hover:text-gray-300"
+          className={creditLink}
         >
           MIT
         </a>

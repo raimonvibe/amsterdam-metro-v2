@@ -53,7 +53,7 @@ export function Sidebar({
   const colorOf = (id: string) => lines.find((l) => l.id === id)?.color ?? "#999";
 
   return (
-    <aside className="flex h-full w-full flex-col overflow-y-auto overscroll-contain border-r border-gray-200 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-4 pt-[max(1rem,env(safe-area-inset-top))] text-gray-900 backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 dark:text-gray-100 md:w-72">
+    <aside className="flex h-full w-full min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-contain border-r border-gray-200 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-4 pt-[max(1rem,env(safe-area-inset-top))] text-gray-900 backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 dark:text-gray-100 md:w-72">
       <div className="mb-1 flex items-start justify-between gap-2">
         <h1 className="min-w-0 text-base font-bold tracking-tight sm:text-lg">
           Amsterdam Metro Live
@@ -83,7 +83,7 @@ export function Sidebar({
         Real trains, real tracks, real time
       </p>
 
-      <div className="mb-5 space-y-1.5">
+      <div className="mb-5 min-w-0 space-y-1.5">
         {lines.map((line) => {
           const count = trains.filter((t) => t.line === line.id).length;
           const on = visibleLines.includes(line.id);
@@ -91,17 +91,17 @@ export function Sidebar({
             <button
               key={line.id}
               onClick={() => onToggleLine(line.id)}
-              className={`flex min-h-11 w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition sm:min-h-0 sm:py-1.5 ${
+              className={`flex min-h-11 w-full min-w-0 items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition sm:min-h-0 sm:py-1.5 ${
                 on
                   ? "bg-gray-100 dark:bg-gray-800/80"
                   : "bg-transparent opacity-45 hover:opacity-75"
               }`}
             >
-              <span className="flex items-center gap-2">
-                <LineBadge id={line.id} color={line.color} />
-                <span className="truncate text-gray-800 dark:text-gray-200">{line.name}</span>
+              <LineBadge id={line.id} color={line.color} />
+              <span className="min-w-0 flex-1 truncate text-gray-800 dark:text-gray-200">
+                {line.name}
               </span>
-              <span className="text-xs tabular-nums text-gray-500 dark:text-gray-400">
+              <span className="w-5 shrink-0 text-right text-xs tabular-nums text-gray-500 dark:text-gray-400">
                 {count}
               </span>
             </button>
@@ -180,10 +180,10 @@ export function Sidebar({
       )}
 
       <div className="mt-6 space-y-4">
-        <p className="text-[10px] leading-relaxed text-gray-400 dark:text-gray-600 md:hidden">
+        <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:hidden">
           Pinch & drag to explore · tap stations for departures.
         </p>
-        <p className="hidden text-[10px] leading-relaxed text-gray-400 dark:text-gray-600 md:block">
+        <p className="hidden text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:block">
           Right-drag to orbit · zoom in for buildings.
         </p>
         <Credits onOpenPrivacy={onOpenPrivacy} />
