@@ -19,6 +19,22 @@ from .realtime import RealtimeState
 logger = logging.getLogger(__name__)
 
 EARTH_R = 6371000.0
+# Ignore RT absolute times that are still far from schedule after day-alignment.
+MAX_RT_DRIFT_S = 6 * 3600
+
+
+def _align_rt_epoch(rt_epoch: float, sched_epoch: float) -> float:
+    """Snap RT absolute epochs onto the service-date schedule.
+
+    OVapi tripUpdates often carry times from a previous service day while
+    static GTFS uses today's calendar date — without correction the trip
+    window shifts off ``now`` and the train disappears from the map.
+    """
+    day_shift = round((rt_epoch - sched_epoch) / 86400) * 86400
+    aligned = rt_epoch - day_shift
+    if abs(aligned - sched_epoch) > MAX_RT_DRIFT_S:
+        return sched_epoch
+    return aligned
 
 
 def _dist_m(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
@@ -214,7 +230,10 @@ class MetroData:
         now = now or time.time()
         out: List[TrainOut] = []
         for trip_id, t in self.trips.items():
-            dates = self.service_dates.get(t["service_id"], [])
+            dates = sorted(
+                self.service_dates.get(t["service_id"], []),
+                reverse=True,
+            )
             rt_trip = rt.trip_updates.get(trip_id)
             for date in dates:
                 train = self._solve(trip_id, t, date, rt_trip, now)
@@ -233,16 +252,23 @@ class MetroData:
         delay = 0
         rt_stops = rt_trip["stops"] if rt_trip else {}
         for seq, _stop_id, arr_s, dep_s, dist in t["stops"]:
-            arr = base + arr_s
-            dep = base + dep_s
+            sched_arr = base + arr_s
+            sched_dep = base + dep_s
+            arr, dep = sched_arr, sched_dep
             rec = rt_stops.get(seq)
             if rec:
                 delay = rec.get("delay", delay)
-                arr = rec["arr"] or arr + delay
-                dep = rec["dep"] or dep + delay
+                if rec.get("arr"):
+                    arr = _align_rt_epoch(rec["arr"], sched_arr)
+                else:
+                    arr = sched_arr + delay
+                if rec.get("dep"):
+                    dep = _align_rt_epoch(rec["dep"], sched_dep)
+                else:
+                    dep = sched_dep + delay
             else:
-                arr += delay
-                dep += delay
+                arr = sched_arr + delay
+                dep = sched_dep + delay
             times.append((arr, dep, dist, delay))
         return times
 
