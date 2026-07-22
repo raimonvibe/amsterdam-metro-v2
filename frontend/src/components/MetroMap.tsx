@@ -7,6 +7,7 @@ import { TripsLayer } from "@deck.gl/geo-layers";
 import { AnimatedTrain, Line, ShapeGeom, Station } from "../types";
 import { currentDistance, pathBetween, pointAt } from "../animate";
 import { MAP_THEME, Theme } from "../theme";
+import { getWebGLStatus } from "../webgl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 // deck.gl attached as a maplibre overlay control: shares the map camera, so
@@ -90,6 +91,10 @@ export function MetroMap({
   const mapRef = useRef<MapRef>(null);
   const [zoom, setZoom] = useState(INTRO_START.zoom);
   const [tick, setTick] = useState(0);
+  const [webglError, setWebglError] = useState<string | null>(() => {
+    const status = getWebGLStatus();
+    return status.ok ? null : status.reason;
+  });
   const introDone = useRef(false);
   const trailsRef = useRef<Record<string, Trail>>({});
   const lastSampleRef = useRef(0);
@@ -387,6 +392,34 @@ export function MetroMap({
     }),
   ];
 
+  if (webglError) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-gray-950 p-8 text-gray-100">
+        <div className="max-w-lg space-y-4 text-sm leading-relaxed">
+          <h2 className="text-lg font-semibold text-white">3D map needs WebGL</h2>
+          <p>{webglError}</p>
+          <p className="text-gray-400">
+            Chrome blocked GPU rendering on this machine. Try:
+          </p>
+          <ol className="list-decimal space-y-2 pl-5 text-gray-300">
+            <li>
+              Open <code className="text-amber-200">chrome://settings/system</code>{" "}
+              and turn on <strong>Use hardware acceleration</strong>, then restart Chrome.
+            </li>
+            <li>
+              Open <code className="text-amber-200">chrome://flags/#enable-unsafe-swiftshader</code>{" "}
+              and enable it for software WebGL fallback.
+            </li>
+            <li>
+              Check <code className="text-amber-200">chrome://gpu</code> — WebGL should not say
+              &quot;Unavailable&quot; or &quot;Disabled&quot;.
+            </li>
+          </ol>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full w-full">
       <Map
@@ -398,6 +431,7 @@ export function MetroMap({
         maxPitch={72}
         onLoad={handleLoad}
         onMove={(e) => setZoom(e.viewState.zoom)}
+        onError={(e) => setWebglError(e.error?.message ?? "WebGL map failed to start")}
       >
         <DeckGLOverlay
           layers={layers}

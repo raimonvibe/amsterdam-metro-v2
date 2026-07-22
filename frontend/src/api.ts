@@ -1,7 +1,10 @@
 import { Departure, Line, ShapeGeom, Station, Status, Train } from "./types";
 
+/** Empty in local dev → relative /api/... (Vite proxy). Set on Render build. */
+const API_BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`/api${path}`);
+  const res = await fetch(`${API_BASE}/api${path}`);
   if (!res.ok) throw new Error(`GET /api${path} -> ${res.status}`);
   return res.json();
 }

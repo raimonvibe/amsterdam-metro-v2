@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 CACHE_DIR = DATA_DIR / "cache"
@@ -10,6 +11,10 @@ GTFS_MAX_AGE_HOURS = 24
 
 TRIP_UPDATES_URL = "https://gtfs.ovapi.nl/nl/tripUpdates.pb"
 RT_POLL_SECONDS = 30
+
+# Comma-separated list, or "*" when unset (handy for local dev).
+_cors = os.getenv("CORS_ORIGINS", "").strip()
+CORS_ORIGINS = ["*"] if not _cors else [o.strip() for o in _cors.split(",") if o.strip()]
 
 # GVB metro lines and display colors (roughly GVB branding, dark-map friendly)
 METRO_LINES = {

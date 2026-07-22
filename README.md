@@ -52,6 +52,18 @@ npm install
 npm run dev   # → http://localhost:5183 (proxies /api to :8020)
 ```
 
+**Production preview locally** (optional):
+
+```bash
+cd frontend
+cp .env.production.example .env.production.local
+# edit VITE_API_URL if your backend runs elsewhere
+npm run build && npm run preview
+```
+
+Deploy to Render: see [docs/render-deploy-plan.md](docs/render-deploy-plan.md).  
+Costs & specs: see [docs/costs-and-specs.md](docs/costs-and-specs.md).
+
 First backend start downloads the national GTFS zip (~240MB, cached) and extracts the GVB metro subset — a few MB, refreshed daily.
 
 ## 💸 Running costs
@@ -63,6 +75,8 @@ No API keys, no paid services required:
 | Transit data (OVapi / NDOV) | Free |
 | Map tiles (OpenFreeMap) | Free |
 | Small VPS to host backend + frontend | ~€5–10/month |
+
+Full breakdown (RAM, bandwidth, Render tiers): **[docs/costs-and-specs.md](docs/costs-and-specs.md)**.
 
 ## 🙏 Credits
 

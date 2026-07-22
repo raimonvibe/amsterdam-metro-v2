@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import gtfs_static, realtime
+from .config import CORS_ORIGINS
 from .models import Line, StationOut, StatusOut, TrainOut
 from .positions import MetroData
 
@@ -36,7 +37,7 @@ app = FastAPI(title="Amsterdam Metro Live API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
