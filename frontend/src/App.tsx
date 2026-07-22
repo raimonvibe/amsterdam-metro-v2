@@ -112,16 +112,40 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () => {
+      document.body.style.overflow = mq.matches ? "hidden" : "";
+    };
+    sync();
+    mq.addEventListener("change", sync);
+    return () => {
+      document.body.style.overflow = "";
+      mq.removeEventListener("change", sync);
+    };
+  }, [sidebarOpen]);
+
   const toggleLine = (id: string) =>
     setVisibleLines((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+    <div className="flex h-dvh min-h-0 overflow-hidden bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+      {sidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close menu"
+          className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[1px] md:hidden"
+          onClick={closeSidebar}
+        />
+      )}
       <div
-        className={`shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out ${
-          sidebarOpen ? "w-72" : "w-0"
+        className={`fixed inset-y-0 left-0 z-50 w-[min(18rem,calc(100vw-env(safe-area-inset-left)-env(safe-area-inset-right)))] max-w-[85vw] transition-transform duration-300 ease-in-out md:static md:z-auto md:max-w-none md:shrink-0 md:overflow-hidden md:transition-[width] ${
+          sidebarOpen
+            ? "translate-x-0 md:w-72"
+            : "-translate-x-full md:translate-x-0 md:w-0"
         }`}
       >
         <Sidebar
@@ -139,21 +163,21 @@ export default function App() {
           onClose={closeSidebar}
         />
       </div>
-      <main className="relative min-w-0 flex-1">
+      <main className="relative min-h-0 min-w-0 flex-1">
         {!sidebarOpen && (
           <button
             type="button"
             onClick={openSidebar}
             title="Show sidebar"
             aria-label="Show sidebar"
-            className="absolute left-3 top-3 z-20 flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-3 py-2 text-sm font-medium text-gray-800 shadow-md backdrop-blur transition hover:bg-white dark:border-gray-700 dark:bg-gray-900/95 dark:text-gray-100 dark:hover:bg-gray-900"
+            className="absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-20 flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-3 py-2 text-sm font-medium text-gray-800 shadow-md backdrop-blur transition hover:bg-white dark:border-gray-700 dark:bg-gray-900/95 dark:text-gray-100 dark:hover:bg-gray-900"
           >
             <PanelLeftOpen size={16} />
             <span className="hidden sm:inline">Menu</span>
           </button>
         )}
         {error && (
-          <div className="absolute inset-x-0 top-0 z-10 bg-red-900/90 px-4 py-2 text-sm">
+          <div className="absolute inset-x-0 top-0 z-10 bg-red-900/90 px-4 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] text-sm">
             {error}
           </div>
         )}

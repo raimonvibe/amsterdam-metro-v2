@@ -53,16 +53,18 @@ export function Sidebar({
   const colorOf = (id: string) => lines.find((l) => l.id === id)?.color ?? "#999";
 
   return (
-    <aside className="w-72 shrink-0 overflow-y-auto border-r border-gray-200 bg-white/95 p-4 text-gray-900 backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 dark:text-gray-100">
+    <aside className="flex h-full w-full flex-col overflow-y-auto overscroll-contain border-r border-gray-200 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-4 pt-[max(1rem,env(safe-area-inset-top))] text-gray-900 backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 dark:text-gray-100 md:w-72">
       <div className="mb-1 flex items-start justify-between gap-2">
-        <h1 className="text-lg font-bold tracking-tight">Amsterdam Metro Live</h1>
+        <h1 className="min-w-0 text-base font-bold tracking-tight sm:text-lg">
+          Amsterdam Metro Live
+        </h1>
         <div className="flex shrink-0 items-center gap-0.5">
           <button
             type="button"
             onClick={onClose}
             title="Hide sidebar"
             aria-label="Hide sidebar"
-            className="rounded-full p-1.5 text-gray-500 transition hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
           >
             <PanelLeftClose size={16} />
           </button>
@@ -71,7 +73,7 @@ export function Sidebar({
             onClick={onToggleTheme}
             title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            className="rounded-full p-1.5 text-gray-500 transition hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
           >
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           </button>
@@ -89,7 +91,7 @@ export function Sidebar({
             <button
               key={line.id}
               onClick={() => onToggleLine(line.id)}
-              className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-sm transition ${
+              className={`flex min-h-11 w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition sm:min-h-0 sm:py-1.5 ${
                 on
                   ? "bg-gray-100 dark:bg-gray-800/80"
                   : "bg-transparent opacity-45 hover:opacity-75"
@@ -97,7 +99,7 @@ export function Sidebar({
             >
               <span className="flex items-center gap-2">
                 <LineBadge id={line.id} color={line.color} />
-                <span className="text-gray-800 dark:text-gray-200">{line.name}</span>
+                <span className="truncate text-gray-800 dark:text-gray-200">{line.name}</span>
               </span>
               <span className="text-xs tabular-nums text-gray-500 dark:text-gray-400">
                 {count}
@@ -132,7 +134,7 @@ export function Sidebar({
         <div className="mb-3 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-900">
           <div className="mb-1 flex items-center gap-2">
             <LineBadge id={hoveredTrain.line} color={colorOf(hoveredTrain.line)} />
-            <span className="font-semibold">→ {hoveredTrain.headsign}</span>
+            <span className="min-w-0 truncate font-semibold">→ {hoveredTrain.headsign}</span>
           </div>
           <div className="space-y-0.5 text-xs text-gray-600 dark:text-gray-300">
             {hoveredTrain.status === "dwelling" ? (
@@ -178,7 +180,10 @@ export function Sidebar({
       )}
 
       <div className="mt-6 space-y-4">
-        <p className="text-[10px] leading-relaxed text-gray-400 dark:text-gray-600">
+        <p className="text-[10px] leading-relaxed text-gray-400 dark:text-gray-600 md:hidden">
+          Pinch & drag to explore · tap stations for departures.
+        </p>
+        <p className="hidden text-[10px] leading-relaxed text-gray-400 dark:text-gray-600 md:block">
           Right-drag to orbit · zoom in for buildings.
         </p>
         <Credits onOpenPrivacy={onOpenPrivacy} />

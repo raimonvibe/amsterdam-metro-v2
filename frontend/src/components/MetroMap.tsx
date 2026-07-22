@@ -394,7 +394,7 @@ export function MetroMap({
 
   if (webglError) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-gray-950 p-8 text-gray-100">
+      <div className="flex h-full min-h-0 w-full items-center justify-center bg-gray-950 p-4 text-gray-100 sm:p-8">
         <div className="max-w-lg space-y-4 text-sm leading-relaxed">
           <h2 className="text-lg font-semibold text-white">3D map needs WebGL</h2>
           <p>{webglError}</p>
@@ -421,7 +421,7 @@ export function MetroMap({
   }
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full min-h-0 w-full">
       <Map
         ref={mapRef}
         initialViewState={INTRO_START}

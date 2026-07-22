@@ -46,14 +46,16 @@ export function DepartureBoard({ station, lines, onClose }: DepartureBoardProps)
   const colorOf = (id: string) => lines.find((l) => l.id === id)?.color ?? "#999";
 
   return (
-    <div className="absolute right-4 top-4 w-72 rounded-xl border border-gray-200 bg-white/95 p-3 text-gray-900 shadow-lg backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 dark:text-gray-100">
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-sm font-bold">
+    <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 max-h-[min(50vh,24rem)] overflow-y-auto overscroll-contain rounded-xl border border-gray-200 bg-white/95 p-3 text-gray-900 shadow-lg backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 dark:text-gray-100 sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-4 sm:max-h-[min(70vh,28rem)] sm:w-72">
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <h2 className="min-w-0 text-sm font-bold leading-snug">
           {station.name.replace(/^Amsterdam, /, "")}
         </h2>
         <button
+          type="button"
           onClick={onClose}
-          className="rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+          aria-label="Close departures"
+          className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100 sm:min-h-0 sm:min-w-0 sm:p-1"
         >
           <X size={14} />
         </button>

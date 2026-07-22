@@ -9,9 +9,9 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
   const o = SITE_OPERATOR;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm sm:p-8">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/60 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-sm sm:p-8">
       <article
-        className="relative my-4 w-full max-w-2xl rounded-xl border border-gray-200 bg-white p-6 text-sm leading-relaxed text-gray-800 shadow-xl dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200 sm:p-8"
+        className="relative my-2 w-full max-w-2xl rounded-xl border border-gray-200 bg-white p-4 text-sm leading-relaxed text-gray-800 shadow-xl dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200 sm:my-4 sm:p-8"
         role="dialog"
         aria-labelledby="privacy-title"
         aria-modal="true"
