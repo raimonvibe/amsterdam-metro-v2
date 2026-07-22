@@ -92,17 +92,20 @@ Local dev uses `frontend/.env.development` with an empty `VITE_API_URL` — prod
 
 ## SEO & sharing
 
-Set in `frontend/index.html`:
+Configured in `frontend/index.html`, `frontend/public/`, and `frontend/src/seo/site.ts`:
 
 - **Canonical:** `https://amsterdammetro.nl/`
-- **Open Graph URL:** `https://amsterdammetro.nl/`
-- **Title:** Amsterdam Metro Live
+- **Title & description:** Dutch copy with GVB line keywords (M50–M54)
+- **Favicon:** `favicon.ico` at `https://amsterdammetro.nl/favicon.ico`
+- **Open Graph & Twitter cards:** `social-share.png` at `https://amsterdammetro.nl/social-share.png`
+- **Add to home screen:** `apple-touch-icon` + `manifest.webmanifest` (both use `social-share.png`)
+- **JSON-LD:** `WebSite`, `WebApplication`, and `Organization` schema
+- **Sitemap:** `https://amsterdammetro.nl/sitemap.xml` (`/` and `/privacy`)
+- **Robots:** `https://amsterdammetro.nl/robots.txt`
 
-Optional next steps (not in repo yet):
+Optional next steps:
 
-- Add `og:image` pointing to `https://amsterdammetro.nl/...` screenshot
-- Add `https://amsterdammetro.nl/sitemap.xml`
-- Register in Google Search Console
+- Register in [Google Search Console](https://search.google.com/search-console) and submit the sitemap
 
 ---
 
