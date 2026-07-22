@@ -3,6 +3,7 @@ import { AnimatedTrain, Line, Station, Status } from "../types";
 import { Theme } from "../theme";
 import { SocialIcons } from "./SocialIcons";
 import { Credits } from "./Credits";
+import { compactLineName } from "../format";
 
 interface SidebarProps {
   lines: Line[];
@@ -98,7 +99,10 @@ export function Sidebar({
               }`}
             >
               <LineBadge id={line.id} color={line.color} />
-              <span className="min-w-0 flex-1 truncate text-gray-800 dark:text-gray-200">
+              <span className="min-w-0 flex-1 truncate text-gray-800 dark:text-gray-200 md:hidden">
+                {compactLineName(line.name)}
+              </span>
+              <span className="hidden min-w-0 flex-1 truncate text-gray-800 dark:text-gray-200 md:block">
                 {line.name}
               </span>
               <span className="w-5 shrink-0 text-right text-xs tabular-nums text-gray-500 dark:text-gray-400">
