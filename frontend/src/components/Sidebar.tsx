@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, Clock, Moon, PanelLeftClose, Sun, TrainFront } 
 import { AnimatedTrain, Line, Station, Status } from "../types";
 import { Theme } from "../theme";
 import { nl } from "../i18n/nl";
-import { compactLineName } from "../format";
+import { formatPlaceName } from "../format";
 import { SocialIcons } from "./SocialIcons";
 import { Credits } from "./Credits";
 
@@ -98,11 +98,8 @@ export function Sidebar({
               }`}
             >
               <LineBadge id={line.id} color={line.color} />
-              <span className="min-w-0 flex-1 truncate text-gray-800 dark:text-gray-200 md:hidden">
-                {compactLineName(line.name)}
-              </span>
-              <span className="hidden min-w-0 flex-1 truncate text-gray-800 dark:text-gray-200 md:block">
-                {line.name}
+              <span className="min-w-0 flex-1 truncate text-gray-800 dark:text-gray-200">
+                {formatPlaceName(line.name)}
               </span>
               <span className="w-5 shrink-0 text-right text-xs tabular-nums text-gray-500 dark:text-gray-400">
                 {count}
@@ -137,17 +134,17 @@ export function Sidebar({
         <div className="mb-3 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-900">
           <div className="mb-1 flex items-center gap-2">
             <LineBadge id={hoveredTrain.line} color={colorOf(hoveredTrain.line)} />
-            <span className="min-w-0 truncate font-semibold">→ {hoveredTrain.headsign}</span>
+            <span className="min-w-0 truncate font-semibold">→ {formatPlaceName(hoveredTrain.headsign ?? "")}</span>
           </div>
           <div className="space-y-0.5 text-xs text-gray-600 dark:text-gray-300">
             {hoveredTrain.status === "dwelling" ? (
               <div>
-                {nl.atStation} {hoveredTrain.prev_station?.replace(/^Amsterdam, /, "")}
+                {nl.atStation} {formatPlaceName(hoveredTrain.prev_station ?? "")}
               </div>
             ) : (
               <div>
-                {hoveredTrain.prev_station?.replace(/^Amsterdam, /, "")} →{" "}
-                {hoveredTrain.next_station?.replace(/^Amsterdam, /, "")}
+                {formatPlaceName(hoveredTrain.prev_station ?? "")} →{" "}
+                {formatPlaceName(hoveredTrain.next_station ?? "")}
               </div>
             )}
             <div>
@@ -172,7 +169,7 @@ export function Sidebar({
       {hoveredStation && !hoveredTrain && (
         <div className="mb-3 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-900">
           <div className="font-semibold">
-            {hoveredStation.name.replace(/^Amsterdam, /, "")}
+            {formatPlaceName(hoveredStation.name)}
           </div>
           <div className="mt-1 flex gap-1">
             {hoveredStation.lines.map((l) => (

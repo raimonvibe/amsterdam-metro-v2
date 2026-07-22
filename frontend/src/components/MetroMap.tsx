@@ -6,6 +6,7 @@ import { PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { TripsLayer } from "@deck.gl/geo-layers";
 import { AnimatedTrain, Line, ShapeGeom, Station } from "../types";
 import { currentDistance, pathBetween, pointAt } from "../animate";
+import { formatPlaceName } from "../format";
 import { MAP_THEME, Theme } from "../theme";
 import { getWebGLStatus } from "../webgl";
 import { nl } from "../i18n/nl";
@@ -326,7 +327,7 @@ export function MetroMap({
             id: "station-labels",
             data: visibleStations,
             getPosition: (d: Station) => [d.longitude, d.latitude],
-            getText: (d: Station) => d.name.replace(/^Amsterdam, /, ""),
+            getText: (d: Station) => formatPlaceName(d.name),
             getSize: 11.5,
             getColor: t.labelColor,
             getPixelOffset: [0, -16],
