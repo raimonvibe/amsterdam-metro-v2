@@ -10,7 +10,7 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.8"
       - key: CORS_ORIGINS
-        sync: false
+        value: "https://amsterdammetro.nl,https://www.amsterdammetro.nl"
 
   - type: web
     name: amsterdam-metro
@@ -20,7 +20,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        sync: false
+        value: "https://api.amsterdammetro.nl"
     routes:
       - type: rewrite
         source: /*

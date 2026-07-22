@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** Backend origin for production builds, e.g. https://amsterdam-metro-api.onrender.com */
+  /** Backend origin for production builds, e.g. https://api.amsterdammetro.nl */
   readonly VITE_API_URL: string;
 }
 

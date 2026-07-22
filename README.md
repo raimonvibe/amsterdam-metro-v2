@@ -1,6 +1,6 @@
 # 🚇 Amsterdam Metro Live
 
-> **A live, 3D, orbitable map of Amsterdam's GVB metro — real trains, riding real track geometry, in real time.**
+> **Live site:** [amsterdammetro.nl](https://amsterdammetro.nl) — a 3D, orbitable map of Amsterdam's GVB metro with real trains on real track geometry, in real time.
 
 ![Amsterdam Metro Live — Centraal Station, Nieuwmarkt and Waterlooplein at dusk, with live trains glowing on the shared corridor](docs/screenshot.jpg)
 
@@ -61,8 +61,13 @@ cp .env.production.example .env.production.local
 npm run build && npm run preview
 ```
 
-Deploy to Render: see [docs/render-deploy-plan.md](docs/render-deploy-plan.md).  
-Costs & specs: see [docs/costs-and-specs.md](docs/costs-and-specs.md).
+Production domain: **https://amsterdammetro.nl** (API: **https://api.amsterdammetro.nl**).
+
+| Doc | Contents |
+|---|---|
+| [docs/domain.md](docs/domain.md) | DNS, registrar, env vars |
+| [docs/render-deploy-plan.md](docs/render-deploy-plan.md) | Render deploy steps |
+| [docs/costs-and-specs.md](docs/costs-and-specs.md) | RAM, bandwidth, pricing |
 
 First backend start downloads the national GTFS zip (~240MB, cached) and extracts the GVB metro subset — a few MB, refreshed daily.
 
@@ -80,9 +85,13 @@ Full breakdown (RAM, bandwidth, Render tiers): **[docs/costs-and-specs.md](docs/
 
 ## 🙏 Credits
 
-- 🚇 Data: [OVapi](https://gtfs.ovapi.nl/) / [openOV](https://openov.nl/) / GVB
-- 🗺️ Tiles: [OpenFreeMap](https://openfreemap.org/) & OpenStreetMap contributors
-- 💡 Inspiration: [londonunderground.live](https://www.londonunderground.live/) by Ben James
+Full attribution: **[docs/attribution.md](docs/attribution.md)** (also shown in the app sidebar).
+
+- 🚇 **Transit data:** [OVapi](https://gtfs.ovapi.nl/) / [openOV](https://openov.nl/) / [NDOV](https://ndov.nl/) — GVB metro GTFS (not affiliated with GVB)
+- 🗺️ **Map tiles:** [OpenFreeMap](https://openfreemap.org/) · [OpenStreetMap](https://www.openstreetmap.org/copyright) · [OpenMapTiles](https://openmaptiles.org/)
+- 🧭 **Map engine:** [MapLibre GL JS](https://maplibre.org/) · [deck.gl](https://deck.gl/)
+- 🎨 **Icons:** [Font Awesome](https://fontawesome.com/) by Fonticons, Inc.
+- 💡 **Inspiration:** [londonunderground.live](https://www.londonunderground.live/) by Ben James
 
 ## 📄 License
 

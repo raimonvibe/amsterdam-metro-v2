@@ -157,7 +157,7 @@ This app is light except for **continuous OVapi polling** (~14 GB/day inbound). 
 | [OVapi / GTFS-NL](https://gtfs.ovapi.nl/) | **Free** (fair use) | Static + realtime feeds |
 | [OpenFreeMap](https://openfreemap.org/) | **Free** | Map tiles in browser |
 | GitHub | **Free** | Source + Render deploy hook |
-| Domain (optional) | **~$10–15/year** | Custom URL via Render DNS |
+| Domain (`amsterdammetro.nl`) | **~€8–15/year** | .nl registration; see [domain.md](docs/domain.md) |
 
 ---
 
@@ -182,7 +182,7 @@ Not a server cost, but affects who can use the site:
 Render Starter backend     $7.00
 Render static frontend     $0.00
 Optional 1 GB disk         $0.25
-Optional domain            ~$1/month (amortized)
+Optional domain            ~€1/month (amsterdammetro.nl)
 ─────────────────────────────────
 Total                      ~$7–8/month
 ```
@@ -214,7 +214,8 @@ Total                      ~€5/month + your ops time
 - [ ] **≥ 512 MB RAM** (1 GB safer for GTFS cold start)
 - [ ] **≥ 1 GB disk** for GTFS zip + cache (persistent disk on Render optional but nice)
 - [ ] **EU region** for lower latency to OVapi
-- [ ] Set `VITE_API_URL` + `CORS_ORIGINS` (see deploy plan)
+- [ ] Register **amsterdammetro.nl** and configure DNS ([domain.md](./domain.md))
+- [ ] Set `VITE_API_URL` + `CORS_ORIGINS` (already in `render.yaml`)
 - [ ] Expect **~430 GB/month inbound** bandwidth on backend (included on most paid plans; confirm provider limits)
 - [ ] No need to pay for map tiles or transit API keys
 
@@ -222,8 +223,10 @@ Total                      ~€5/month + your ops time
 
 ## Quick reference
 
-| | Local dev | Production (recommended) |
+| | Local dev | Production |
 |---|---|---|
+| **Site** | http://localhost:5183 | **https://amsterdammetro.nl** |
+| **API** | http://localhost:8020 | **https://api.amsterdammetro.nl** |
 | Backend RAM | Your machine | 512 MB–1 GB |
 | Backend cost | $0 | **~$7/month** (Render Starter) |
 | Frontend cost | $0 | **$0** (static) |

@@ -20,7 +20,9 @@ backend/data/cache/
 !.env.example
 !.env.development
 !.env.production.example
+!.env.production
 !backend/.env.example
+!config/production.env.example
 
 # IDE / OS
 .idea/

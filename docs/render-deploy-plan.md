@@ -8,8 +8,8 @@ Plan for hosting this project on [Render](https://render.com). Render supports *
 
 | Component | Render type | Runtime | Public URL example |
 |---|---|---|---|
-| Backend API | **Web Service** | Python 3.12 + Uvicorn | `https://amsterdam-metro-api.onrender.com` |
-| Frontend UI | **Static Site** | Node build → static files | `https://amsterdam-metro.onrender.com` |
+| Backend API | **Web Service** | Python 3.12 + Uvicorn | `https://api.amsterdammetro.nl` |
+| Frontend UI | **Static Site** | Node build → static files | `https://amsterdammetro.nl` |
 
 **Why two services?**
 
@@ -19,11 +19,14 @@ Plan for hosting this project on [Render](https://render.com). Render supports *
 
 **Alternative (simpler, one URL):** serve the built frontend from FastAPI with `StaticFiles` on a single Web Service. Fewer moving parts, but slightly more backend code. This plan focuses on the standard two-service setup.
 
-Related: [costs-and-specs.md](./costs-and-specs.md) — RAM, bandwidth, and monthly pricing.
+Related: [domain.md](./domain.md) · [costs-and-specs.md](./costs-and-specs.md) — production URLs, DNS, RAM, and pricing.
 
 ---
 
+## Prerequisites
+
 - GitHub repo: [raimonvibe/amsterdam-metro-v2](https://github.com/raimonvibe/amsterdam-metro-v2)
+- Production domain: **amsterdammetro.nl** (frontend) + **api.amsterdammetro.nl** (API)
 - Render account (free tier works for testing; see [costs & limits](#costs--limits))
 - No API keys needed (OVapi + OpenFreeMap are free)
 
@@ -60,7 +63,7 @@ These are **already in the repo**:
 Set on Render Static Site at build time:
 
 ```bash
-VITE_API_URL=https://amsterdam-metro-api.onrender.com
+VITE_API_URL=https://api.amsterdammetro.nl
 ```
 
 ### 2. Backend bind to Render’s `PORT`
@@ -76,7 +79,7 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 Set on Render Web Service:
 
 ```bash
-CORS_ORIGINS=https://amsterdam-metro.onrender.com
+CORS_ORIGINS=https://amsterdammetro.nl,https://www.amsterdammetro.nl
 ```
 
 Local dev: leave unset → allows all origins.
@@ -120,7 +123,7 @@ Example `render.yaml` (already at repo root):
 | Key | Value | Notes |
 |---|---|---|
 | `PYTHON_VERSION` | `3.12.8` | Match local dev |
-| `CORS_ORIGINS` | `https://your-frontend.onrender.com` | Optional |
+| `CORS_ORIGINS` | `https://amsterdammetro.nl,https://www.amsterdammetro.nl` | Set in `render.yaml` |
 
 ### First startup behavior
 
@@ -135,8 +138,8 @@ On first boot (and after redeploy on free tier):
 ### Verify backend
 
 ```bash
-curl https://amsterdam-metro-api.onrender.com/healthz
-curl https://amsterdam-metro-api.onrender.com/api/status
+curl https://api.amsterdammetro.nl/healthz
+curl https://api.amsterdammetro.nl/api/status
 ```
 
 ---
@@ -160,7 +163,7 @@ curl https://amsterdam-metro-api.onrender.com/api/status
 
 | Key | Value |
 |---|---|
-| `VITE_API_URL` | `https://amsterdam-metro-api.onrender.com` |
+| `VITE_API_URL` | `https://api.amsterdammetro.nl` |
 
 > **Important:** Static sites bake env vars into the build. If the backend URL changes, **redeploy** the frontend.
 
@@ -176,7 +179,7 @@ Or use Render’s **Rewrite** rule: `/*` → `/index.html`.
 
 ### Verify frontend
 
-Open `https://amsterdam-metro.onrender.com` — map loads, sidebar shows live train count, no “Backend not reachable” error.
+Open `https://amsterdammetro.nl` — map loads, sidebar shows live train count, no “Backend not reachable” error.
 
 ---
 
@@ -190,7 +193,7 @@ Open `https://amsterdam-metro.onrender.com` — map loads, sidebar shows live tr
 - [ ] Set `VITE_API_URL` on Static Site
 - [ ] Deploy frontend
 - [ ] Test map, trains, station departures in browser
-- [ ] (Optional) Add custom domain on Render
+- [ ] Configure DNS for **amsterdammetro.nl** (see [domain.md](./domain.md))
 
 ---
 
@@ -237,9 +240,13 @@ Deployment does not fix client-side WebGL issues (Chrome GPU disabled). Users ne
 
 ### Custom domain
 
-1. Render → Static Site → **Settings → Custom Domains**
-2. Add DNS CNAME to Render
-3. Update `CORS_ORIGINS` and `VITE_API_URL` if backend domain changes
+Full DNS setup, registrar steps, and env vars: **[domain.md](./domain.md)**.
+
+Quick summary:
+
+1. Render static site → `amsterdammetro.nl`, `www.amsterdammetro.nl`
+2. Render web service → `api.amsterdammetro.nl`
+3. Point DNS at registrar; `render.yaml` already has the correct env vars
 
 ---
 
@@ -271,10 +278,10 @@ cd frontend && npm run dev
 **Production URLs (after deploy):**
 
 ```text
-Frontend:  https://amsterdam-metro.onrender.com
-Backend:   https://amsterdam-metro-api.onrender.com
-Health:    https://amsterdam-metro-api.onrender.com/healthz
-Status:    https://amsterdam-metro-api.onrender.com/api/status
+Frontend:  https://amsterdammetro.nl
+Backend:   https://api.amsterdammetro.nl
+Health:    https://api.amsterdammetro.nl/healthz
+Status:    https://api.amsterdammetro.nl/api/status
 ```
 
 ---
@@ -288,4 +295,4 @@ Yes — **Render is a good fit** for this project:
 - **No paid third-party APIs** required
 - **~$7/month** for a reliable always-on demo; free tier works with cold-start tradeoffs
 
-Next implementation step: apply the small code changes above, add `render.yaml`, push to GitHub, and deploy backend first, then frontend.
+Next step: push to GitHub, deploy on Render, then wire DNS — see [domain.md](./domain.md).

@@ -8,3 +8,68 @@ body,
   height: 100%;
   margin: 0;
 }
+
+/* Social icons — same pattern as github.com/raimonvibe/eleven-up */
+.social-icons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.social-icons li {
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+}
+
+.social-icons .icon {
+  text-decoration: none;
+  border-bottom: none;
+  position: relative;
+  color: rgb(107 114 128);
+  transition: color 0.2s ease, opacity 0.2s ease, transform 0.15s ease;
+}
+
+.dark .social-icons .icon {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.social-icons .icon::before {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  display: inline-block;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  line-height: 1;
+  text-transform: none !important;
+  font-family: "Font Awesome 6 Free";
+  font-weight: 400;
+  font-size: 0.95rem;
+}
+
+.social-icons .icon.solid::before {
+  font-weight: 900;
+}
+
+.social-icons .icon.brands::before {
+  font-family: "Font Awesome 6 Brands";
+  font-weight: 400;
+}
+
+.social-icons .icon > .label {
+  display: none;
+}
+
+.social-icons .icon:hover {
+  color: rgb(55 65 81);
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.dark .social-icons .icon:hover {
+  color: rgba(255, 255, 255, 0.95);
+}

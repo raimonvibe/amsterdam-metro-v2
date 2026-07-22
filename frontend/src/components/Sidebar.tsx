@@ -1,6 +1,8 @@
 import { Clock, Moon, Sun, TrainFront } from "lucide-react";
 import { AnimatedTrain, Line, Station, Status } from "../types";
 import { Theme } from "../theme";
+import { SocialIcons } from "./SocialIcons";
+import { Credits } from "./Credits";
 
 interface SidebarProps {
   lines: Line[];
@@ -158,11 +160,15 @@ export function Sidebar({
         </div>
       )}
 
-      <p className="mt-6 text-[10px] leading-relaxed text-gray-400 dark:text-gray-600">
-        Right-drag to orbit · zoom in for buildings.
-        <br />
-        Data: OVapi / GVB · Tiles: OpenFreeMap
-      </p>
+      <div className="mt-6 space-y-4">
+        <p className="text-[10px] leading-relaxed text-gray-400 dark:text-gray-600">
+          Right-drag to orbit · zoom in for buildings.
+        </p>
+        <Credits />
+        <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
+          <SocialIcons />
+        </div>
+      </div>
     </aside>
   );
 }
