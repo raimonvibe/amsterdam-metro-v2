@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { PanelLeftOpen } from "lucide-react";
 import { MetroMap } from "./components/MetroMap";
 import { Sidebar } from "./components/Sidebar";
 import { LiveBadge } from "./components/LiveBadge";
 import { DepartureBoard } from "./components/DepartureBoard";
 import { FollowChip } from "./components/FollowChip";
+import { PrivacyPolicy } from "./components/PrivacyPolicy";
 import {
   fetchLines,
   fetchShapes,
@@ -13,6 +15,8 @@ import {
 } from "./api";
 import { AnimatedTrain, Line, ShapeGeom, Station, Status } from "./types";
 import { useTheme } from "./theme";
+import { usePrivacyRoute } from "./hooks/usePrivacyRoute";
+import { useSidebarOpen } from "./hooks/useSidebarOpen";
 
 const TRAINS_POLL_MS = 5000;
 const STATUS_POLL_MS = 30000;
@@ -31,17 +35,23 @@ export default function App() {
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [followedTrainId, setFollowedTrainId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { showPrivacy, openPrivacy, closePrivacy } = usePrivacyRoute();
+  const [sidebarOpen, openSidebar, closeSidebar] = useSidebarOpen();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        if (showPrivacy) {
+          closePrivacy();
+          return;
+        }
         setFollowedTrainId(null);
         setSelectedStation(null);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [showPrivacy, closePrivacy]);
 
   useEffect(() => {
     (async () => {
@@ -108,20 +118,40 @@ export default function App() {
     );
 
   return (
-    <div className="flex h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-      <Sidebar
-        lines={lines}
-        visibleLines={visibleLines}
-        onToggleLine={toggleLine}
-        trains={trains}
-        status={status}
-        hoveredTrain={hoveredTrain}
-        hoveredStation={hoveredStation}
-        lastUpdated={lastUpdated}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-      />
-      <main className="relative flex-1">
+    <div className="flex h-screen overflow-hidden bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+      <div
+        className={`shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out ${
+          sidebarOpen ? "w-72" : "w-0"
+        }`}
+      >
+        <Sidebar
+          lines={lines}
+          visibleLines={visibleLines}
+          onToggleLine={toggleLine}
+          trains={trains}
+          status={status}
+          hoveredTrain={hoveredTrain}
+          hoveredStation={hoveredStation}
+          lastUpdated={lastUpdated}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onOpenPrivacy={openPrivacy}
+          onClose={closeSidebar}
+        />
+      </div>
+      <main className="relative min-w-0 flex-1">
+        {!sidebarOpen && (
+          <button
+            type="button"
+            onClick={openSidebar}
+            title="Show sidebar"
+            aria-label="Show sidebar"
+            className="absolute left-3 top-3 z-20 flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-3 py-2 text-sm font-medium text-gray-800 shadow-md backdrop-blur transition hover:bg-white dark:border-gray-700 dark:bg-gray-900/95 dark:text-gray-100 dark:hover:bg-gray-900"
+          >
+            <PanelLeftOpen size={16} />
+            <span className="hidden sm:inline">Menu</span>
+          </button>
+        )}
         {error && (
           <div className="absolute inset-x-0 top-0 z-10 bg-red-900/90 px-4 py-2 text-sm">
             {error}
@@ -161,6 +191,7 @@ export default function App() {
             ) : null;
           })()}
       </main>
+      {showPrivacy && <PrivacyPolicy onClose={closePrivacy} />}
     </div>
   );
 }

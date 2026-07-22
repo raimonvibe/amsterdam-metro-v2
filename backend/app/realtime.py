@@ -12,7 +12,7 @@ from typing import Dict, Optional
 import httpx
 from google.transit import gtfs_realtime_pb2
 
-from .config import RT_POLL_SECONDS, TRIP_UPDATES_URL
+from .config import HTTP_HEADERS, RT_POLL_SECONDS, TRIP_UPDATES_URL
 
 logger = logging.getLogger(__name__)
 
@@ -66,17 +66,27 @@ def _parse(feed_bytes: bytes, metro_trip_ids: set) -> Dict[str, dict]:
 
 
 async def poll_forever(get_metro_trip_ids) -> None:
-    async with httpx.AsyncClient(timeout=60) as client:
+    conditional_headers: dict[str, str] = {}
+    async with httpx.AsyncClient(timeout=60, headers=HTTP_HEADERS) as client:
         while True:
             try:
-                resp = await client.get(TRIP_UPDATES_URL)
-                resp.raise_for_status()
-                trip_ids = get_metro_trip_ids()
-                updates = await asyncio.to_thread(_parse, resp.content, trip_ids)
-                state.trip_updates = updates
-                state.last_success_ts = int(time.time())
-                state.last_error = None
-                logger.info("RT poll ok: %d metro trip updates", len(updates))
+                resp = await client.get(TRIP_UPDATES_URL, headers=conditional_headers)
+                if resp.status_code == 304:
+                    state.last_success_ts = int(time.time())
+                    state.last_error = None
+                    logger.debug("RT poll not modified (304)")
+                else:
+                    resp.raise_for_status()
+                    trip_ids = get_metro_trip_ids()
+                    updates = await asyncio.to_thread(_parse, resp.content, trip_ids)
+                    state.trip_updates = updates
+                    state.last_success_ts = int(time.time())
+                    state.last_error = None
+                    logger.info("RT poll ok: %d metro trip updates", len(updates))
+                    if etag := resp.headers.get("etag"):
+                        conditional_headers["If-None-Match"] = etag
+                    if modified := resp.headers.get("last-modified"):
+                        conditional_headers["If-Modified-Since"] = modified
             except Exception as e:  # keep polling through transient failures
                 state.last_error = str(e)
                 logger.warning("RT poll failed: %s", e)

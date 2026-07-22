@@ -23,6 +23,7 @@ from .config import (
     GTFS_MAX_AGE_HOURS,
     GTFS_STATIC_URL,
     GTFS_STATIC_ZIP,
+    HTTP_HEADERS,
     METRO_LINES,
 )
 
@@ -58,7 +59,13 @@ def download_static(force: bool = False) -> Path:
     logger.info("Downloading %s ...", GTFS_STATIC_URL)
     GTFS_STATIC_ZIP.parent.mkdir(parents=True, exist_ok=True)
     tmp = GTFS_STATIC_ZIP.with_suffix(".part")
-    with httpx.stream("GET", GTFS_STATIC_URL, timeout=600, follow_redirects=True) as r:
+    with httpx.stream(
+        "GET",
+        GTFS_STATIC_URL,
+        headers=HTTP_HEADERS,
+        timeout=600,
+        follow_redirects=True,
+    ) as r:
         r.raise_for_status()
         with open(tmp, "wb") as f:
             for chunk in r.iter_bytes(1 << 20):

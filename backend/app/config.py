@@ -16,7 +16,14 @@ RT_POLL_SECONDS = 30
 _cors = os.getenv("CORS_ORIGINS", "").strip()
 CORS_ORIGINS = ["*"] if not _cors else [o.strip() for o in _cors.split(",") if o.strip()]
 
-# GVB metro lines and display colors (roughly GVB branding, dark-map friendly)
+# Required by OVapi technical usage policy: https://gtfs.ovapi.nl/README
+HTTP_USER_AGENT = os.getenv(
+    "HTTP_USER_AGENT",
+    "AmsterdamMetroLive/2.0 (+https://amsterdammetro.nl)",
+)
+HTTP_HEADERS = {"User-Agent": HTTP_USER_AGENT}
+
+# GVB metro lines and display colours (public route colours, not official GVB branding)
 METRO_LINES = {
     "50": {"name": "Gein - Isolatorweg", "color": "#3CB44B"},
     "51": {"name": "Centraal Station - Isolatorweg", "color": "#F58231"},

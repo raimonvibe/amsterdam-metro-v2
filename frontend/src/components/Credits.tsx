@@ -8,7 +8,7 @@ export const CREDITS = [
       { name: "openOV", href: "https://openov.nl/" },
       { name: "NDOV", href: "https://ndov.nl/" },
     ],
-    note: "GVB metro GTFS static & realtime feeds (lines 50–54). Not affiliated with GVB.",
+    note: "CC0 open data via Stichting OpenGeo / OVapi. Unofficial — not affiliated with or endorsed by GVB.",
   },
   {
     label: "Map tiles",
@@ -27,7 +27,12 @@ export const CREDITS = [
   },
   {
     label: "Icons",
-    items: [{ name: "Font Awesome", href: "https://fontawesome.com/" }],
+    items: [
+      {
+        name: "Font Awesome Free",
+        href: "https://fontawesome.com/license/free",
+      },
+    ],
     note: "Icons by Fonticons, Inc.",
   },
   {
@@ -42,17 +47,20 @@ export const CREDITS = [
   },
 ] as const;
 
-export function Credits() {
+export function Credits({ onOpenPrivacy }: { onOpenPrivacy: () => void }) {
   return (
     <div className="text-[10px] leading-relaxed text-gray-400 dark:text-gray-600">
+      <p className="mb-2 text-[10px] leading-relaxed text-gray-400 dark:text-gray-600">
+        Unofficial fan project — not affiliated with GVB or the City of Amsterdam.
+      </p>
       <p className="mb-2 font-medium uppercase tracking-wide text-gray-500 dark:text-gray-500">
         Credits
       </p>
       <ul className="space-y-2">
-        {CREDITS.map(({ label, items, note }) => (
-          <li key={label}>
-            <span className="text-gray-500 dark:text-gray-500">{label}: </span>
-            {items.map((item, i) => (
+        {CREDITS.map((section) => (
+          <li key={section.label}>
+            <span className="text-gray-500 dark:text-gray-500">{section.label}: </span>
+            {section.items.map((item, i) => (
               <span key={item.href}>
                 {i > 0 && ", "}
                 <a
@@ -65,12 +73,22 @@ export function Credits() {
                 </a>
               </span>
             ))}
-            {note && (
-              <span className="block text-gray-400 dark:text-gray-600">{note}</span>
+            {"note" in section && section.note && (
+              <span className="block text-gray-400 dark:text-gray-600">{section.note}</span>
             )}
           </li>
         ))}
       </ul>
+      <p className="mt-2 text-gray-400 dark:text-gray-600">
+        Theme preference stored locally only.{" "}
+        <button
+          type="button"
+          onClick={onOpenPrivacy}
+          className="underline decoration-gray-300 underline-offset-2 hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          Privacy Policy
+        </button>
+      </p>
       <p className="mt-2 text-gray-400 dark:text-gray-600">
         © {new Date().getFullYear()}{" "}
         <a

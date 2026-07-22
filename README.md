@@ -68,6 +68,7 @@ Production domain: **https://amsterdammetro.nl** (API: **https://api.amsterdamme
 | [docs/domain.md](docs/domain.md) | DNS, registrar, env vars |
 | [docs/render-deploy-plan.md](docs/render-deploy-plan.md) | Render deploy steps |
 | [docs/costs-and-specs.md](docs/costs-and-specs.md) | RAM, bandwidth, pricing |
+| [docs/legal-compliance.md](docs/legal-compliance.md) | Legal / attribution checklist |
 
 First backend start downloads the national GTFS zip (~240MB, cached) and extracts the GVB metro subset — a few MB, refreshed daily.
 

@@ -1,4 +1,4 @@
-import { Clock, Moon, Sun, TrainFront } from "lucide-react";
+import { Clock, Moon, PanelLeftClose, Sun, TrainFront } from "lucide-react";
 import { AnimatedTrain, Line, Station, Status } from "../types";
 import { Theme } from "../theme";
 import { SocialIcons } from "./SocialIcons";
@@ -15,6 +15,8 @@ interface SidebarProps {
   lastUpdated: Date | null;
   theme: Theme;
   onToggleTheme: () => void;
+  onOpenPrivacy: () => void;
+  onClose: () => void;
 }
 
 function delayLabel(s: number): string {
@@ -45,20 +47,35 @@ export function Sidebar({
   lastUpdated,
   theme,
   onToggleTheme,
+  onOpenPrivacy,
+  onClose,
 }: SidebarProps) {
   const colorOf = (id: string) => lines.find((l) => l.id === id)?.color ?? "#999";
 
   return (
     <aside className="w-72 shrink-0 overflow-y-auto border-r border-gray-200 bg-white/95 p-4 text-gray-900 backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 dark:text-gray-100">
-      <div className="mb-1 flex items-start justify-between">
+      <div className="mb-1 flex items-start justify-between gap-2">
         <h1 className="text-lg font-bold tracking-tight">Amsterdam Metro Live</h1>
-        <button
-          onClick={onToggleTheme}
-          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          className="rounded-full p-1.5 text-gray-500 transition hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-        >
-          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            onClick={onClose}
+            title="Hide sidebar"
+            aria-label="Hide sidebar"
+            className="rounded-full p-1.5 text-gray-500 transition hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+          >
+            <PanelLeftClose size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            className="rounded-full p-1.5 text-gray-500 transition hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+          >
+            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+        </div>
       </div>
       <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
         Real trains, real tracks, real time
@@ -164,7 +181,7 @@ export function Sidebar({
         <p className="text-[10px] leading-relaxed text-gray-400 dark:text-gray-600">
           Right-drag to orbit · zoom in for buildings.
         </p>
-        <Credits />
+        <Credits onOpenPrivacy={onOpenPrivacy} />
         <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
           <SocialIcons />
         </div>
