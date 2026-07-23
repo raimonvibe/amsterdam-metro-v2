@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { ChevronDown, ChevronUp, Clock, Moon, PanelLeftClose, Sun, TrainFront } from "lucide-react";
+import { Clock, Moon, PanelLeftClose, Sun, TrainFront } from "lucide-react";
 import { AnimatedTrain, Line, Station, Status } from "../types";
 import { Theme } from "../theme";
 import { nl } from "../i18n/nl";
@@ -53,7 +52,6 @@ export function Sidebar({
   onOpenPrivacy,
   onClose,
 }: SidebarProps) {
-  const [infoOpen, setInfoOpen] = useState(false);
   const colorOf = (id: string) => lines.find((l) => l.id === id)?.color ?? "#999";
 
   return (
@@ -179,28 +177,16 @@ export function Sidebar({
         </div>
       )}
 
-      <div className="mt-auto border-t border-gray-200 pt-4 dark:border-gray-800">
-        <button
-          type="button"
-          onClick={() => setInfoOpen((v) => !v)}
-          aria-expanded={infoOpen}
-          className="flex w-full items-center justify-between gap-2 rounded-lg px-1 py-2 text-left text-xs font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-        >
-          <span>{nl.infoToggle}</span>
-          {infoOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </button>
-        {infoOpen && (
-          <div className="mt-2 space-y-4">
-            <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:hidden">
-              {nl.helpMobile}
-            </p>
-            <p className="hidden text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:block">
-              {nl.helpDesktop}
-            </p>
-            <Credits onOpenPrivacy={onOpenPrivacy} />
-            <SocialIcons />
-          </div>
-        )}
+      <div className="mt-auto space-y-4 border-t border-gray-200 pt-4 dark:border-gray-800">
+        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">{nl.infoToggle}</p>
+        <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:hidden">
+          {nl.helpMobile}
+        </p>
+        <p className="hidden text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:block">
+          {nl.helpDesktop}
+        </p>
+        <Credits onOpenPrivacy={onOpenPrivacy} />
+        <SocialIcons />
       </div>
     </aside>
   );
