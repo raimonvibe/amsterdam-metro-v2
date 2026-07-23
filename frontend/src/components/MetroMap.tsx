@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Map, useControl } from "react-map-gl/maplibre";
+import { Map, useControl, AttributionControl } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import { MapboxOverlay, MapboxOverlayProps } from "@deck.gl/mapbox";
 import { PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
@@ -427,7 +427,7 @@ export function MetroMap({
         initialViewState={INTRO_START}
         mapStyle={t.styleUrl}
         styleDiffing={false}
-        attributionControl={{ compact: true }}
+        attributionControl={false}
         style={{ width: "100%", height: "100%" }}
         maxPitch={72}
         onLoad={handleLoad}
@@ -441,6 +441,7 @@ export function MetroMap({
         }}
         onError={(e) => setWebglError(e.error?.message ?? "WebGL map failed to start")}
       >
+        <AttributionControl compact />
         <DeckGLOverlay
           layers={layers}
           getCursor={({ isHovering, isDragging }) =>
