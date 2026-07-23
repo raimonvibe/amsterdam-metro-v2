@@ -8,6 +8,7 @@ import { AnimatedTrain, Line, ShapeGeom, Station } from "../types";
 import { currentDistance, pathBetween, pointAt } from "../animate";
 import { formatPlaceName } from "../format";
 import { MAP_THEME, Theme } from "../theme";
+import { ChurchMarkers } from "./ChurchMarkers";
 import { getWebGLStatus } from "../webgl";
 import { nl } from "../i18n/nl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -103,6 +104,7 @@ export function MetroMap({
   const introDone = useRef(false);
   const trailsRef = useRef<Record<string, Trail>>({});
   const lastSampleRef = useRef(0);
+  const [mapReady, setMapReady] = useState(false);
   const t = MAP_THEME[theme];
 
   // ~30fps animation clock for dead-reckoned train movement
@@ -160,11 +162,13 @@ export function MetroMap({
   const handleLoad = useCallback(() => {
     const map = mapRef.current?.getMap();
     if (!map) return;
+    setMapReady(true);
     map.on("style.load", addBuildings);
     addBuildings();
     if (!introDone.current) {
       introDone.current = true;
       map.flyTo({ ...INTRO_END, duration: 3200, essential: true });
+      map.once("moveend", () => setZoom(map.getZoom()));
     }
   }, [addBuildings]);
 
@@ -421,7 +425,7 @@ export function MetroMap({
   }
 
   return (
-    <div className="h-full min-h-0 w-full">
+    <div className="relative h-full min-h-0 w-full">
       <Map
         ref={mapRef}
         initialViewState={INTRO_START}
@@ -432,6 +436,7 @@ export function MetroMap({
         maxPitch={72}
         onLoad={handleLoad}
         onMove={(e) => setZoom(e.viewState.zoom)}
+        onMoveEnd={(e) => setZoom(e.viewState.zoom)}
         onClick={() => {
           if (!onMapBackgroundClick) return;
           setTimeout(() => {
@@ -449,6 +454,7 @@ export function MetroMap({
           }
         />
       </Map>
+      <ChurchMarkers mapRef={mapRef} mapReady={mapReady} theme={theme} />
     </div>
   );
 }

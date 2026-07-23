@@ -16,6 +16,24 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+.church-marker {
+  pointer-events: none;
+  user-select: none;
+  font-family: system-ui, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+  z-index: 5;
+}
+
+.church-marker-light {
+  color: rgb(232 228 220);
+}
+
+.church-marker-dark {
+  color: rgb(0 0 0);
+}
+
 /* Social icons — same pattern as github.com/raimonvibe/eleven-up */
 .social-icons {
   list-style: none;
