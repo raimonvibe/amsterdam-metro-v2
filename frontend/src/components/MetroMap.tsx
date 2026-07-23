@@ -427,6 +427,7 @@ export function MetroMap({
         initialViewState={INTRO_START}
         mapStyle={t.styleUrl}
         styleDiffing={false}
+        attributionControl={{ compact: true }}
         style={{ width: "100%", height: "100%" }}
         maxPitch={72}
         onLoad={handleLoad}

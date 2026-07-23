@@ -55,7 +55,8 @@ export function Sidebar({
   const colorOf = (id: string) => lines.find((l) => l.id === id)?.color ?? "#999";
 
   return (
-    <aside className="flex h-full w-full min-w-0 flex-col overflow-x-hidden overflow-y-auto overscroll-contain border-r border-gray-200 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-4 pt-[max(1rem,env(safe-area-inset-top))] text-gray-900 backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 dark:text-gray-100 md:w-72">
+    <aside className="flex h-full w-full min-w-0 flex-col overflow-hidden border-r border-gray-200 bg-white/95 text-gray-900 backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 dark:text-gray-100 md:w-72">
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-4 pl-[max(1rem,env(safe-area-inset-left))] pr-4 pt-[max(1rem,env(safe-area-inset-top))]">
       <div className="mb-1 flex items-start justify-between gap-2">
         <h1 className="min-w-0 text-base font-bold tracking-tight sm:text-lg">{nl.appName}</h1>
         <div className="flex shrink-0 items-center gap-0.5">
@@ -177,7 +178,7 @@ export function Sidebar({
         </div>
       )}
 
-      <div className="mt-auto space-y-4 border-t border-gray-200 pt-4 dark:border-gray-800">
+      <div className="mt-4 space-y-4 border-t border-gray-200 pt-4 dark:border-gray-800">
         <p className="text-xs font-medium text-gray-600 dark:text-gray-300">{nl.infoToggle}</p>
         <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:hidden">
           {nl.helpMobile}
@@ -186,6 +187,9 @@ export function Sidebar({
           {nl.helpDesktop}
         </p>
         <Credits onOpenPrivacy={onOpenPrivacy} />
+      </div>
+      </div>
+      <div className="shrink-0 border-t border-gray-200 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-4 pt-3 dark:border-gray-800">
         <SocialIcons />
       </div>
     </aside>
