@@ -8,6 +8,11 @@ GTFS_STATIC_URL = "https://gtfs.ovapi.nl/nl/gtfs-nl.zip"
 GTFS_STATIC_ZIP = DATA_DIR / "gtfs-nl.zip"
 GTFS_CACHE_FILE = CACHE_DIR / "gvb_metro.json"
 GTFS_MAX_AGE_HOURS = 24
+# How often the running process re-checks the static subset. load_subset()
+# itself is cheap when the cache is still valid, so this can be frequent;
+# it's what guards against a long-lived process serving a stale service-date
+# window (see docs on the day-rollover bug this replaced).
+GTFS_REFRESH_SECONDS = 3600
 
 TRIP_UPDATES_URL = "https://gtfs.ovapi.nl/nl/tripUpdates.pb"
 RT_POLL_SECONDS = 30

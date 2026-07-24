@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import gtfs_static, realtime
-from .config import CORS_ORIGINS
+from .config import CORS_ORIGINS, GTFS_REFRESH_SECONDS
 from .models import Line, StationOut, StatusOut, TrainOut
 from .positions import MetroData
 
@@ -21,16 +21,38 @@ logger = logging.getLogger(__name__)
 metro: Optional[MetroData] = None
 
 
+def _load_metro() -> MetroData:
+    return MetroData(gtfs_static.load_subset())
+
+
+async def refresh_gtfs_forever() -> None:
+    """Rebuild the static subset periodically so a long-lived process picks
+    up new service dates. load_subset() is a cheap no-op when the on-disk
+    cache is still fresh and covers today; it only re-downloads/rebuilds
+    when actually stale, so a short interval here is safe. Both the load and
+    the (CPU-bound) MetroData construction run in a thread so a rebuild never
+    blocks the event loop / request handling / RT polling."""
+    global metro
+    while True:
+        await asyncio.sleep(GTFS_REFRESH_SECONDS)
+        try:
+            metro = await asyncio.to_thread(_load_metro)
+            logger.info("GTFS static subset refreshed")
+        except Exception as e:  # keep the previous subset serving on failure
+            logger.warning("GTFS static refresh failed: %s", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global metro
-    subset = await asyncio.to_thread(gtfs_static.load_subset)
-    metro = MetroData(subset)
+    metro = await asyncio.to_thread(_load_metro)
     poller = asyncio.create_task(
         realtime.poll_forever(lambda: metro.trip_ids() if metro else set())
     )
+    refresher = asyncio.create_task(refresh_gtfs_forever())
     yield
     poller.cancel()
+    refresher.cancel()
 
 
 app = FastAPI(title="Amsterdam Metro Live API", lifespan=lifespan)

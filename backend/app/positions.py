@@ -9,10 +9,11 @@ import logging
 import math
 import time
 from bisect import bisect_right
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
 from .config import METRO_LINES
-from .gtfs_static import service_date_epoch
+from .gtfs_static import TZ, service_date_epoch
 from .models import Line, StationOut, TrainOut
 from .realtime import RealtimeState
 
@@ -29,9 +30,16 @@ def _align_rt_epoch(rt_epoch: float, sched_epoch: float) -> float:
     OVapi tripUpdates often carry times from a previous service day while
     static GTFS uses today's calendar date — without correction the trip
     window shifts off ``now`` and the train disappears from the map.
+
+    Shifted by local *calendar days*, not fixed 86400s multiples: Europe/
+    Amsterdam DST transitions make some local days 82800s or 90000s long, and
+    a fixed-86400s shift misaligns trips whose RT and scheduled times fall on
+    opposite sides of one of those two nights a year.
     """
-    day_shift = round((rt_epoch - sched_epoch) / 86400) * 86400
-    aligned = rt_epoch - day_shift
+    rt_dt = datetime.fromtimestamp(rt_epoch, TZ)
+    sched_dt = datetime.fromtimestamp(sched_epoch, TZ)
+    day_shift = (sched_dt.date() - rt_dt.date()).days
+    aligned = (rt_dt + timedelta(days=day_shift)).timestamp() if day_shift else rt_epoch
     if abs(aligned - sched_epoch) > MAX_RT_DRIFT_S:
         return sched_epoch
     return aligned
