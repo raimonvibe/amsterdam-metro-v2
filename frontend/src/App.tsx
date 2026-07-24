@@ -21,6 +21,11 @@ import { nl } from "./i18n/nl";
 
 const TRAINS_POLL_MS = 5000;
 const STATUS_POLL_MS = 30000;
+// Require a few consecutive empty responses before actually clearing the
+// map: metro service does legitimately stop overnight, but a single empty
+// reply is more likely a transient backend hiccup (e.g. mid-refresh) than
+// every train vanishing at once.
+const EMPTY_POLLS_BEFORE_CLEAR = 3;
 
 export default function App() {
   const [theme, toggleTheme] = useTheme();
@@ -75,12 +80,19 @@ export default function App() {
 
   useEffect(() => {
     let stop = false;
+    let emptyStreak = 0;
     const poll = async () => {
       try {
         const t = await fetchTrains();
         if (stop) return;
         const fetchedAt = Date.now();
-        setTrains(t.map((x) => ({ ...x, fetchedAt })));
+        if (t.length === 0) {
+          emptyStreak += 1;
+          if (emptyStreak >= EMPTY_POLLS_BEFORE_CLEAR) setTrains([]);
+        } else {
+          emptyStreak = 0;
+          setTrains(t.map((x) => ({ ...x, fetchedAt })));
+        }
         setLastUpdated(new Date());
         setError(null);
       } catch {

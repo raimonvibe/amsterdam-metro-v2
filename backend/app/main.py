@@ -2,6 +2,7 @@ import asyncio
 import logging
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
@@ -9,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import gtfs_static, realtime
 from .config import CORS_ORIGINS, GTFS_REFRESH_SECONDS
+from .gtfs_static import TZ
 from .models import Line, StationOut, StatusOut, TrainOut
 from .positions import MetroData
 
@@ -71,8 +73,23 @@ def _metro() -> MetroData:
     return metro
 
 
+def _covers_today() -> bool:
+    if metro is None:
+        return False
+    today = datetime.now(TZ).strftime("%Y%m%d")
+    return any(today in dates for dates in metro.service_dates.values())
+
+
 @app.get("/healthz")
 async def healthz():
+    # Ties directly into the bug this guards against: a long-lived process
+    # whose static subset has aged out of today's service dates (the
+    # periodic refresh in refresh_gtfs_forever should prevent this, but if
+    # it's ever failing repeatedly this makes the platform's health check
+    # catch it and restart the process, instead of silently serving zero
+    # trains forever).
+    if not _covers_today():
+        raise HTTPException(status_code=503, detail="GTFS static data does not cover today's service date")
     return {"status": "ok"}
 
 
