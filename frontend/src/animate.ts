@@ -2,16 +2,15 @@ import { AnimatedTrain, ShapeGeom } from "./types";
 
 const EARTH_R_M = 6371000;
 
-/** Unit west-biased perpendicular of a tangent (east, north) in metres. */
-function westBiasedNormal(east: number, north: number): [number, number] {
+/** Right-hand unit normal of a tangent (east, north) in metres. */
+function rightNormal(east: number, north: number): [number, number] {
   const len = Math.hypot(east, north) || 1;
-  let rx = north / len;
-  let ry = -east / len;
-  // Prefer the western half-plane so inbound/outbound share one lane.
-  if (rx > 0 || (rx === 0 && ry > 0)) {
-    rx = -rx;
-    ry = -ry;
-  }
+  return [north / len, -east / len];
+}
+
+/** Flip a normal into the western half-plane (initial lane pick only). */
+function preferWest([rx, ry]: [number, number]): [number, number] {
+  if (rx > 0 || (rx === 0 && ry > 0)) return [-rx, -ry];
   return [rx, ry];
 }
 
@@ -29,9 +28,52 @@ function applyOffsetM(
   ];
 }
 
+/** Walk along `path` from `i` until ~`targetM` of chord length is covered. */
+function indexAtDistance(
+  path: [number, number][],
+  i: number,
+  dir: -1 | 1,
+  targetM: number,
+): number {
+  let traveled = 0;
+  let j = i;
+  while (j + dir >= 0 && j + dir < path.length && traveled < targetM) {
+    const a = path[j];
+    const b = path[j + dir];
+    const cosLat = Math.cos((a[1] * Math.PI) / 180);
+    const east = ((b[0] - a[0]) * Math.PI) / 180 * cosLat * EARTH_R_M;
+    const north = ((b[1] - a[1]) * Math.PI) / 180 * EARTH_R_M;
+    traveled += Math.hypot(east, north);
+    j += dir;
+  }
+  return j;
+}
+
+/**
+ * Tangent at vertex `i`, sampled over a metres window so GTFS vertex jitter
+ * (sub-metre backtracks) does not reverse the normal and spike the parallel.
+ */
+function tangentAt(
+  path: [number, number][],
+  i: number,
+  windowM = 40,
+): { east: number; north: number; lon: number; lat: number } {
+  const prev = path[indexAtDistance(path, i, -1, windowM / 2)];
+  const next = path[indexAtDistance(path, i, 1, windowM / 2)];
+  const [lon, lat] = path[i];
+  const cosLat = Math.cos((lat * Math.PI) / 180);
+  return {
+    lon,
+    lat,
+    east: ((next[0] - prev[0]) * Math.PI) / 180 * cosLat * EARTH_R_M,
+    north: ((next[1] - prev[1]) * Math.PI) / 180 * EARTH_R_M,
+  };
+}
+
 /**
  * Shift a lon/lat point sideways by `offsetM` metres using bearing
- * (0° = north, clockwise). Same west-biased lane rule as offsetPathMeters.
+ * (0° = north, clockwise). Prefer the continuous path offset when a polyline
+ * is available — this is a fallback for single points.
  */
 export function offsetLonLatMeters(
   lon: number,
@@ -41,18 +83,20 @@ export function offsetLonLatMeters(
 ): [number, number] {
   if (!offsetM) return [lon, lat];
   const br = (bearingDeg * Math.PI) / 180;
-  const [rx, ry] = westBiasedNormal(Math.sin(br), Math.cos(br));
+  const [rx, ry] = preferWest(rightNormal(Math.sin(br), Math.cos(br)));
   return applyOffsetM(lon, lat, rx, ry, offsetM);
 }
 
 /**
  * Shift a lon/lat polyline sideways by `offsetM` metres.
  *
- * The side is stable across travel direction: the perpendicular is flipped so
- * it always points into the western half-plane. Positive `offsetM` therefore
- * means "west of the corridor" for both inbound and outbound shapes — without
- * that, right-of-travel offsets put opposite directions on opposite sides and
- * two lines with +/− offsets stack on top of each other again.
+ * Lane side is chosen once (west-positive for +offsetM on the first usable
+ * tangent), then the normal is kept continuous along the path. Per-vertex
+ * west-bias was wrong: on E–W corridors the preferred half-plane flips every
+ * time the tangent wobbles, which drew the sawtooth zig-zags at Isolatorweg,
+ * Gein, Zuid, etc. Continuity + windowed tangents keep one smooth parallel;
+ * inbound/outbound still share a lane because each starts with the same
+ * west-positive pick.
  */
 export function offsetPathMeters(
   path: [number, number][],
@@ -60,16 +104,27 @@ export function offsetPathMeters(
 ): [number, number][] {
   if (!offsetM || path.length < 2) return path;
   const out: [number, number][] = new Array(path.length);
+  let prevN: [number, number] | null = null;
+
   for (let i = 0; i < path.length; i++) {
-    const prev = path[Math.max(0, i - 1)];
-    const next = path[Math.min(path.length - 1, i + 1)];
-    const [lon, lat] = path[i];
-    const cosLat = Math.cos((lat * Math.PI) / 180);
-    const east =
-      ((next[0] - prev[0]) * Math.PI) / 180 * cosLat * EARTH_R_M;
-    const north = ((next[1] - prev[1]) * Math.PI) / 180 * EARTH_R_M;
-    const [rx, ry] = westBiasedNormal(east, north);
-    out[i] = applyOffsetM(lon, lat, rx, ry, offsetM);
+    const { lon, lat, east, north } = tangentAt(path, i);
+    const len = Math.hypot(east, north);
+    let n: [number, number];
+    if (len < 1e-3) {
+      n = prevN ?? [0, 0];
+    } else {
+      n = rightNormal(east, north);
+      if (!prevN) {
+        n = preferWest(n);
+      } else if (n[0] * prevN[0] + n[1] * prevN[1] < 0) {
+        n = [-n[0], -n[1]];
+      }
+      prevN = n;
+    }
+    out[i] =
+      n[0] === 0 && n[1] === 0
+        ? [lon, lat]
+        : applyOffsetM(lon, lat, n[0], n[1], offsetM);
   }
   return out;
 }
