@@ -7,6 +7,14 @@ class Line(BaseModel):
     name: str
     color: str
     shape: List[List[float]]     # representative [lon, lat] polyline (longest shape)
+    # Every distinct track the line runs on, the representative one first. A
+    # metro line is not one polyline: the two directions have their own GTFS
+    # shapes, and where they run in separate tunnel bores they are metres
+    # apart. Drawing only `shape` leaves trains on the other bore floating
+    # visibly beside the rail — 17m at Noorderpark. Near-identical shapes are
+    # collapsed (see TRACK_DEDUP_M), so this stays 1-3 entries per line rather
+    # than one per trip pattern.
+    tracks: List[List[List[float]]] = []
 
 
 class StationOut(BaseModel):
