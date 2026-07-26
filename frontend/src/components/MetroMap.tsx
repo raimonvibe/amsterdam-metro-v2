@@ -229,6 +229,28 @@ export function MetroMap({
 }: MetroMapProps) {
   const mapRef = useRef<MapRef>(null);
   const deckPickRef = useRef(false);
+  /** Full-shape lane offsets, keyed by `shapeId:offsetM`. Cleared when shapes reload. */
+  const laneShapeCache = useRef<Record<string, ShapeGeom>>({});
+  const laneShapesSource = useRef(shapes);
+  if (laneShapesSource.current !== shapes) {
+    laneShapesSource.current = shapes;
+    laneShapeCache.current = {};
+  }
+  const laneShape = (shapeId: string, shape: ShapeGeom, offsetM: number): ShapeGeom => {
+    if (!offsetM) return shape;
+    const key = `${shapeId}:${offsetM}`;
+    let cached = laneShapeCache.current[key];
+    if (!cached) {
+      cached = {
+        coords: offsetPathMeters(shape.coords as [number, number][], offsetM),
+        // Distances along the raw shape stay valid enough for placement; the
+        // parallel is ~same length and we only sample locally.
+        cum: shape.cum,
+      };
+      laneShapeCache.current[key] = cached;
+    }
+    return cached;
+  };
   const [zoom, setZoom] = useState(INTRO_START.zoom);
   const [tick, setTick] = useState(0);
   const [webglError, setWebglError] = useState<string | null>(() => {
@@ -345,22 +367,25 @@ export function MetroMap({
       const shape = shapes[tr.shape_id];
       const head = currentDistance(tr, nowMs);
       const offsetM = LINE_TRACK_OFFSET_M[tr.line] ?? 0;
-      const rawPath = shape
-        ? pathBetween(shape, head - TRAIN_LENGTH_M, head)
-        : ([[tr.longitude, tr.latitude]] as [number, number][]);
-      const path = offsetPathMeters(rawPath, offsetM);
-      // The halo is one sprite rather than a path, so it hangs off the middle
-      // of the pill and is rotated to the track bearing there — close enough on
-      // Amsterdam's curve radii, and far cheaper than a per-curve mesh.
-      const [lon, lat, bearing] = shape
-        ? pointAt(shape, head - TRAIN_LENGTH_M / 2)
-        : [tr.longitude, tr.latitude, tr.bearing];
-      const center = offsetLonLatMeters(lon, lat, bearing, offsetM);
+      // Offset the whole shape once so the lane matches painted tracks; a short
+      // pathBetween slice would re-pick west-bias and jump sides on E–W segments.
+      const drawn = shape ? laneShape(tr.shape_id, shape, offsetM) : null;
+      const path = drawn
+        ? pathBetween(drawn, head - TRAIN_LENGTH_M, head)
+        : offsetM
+          ? [offsetLonLatMeters(tr.longitude, tr.latitude, tr.bearing, offsetM)]
+          : ([[tr.longitude, tr.latitude]] as [number, number][]);
+      const mid = head - TRAIN_LENGTH_M / 2;
+      const [lon, lat, bearing] = drawn
+        ? pointAt(drawn, mid)
+        : offsetM
+          ? [...offsetLonLatMeters(tr.longitude, tr.latitude, tr.bearing, offsetM), tr.bearing]
+          : [tr.longitude, tr.latitude, tr.bearing];
       return {
         ...tr,
         path,
         head,
-        center,
+        center: [lon, lat] as [number, number],
         angle: angleForBearing(bearing),
         color: lineColor[tr.line] ?? [255, 255, 255],
       };
@@ -412,12 +437,14 @@ export function MetroMap({
       const shape = shapes[tr.shape_id];
       const d = currentDistance(tr, Date.now());
       const offsetM = LINE_TRACK_OFFSET_M[tr.line] ?? 0;
-      const [lon, lat, bearing] = shape
-        ? pointAt(shape, d)
-        : [tr.longitude, tr.latitude, tr.bearing];
-      const center = offsetLonLatMeters(lon, lat, bearing, offsetM);
+      const drawn = shape ? laneShape(tr.shape_id, shape, offsetM) : null;
+      const [lon, lat] = drawn
+        ? pointAt(drawn, d)
+        : offsetM
+          ? offsetLonLatMeters(tr.longitude, tr.latitude, tr.bearing, offsetM)
+          : [tr.longitude, tr.latitude];
       map.easeTo({
-        center,
+        center: [lon, lat],
         zoom: Math.max(map.getZoom(), 14.2),
         duration: 750,
         easing: (x) => x,
