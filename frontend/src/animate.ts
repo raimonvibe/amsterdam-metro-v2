@@ -2,6 +2,49 @@ import { AnimatedTrain, ShapeGeom } from "./types";
 
 const EARTH_R_M = 6371000;
 
+/** Unit west-biased perpendicular of a tangent (east, north) in metres. */
+function westBiasedNormal(east: number, north: number): [number, number] {
+  const len = Math.hypot(east, north) || 1;
+  let rx = north / len;
+  let ry = -east / len;
+  // Prefer the western half-plane so inbound/outbound share one lane.
+  if (rx > 0 || (rx === 0 && ry > 0)) {
+    rx = -rx;
+    ry = -ry;
+  }
+  return [rx, ry];
+}
+
+function applyOffsetM(
+  lon: number,
+  lat: number,
+  rx: number,
+  ry: number,
+  offsetM: number,
+): [number, number] {
+  const cosLat = Math.cos((lat * Math.PI) / 180);
+  return [
+    lon + ((rx * offsetM) / (EARTH_R_M * cosLat)) * (180 / Math.PI),
+    lat + ((ry * offsetM) / EARTH_R_M) * (180 / Math.PI),
+  ];
+}
+
+/**
+ * Shift a lon/lat point sideways by `offsetM` metres using bearing
+ * (0° = north, clockwise). Same west-biased lane rule as offsetPathMeters.
+ */
+export function offsetLonLatMeters(
+  lon: number,
+  lat: number,
+  bearingDeg: number,
+  offsetM: number,
+): [number, number] {
+  if (!offsetM) return [lon, lat];
+  const br = (bearingDeg * Math.PI) / 180;
+  const [rx, ry] = westBiasedNormal(Math.sin(br), Math.cos(br));
+  return applyOffsetM(lon, lat, rx, ry, offsetM);
+}
+
 /**
  * Shift a lon/lat polyline sideways by `offsetM` metres.
  *
@@ -10,8 +53,6 @@ const EARTH_R_M = 6371000;
  * means "west of the corridor" for both inbound and outbound shapes — without
  * that, right-of-travel offsets put opposite directions on opposite sides and
  * two lines with +/− offsets stack on top of each other again.
- *
- * Trains stay on the unshifted geometry.
  */
 export function offsetPathMeters(
   path: [number, number][],
@@ -27,18 +68,8 @@ export function offsetPathMeters(
     const east =
       ((next[0] - prev[0]) * Math.PI) / 180 * cosLat * EARTH_R_M;
     const north = ((next[1] - prev[1]) * Math.PI) / 180 * EARTH_R_M;
-    const len = Math.hypot(east, north) || 1;
-    // Unit perpendicular; bias to the west so both directions share a lane.
-    let rx = north / len;
-    let ry = -east / len;
-    if (rx > 0 || (rx === 0 && ry > 0)) {
-      rx = -rx;
-      ry = -ry;
-    }
-    out[i] = [
-      lon + ((rx * offsetM) / (EARTH_R_M * cosLat)) * (180 / Math.PI),
-      lat + ((ry * offsetM) / EARTH_R_M) * (180 / Math.PI),
-    ];
+    const [rx, ry] = westBiasedNormal(east, north);
+    out[i] = applyOffsetM(lon, lat, rx, ry, offsetM);
   }
   return out;
 }

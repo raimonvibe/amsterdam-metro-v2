@@ -5,7 +5,13 @@ import { MapboxOverlay, MapboxOverlayProps } from "@deck.gl/mapbox";
 import { IconLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { TripsLayer } from "@deck.gl/geo-layers";
 import { AnimatedTrain, Line, ShapeGeom, Station } from "../types";
-import { currentDistance, offsetPathMeters, pathBetween, pointAt } from "../animate";
+import {
+  currentDistance,
+  offsetLonLatMeters,
+  offsetPathMeters,
+  pathBetween,
+  pointAt,
+} from "../animate";
 import { formatPlaceName } from "../format";
 import { angleForBearing, GLOW_ICON_MAPPING, glowSpriteUrl } from "../glow";
 import { MAP_THEME, Theme } from "../theme";
@@ -89,8 +95,8 @@ const TRAIL_EPOCH_MS = Date.now();
  * Lateral draw offset (metres, west-positive — see offsetPathMeters) so lines
  * that share physical rails still show their own colour. 50/51 and 53/54 run
  * the same corridors; without a lane shift the later PathLayers bury the
- * earlier ones (green 50 under orange 51 and yellow 54). Trains stay on the
- * true GTFS geometry.
+ * earlier ones (green 50 under orange 51 and yellow 54). Applied to tracks and
+ * trains so the fleet rides the drawn lane, not the raw GTFS centreline.
  *
  * Sized to stay readable at city overview (~10–11 zoom), where a ~15m shift is
  * sub-pixel; close up it reads as parallel stripes like a schematic, without
@@ -338,20 +344,23 @@ export function MetroMap({
     .map((tr) => {
       const shape = shapes[tr.shape_id];
       const head = currentDistance(tr, nowMs);
-      const path = shape
+      const offsetM = LINE_TRACK_OFFSET_M[tr.line] ?? 0;
+      const rawPath = shape
         ? pathBetween(shape, head - TRAIN_LENGTH_M, head)
         : ([[tr.longitude, tr.latitude]] as [number, number][]);
+      const path = offsetPathMeters(rawPath, offsetM);
       // The halo is one sprite rather than a path, so it hangs off the middle
       // of the pill and is rotated to the track bearing there — close enough on
       // Amsterdam's curve radii, and far cheaper than a per-curve mesh.
       const [lon, lat, bearing] = shape
         ? pointAt(shape, head - TRAIN_LENGTH_M / 2)
         : [tr.longitude, tr.latitude, tr.bearing];
+      const center = offsetLonLatMeters(lon, lat, bearing, offsetM);
       return {
         ...tr,
         path,
         head,
-        center: [lon, lat] as [number, number],
+        center,
         angle: angleForBearing(bearing),
         color: lineColor[tr.line] ?? [255, 255, 255],
       };
@@ -402,9 +411,13 @@ export function MetroMap({
       }
       const shape = shapes[tr.shape_id];
       const d = currentDistance(tr, Date.now());
-      const [lon, lat] = shape ? pointAt(shape, d) : [tr.longitude, tr.latitude];
+      const offsetM = LINE_TRACK_OFFSET_M[tr.line] ?? 0;
+      const [lon, lat, bearing] = shape
+        ? pointAt(shape, d)
+        : [tr.longitude, tr.latitude, tr.bearing];
+      const center = offsetLonLatMeters(lon, lat, bearing, offsetM);
       map.easeTo({
-        center: [lon, lat],
+        center,
         zoom: Math.max(map.getZoom(), 14.2),
         duration: 750,
         easing: (x) => x,
