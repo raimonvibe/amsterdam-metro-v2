@@ -129,6 +129,42 @@ export function offsetPathMeters(
   return out;
 }
 
+/**
+ * Copy the lateral displacement of a reference raw→offset pair onto `path`.
+ *
+ * Deduped track runs and individual trip shapes must share one lane. Offsetting
+ * each polyline on its own re-picks west-bias at the fragment start, so a train
+ * on a full shape can sit a lane away from the painted rail (e.g. yellow at
+ * Duivendrecht). Nearest-point transfer keeps every path on the line's
+ * canonical offset (usually the longest shape).
+ */
+export function offsetPathLikeReference(
+  path: [number, number][],
+  refRaw: [number, number][],
+  refOffset: [number, number][],
+): [number, number][] {
+  if (path.length === 0 || refRaw.length === 0 || refRaw.length !== refOffset.length) {
+    return path;
+  }
+  return path.map(([lon, lat]) => {
+    let bestI = 0;
+    let bestD = Infinity;
+    for (let i = 0; i < refRaw.length; i++) {
+      const dx = refRaw[i][0] - lon;
+      const dy = refRaw[i][1] - lat;
+      const d = dx * dx + dy * dy;
+      if (d < bestD) {
+        bestD = d;
+        bestI = i;
+      }
+    }
+    return [
+      lon + (refOffset[bestI][0] - refRaw[bestI][0]),
+      lat + (refOffset[bestI][1] - refRaw[bestI][1]),
+    ];
+  });
+}
+
 /** Position (lon, lat, bearing) at distance d along a shape polyline. */
 export function pointAt(shape: ShapeGeom, d: number): [number, number, number] {
   const { coords, cum } = shape;

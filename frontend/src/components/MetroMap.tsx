@@ -8,6 +8,7 @@ import { AnimatedTrain, Line, ShapeGeom, Station } from "../types";
 import {
   currentDistance,
   offsetLonLatMeters,
+  offsetPathLikeReference,
   offsetPathMeters,
   pathBetween,
   pointAt,
@@ -95,19 +96,20 @@ const TRAIL_EPOCH_MS = Date.now();
  * Lateral draw offset (metres, west-positive — see offsetPathMeters) so lines
  * that share physical rails still show their own colour. 50/51 and 53/54 run
  * the same corridors; without a lane shift the later PathLayers bury the
- * earlier ones (green 50 under orange 51 and yellow 54). Applied to tracks and
- * trains so the fleet rides the drawn lane, not the raw GTFS centreline.
+ * earlier ones (green 50 under orange 51 and yellow 54). Tracks and trains both
+ * transfer onto the line's canonical offset (longest shape) so a yellow train
+ * cannot sit a lane away from the painted yellow rail.
  *
- * Sized to stay readable at city overview (~10–11 zoom), where a ~15m shift is
- * sub-pixel; close up it reads as parallel stripes like a schematic, without
- * jumping off the corridor.
+ * Keep this modest (~half a metro corridor). At 36m Gein sat in a gap between
+ * green and yellow with both ribbons cutting through buildings; ~14m still
+ * separates colour at street zoom without orphaning the station.
  */
 const LINE_TRACK_OFFSET_M: Record<string, number> = {
-  "50": 36,
-  "51": -36,
+  "50": 14,
+  "51": -14,
   "52": 0,
-  "53": 24,
-  "54": -24,
+  "53": 10,
+  "54": -10,
 };
 
 /** Paint order for track layers — green last so shared corridors keep a 50 edge. */
@@ -229,22 +231,43 @@ export function MetroMap({
 }: MetroMapProps) {
   const mapRef = useRef<MapRef>(null);
   const deckPickRef = useRef(false);
-  /** Full-shape lane offsets, keyed by `shapeId:offsetM`. Cleared when shapes reload. */
+  /** Per-line canonical lane (longest shape → offset). Shared by tracks + trains. */
+  const laneRefs = useMemo(() => {
+    const refs: Record<
+      string,
+      { raw: [number, number][]; offset: [number, number][]; offsetM: number }
+    > = {};
+    for (const l of lines) {
+      const offsetM = LINE_TRACK_OFFSET_M[l.id] ?? 0;
+      if (!offsetM) continue;
+      const raw = l.shape as [number, number][];
+      refs[l.id] = { raw, offset: offsetPathMeters(raw, offsetM), offsetM };
+    }
+    return refs;
+  }, [lines]);
+  /** Shape coords transferred onto the line's canonical lane. */
   const laneShapeCache = useRef<Record<string, ShapeGeom>>({});
-  const laneShapesSource = useRef(shapes);
-  if (laneShapesSource.current !== shapes) {
-    laneShapesSource.current = shapes;
+  const laneShapesKey = useRef(laneRefs);
+  if (laneShapesKey.current !== laneRefs) {
+    laneShapesKey.current = laneRefs;
     laneShapeCache.current = {};
   }
-  const laneShape = (shapeId: string, shape: ShapeGeom, offsetM: number): ShapeGeom => {
-    if (!offsetM) return shape;
-    const key = `${shapeId}:${offsetM}`;
+  const laneShape = (
+    lineId: string,
+    shapeId: string,
+    shape: ShapeGeom,
+  ): ShapeGeom => {
+    const ref = laneRefs[lineId];
+    if (!ref) return shape;
+    const key = `${lineId}:${shapeId}`;
     let cached = laneShapeCache.current[key];
     if (!cached) {
       cached = {
-        coords: offsetPathMeters(shape.coords as [number, number][], offsetM),
-        // Distances along the raw shape stay valid enough for placement; the
-        // parallel is ~same length and we only sample locally.
+        coords: offsetPathLikeReference(
+          shape.coords as [number, number][],
+          ref.raw,
+          ref.offset,
+        ),
         cum: shape.cum,
       };
       laneShapeCache.current[key] = cached;
@@ -336,8 +359,8 @@ export function MetroMap({
 
   // Flattened so the four line tiers each draw one quad per stretch of rail.
   // Within one line the backend has already merged shared stretches; across
-  // lines we offset the drawn path so co-located corridors keep each colour
-  // visible (see LINE_TRACK_OFFSET_M).
+  // lines we offset onto each line's canonical lane (see laneRefs) so trains
+  // and painted rails share the same side of the corridor.
   const tracks = useMemo<Track[]>(
     () => {
       const rank = (id: string) => {
@@ -349,15 +372,17 @@ export function MetroMap({
         .flatMap((l) => {
           const color = lineColor[l.id] ?? hexToRgb(l.color);
           const paths = l.tracks?.length ? l.tracks : [l.shape];
-          const offsetM = LINE_TRACK_OFFSET_M[l.id] ?? 0;
+          const ref = laneRefs[l.id];
           return paths.map((path) => ({
             line: l.id,
-            path: offsetPathMeters(path as [number, number][], offsetM),
+            path: ref
+              ? offsetPathLikeReference(path as [number, number][], ref.raw, ref.offset)
+              : (path as [number, number][]),
             color,
           }));
         });
     },
-    [lines, lineColor],
+    [lines, lineColor, laneRefs],
   );
 
   const nowMs = Date.now();
@@ -366,10 +391,9 @@ export function MetroMap({
     .map((tr) => {
       const shape = shapes[tr.shape_id];
       const head = currentDistance(tr, nowMs);
-      const offsetM = LINE_TRACK_OFFSET_M[tr.line] ?? 0;
-      // Offset the whole shape once so the lane matches painted tracks; a short
-      // pathBetween slice would re-pick west-bias and jump sides on E–W segments.
-      const drawn = shape ? laneShape(tr.shape_id, shape, offsetM) : null;
+      const offsetM = laneRefs[tr.line]?.offsetM ?? 0;
+      // Same canonical lane as painted tracks (not an independent shape offset).
+      const drawn = shape ? laneShape(tr.line, tr.shape_id, shape) : null;
       const path = drawn
         ? pathBetween(drawn, head - TRAIN_LENGTH_M, head)
         : offsetM
@@ -436,8 +460,8 @@ export function MetroMap({
       }
       const shape = shapes[tr.shape_id];
       const d = currentDistance(tr, Date.now());
-      const offsetM = LINE_TRACK_OFFSET_M[tr.line] ?? 0;
-      const drawn = shape ? laneShape(tr.shape_id, shape, offsetM) : null;
+      const offsetM = laneRefs[tr.line]?.offsetM ?? 0;
+      const drawn = shape ? laneShape(tr.line, tr.shape_id, shape) : null;
       const [lon, lat] = drawn
         ? pointAt(drawn, d)
         : offsetM
@@ -454,12 +478,46 @@ export function MetroMap({
       clearInterval(id);
       map.off("dragstart", stop);
     };
-  }, [followedTrainId, trains, shapes, onStopFollow]);
+  }, [followedTrainId, trains, shapes, onStopFollow, laneRefs]);
 
   const visibleTracks = tracks.filter((tk) => visibleLines.includes(tk.line));
-  const visibleStations = stations.filter((s) =>
-    s.lines.some((l) => visibleLines.includes(l)),
-  );
+  // Stations stay on raw GTFS coords; lane-offset rails would leave them in the
+  // gap (Gein). Snap each marker to the average of the nearest point on every
+  // visible line it serves so multi-line stops sit on the corridor again.
+  const visibleStations = useMemo(() => {
+    const byLine: Record<string, Track[]> = {};
+    for (const tk of visibleTracks) {
+      (byLine[tk.line] ??= []).push(tk);
+    }
+    return stations
+      .filter((s) => s.lines.some((l) => visibleLines.includes(l)))
+      .map((s) => {
+        const pts: [number, number][] = [];
+        for (const lid of s.lines) {
+          if (!visibleLines.includes(lid)) continue;
+          let best: [number, number] | null = null;
+          let bestD = Infinity;
+          for (const tk of byLine[lid] ?? []) {
+            for (const p of tk.path) {
+              const d =
+                (p[0] - s.longitude) * (p[0] - s.longitude) +
+                (p[1] - s.latitude) * (p[1] - s.latitude);
+              if (d < bestD) {
+                bestD = d;
+                best = p as [number, number];
+              }
+            }
+          }
+          if (best) pts.push(best);
+        }
+        if (!pts.length) return s;
+        return {
+          ...s,
+          longitude: pts.reduce((a, p) => a + p[0], 0) / pts.length,
+          latitude: pts.reduce((a, p) => a + p[1], 0) / pts.length,
+        };
+      });
+  }, [stations, visibleTracks, visibleLines]);
   const showLabels = zoom >= 12.8;
 
   const trailData = Object.values(trailsRef.current).filter(
