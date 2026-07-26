@@ -5,7 +5,7 @@ import { MapboxOverlay, MapboxOverlayProps } from "@deck.gl/mapbox";
 import { IconLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { TripsLayer } from "@deck.gl/geo-layers";
 import { AnimatedTrain, Line, ShapeGeom, Station } from "../types";
-import { currentDistance, pathBetween, pointAt } from "../animate";
+import { currentDistance, offsetPathMeters, pathBetween, pointAt } from "../animate";
 import { formatPlaceName } from "../format";
 import { angleForBearing, GLOW_ICON_MAPPING, glowSpriteUrl } from "../glow";
 import { MAP_THEME, Theme } from "../theme";
@@ -84,6 +84,28 @@ const TRAIL_MIN_STEP_M = 25;
  * mistake for a blending or geometry bug. Small numbers keep the mantissa.
  */
 const TRAIL_EPOCH_MS = Date.now();
+
+/**
+ * Lateral draw offset (metres, west-positive — see offsetPathMeters) so lines
+ * that share physical rails still show their own colour. 50/51 and 53/54 run
+ * the same corridors; without a lane shift the later PathLayers bury the
+ * earlier ones (green 50 under orange 51 and yellow 54). Trains stay on the
+ * true GTFS geometry.
+ *
+ * Sized to stay readable at city overview (~10–11 zoom), where a ~15m shift is
+ * sub-pixel; close up it reads as parallel stripes like a schematic, without
+ * jumping off the corridor.
+ */
+const LINE_TRACK_OFFSET_M: Record<string, number> = {
+  "50": 36,
+  "51": -36,
+  "52": 0,
+  "53": 24,
+  "54": -24,
+};
+
+/** Paint order for track layers — green last so shared corridors keep a 50 edge. */
+const LINE_DRAW_ORDER = ["52", "53", "54", "51", "50"];
 
 /**
  * Every layer here is a flat decal on the ground plane, drawn in a deliberate
@@ -285,16 +307,28 @@ export function MetroMap({
   }, [lines]);
 
   // Flattened so the four line tiers each draw one quad per stretch of rail.
-  // The backend has already merged the stretches the shapes share, so nothing
-  // here is drawn twice — which matters because these tiers blend normally and
-  // overlapping copies would compound their alpha into a bright ribbon.
+  // Within one line the backend has already merged shared stretches; across
+  // lines we offset the drawn path so co-located corridors keep each colour
+  // visible (see LINE_TRACK_OFFSET_M).
   const tracks = useMemo<Track[]>(
-    () =>
-      lines.flatMap((l) => {
-        const color = lineColor[l.id] ?? hexToRgb(l.color);
-        const paths = l.tracks?.length ? l.tracks : [l.shape];
-        return paths.map((path) => ({ line: l.id, path, color }));
-      }),
+    () => {
+      const rank = (id: string) => {
+        const i = LINE_DRAW_ORDER.indexOf(id);
+        return i === -1 ? LINE_DRAW_ORDER.length : i;
+      };
+      return [...lines]
+        .sort((a, b) => rank(a.id) - rank(b.id))
+        .flatMap((l) => {
+          const color = lineColor[l.id] ?? hexToRgb(l.color);
+          const paths = l.tracks?.length ? l.tracks : [l.shape];
+          const offsetM = LINE_TRACK_OFFSET_M[l.id] ?? 0;
+          return paths.map((path) => ({
+            line: l.id,
+            path: offsetPathMeters(path as [number, number][], offsetM),
+            color,
+          }));
+        });
+    },
     [lines, lineColor],
   );
 
