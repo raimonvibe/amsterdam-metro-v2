@@ -695,27 +695,20 @@ export function MetroMap({
       updateTriggers: { getColor: [theme] },
     }),
 
-    // stations: interchange-style ring + fill
+    // stations: interchange-style ring + fill (visual only — hit target is later)
     new ScatterplotLayer({
       id: "stations",
       data: visibleStations,
       getPosition: (d: Station) => [d.longitude, d.latitude],
-      getRadius: 26,
-      radiusMinPixels: 2.5,
-      radiusMaxPixels: 7,
+      getRadius: 28,
+      radiusMinPixels: 3.5,
+      radiusMaxPixels: 9,
       getFillColor: t.stationFill,
       getLineColor: t.stationRing,
       lineWidthMinPixels: 1.5,
       stroked: true,
       parameters: FLAT,
-      pickable: true,
-      onHover: (info) => onStationHover((info.object as Station) || null),
-      onClick: (info) => {
-        if (info.object) {
-          deckPickRef.current = true;
-          onStationClick(info.object as Station);
-        }
-      },
+      pickable: false,
       updateTriggers: {
         data: [stations, visibleLines],
         getFillColor: [theme],
@@ -739,6 +732,15 @@ export function MetroMap({
             outlineColor: t.labelHalo,
             fontSettings: { sdf: true },
             parameters: FLAT,
+            // Labels are an easy tap target at street zoom.
+            pickable: true,
+            onHover: (info) => onStationHover((info.object as Station) || null),
+            onClick: (info) => {
+              if (info.object) {
+                deckPickRef.current = true;
+                onStationClick(info.object as Station);
+              }
+            },
             updateTriggers: {
               data: [stations, visibleLines],
               getColor: [theme],
@@ -795,6 +797,29 @@ export function MetroMap({
       parameters: haloParams,
       updateTriggers: { getColor: [theme] },
     }),
+
+    // Invisible station hit targets on top of trains — ~touch-sized so markers
+    // stay small but taps/clicks still register (trains no longer steal the hit).
+    new ScatterplotLayer({
+      id: "stations-hit",
+      data: visibleStations,
+      getPosition: (d: Station) => [d.longitude, d.latitude],
+      getRadius: 55,
+      radiusMinPixels: 16,
+      radiusMaxPixels: 28,
+      getFillColor: [0, 0, 0, 0],
+      stroked: false,
+      parameters: FLAT,
+      pickable: true,
+      onHover: (info) => onStationHover((info.object as Station) || null),
+      onClick: (info) => {
+        if (info.object) {
+          deckPickRef.current = true;
+          onStationClick(info.object as Station);
+        }
+      },
+      updateTriggers: { data: [stations, visibleLines] },
+    }),
   ];
 
   if (webglError) {
@@ -839,6 +864,7 @@ export function MetroMap({
         <AttributionControl compact />
         <DeckGLOverlay
           layers={layers}
+          pickingRadius={12}
           getCursor={({ isHovering, isDragging }) =>
             isDragging ? "grabbing" : isHovering ? "pointer" : "grab"
           }

@@ -182,13 +182,13 @@ export default function App() {
           aria-label={nl.menu}
           aria-hidden={sidebarOpen}
           tabIndex={sidebarOpen ? -1 : 0}
-          className={`absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-20 flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-3 py-2 text-sm font-medium text-gray-800 shadow-md backdrop-blur transition-[opacity,transform,background-color] duration-300 ease-in-out hover:bg-white dark:border-gray-700 dark:bg-gray-900/95 dark:text-gray-100 dark:hover:bg-gray-900 ${
+          className={`absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-20 flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-[#4363D8] px-3.5 py-2 text-sm font-semibold text-white shadow-md transition-[opacity,transform,background-color,box-shadow] duration-300 ease-in-out hover:bg-[#3651b8] hover:shadow-lg dark:border-gray-700 dark:bg-[#4363D8]/40 dark:text-blue-100 dark:hover:bg-[#4363D8]/55 ${
             sidebarOpen
               ? "pointer-events-none translate-x-2 opacity-0"
               : "translate-x-0 opacity-100"
           }`}
         >
-          <PanelLeftOpen size={16} />
+          <PanelLeftOpen size={18} strokeWidth={2.25} />
           <span className="hidden sm:inline">{nl.menu}</span>
         </button>
         {error && (
@@ -207,7 +207,9 @@ export default function App() {
           onTrainHover={setHoveredTrain}
           onStationHover={setHoveredStation}
           onTrainClick={(t) => setFollowedTrainId(t.id)}
-          onStationClick={setSelectedStation}
+          onStationClick={(s) =>
+            setSelectedStation((cur) => (cur?.name === s.name ? null : s))
+          }
           onStopFollow={() => setFollowedTrainId(null)}
           onMapBackgroundClick={sidebarOpen ? closeSidebar : undefined}
         />

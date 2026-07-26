@@ -9,6 +9,7 @@ export const nl = {
   themeDark: "Donker thema",
   trainsInService: "metro's in dienst",
   liveTripUpdates: "live ritupdates",
+  updatedAt: "laatst bijgewerkt",
   onTime: "op tijd",
   atStation: "Op",
   scheduledNoRt: "dienstregeling (geen live signaal)",

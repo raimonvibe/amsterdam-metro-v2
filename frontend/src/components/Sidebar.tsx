@@ -59,24 +59,32 @@ export function Sidebar({
       <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-4 pl-[max(1rem,env(safe-area-inset-left))] pr-4 pt-[max(1rem,env(safe-area-inset-top))]">
       <div className="mb-1 flex items-start justify-between gap-2">
         <h1 className="min-w-0 text-base font-bold tracking-tight sm:text-lg">{nl.appName}</h1>
-        <div className="flex shrink-0 items-center gap-0.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           <button
             type="button"
             onClick={onClose}
             title={nl.sidebarHide}
             aria-label={nl.sidebarHide}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-gray-200 bg-[#4363D8] text-white shadow-sm transition hover:bg-[#3651b8] dark:border-gray-700 dark:bg-[#4363D8]/35 dark:text-blue-200 dark:hover:bg-[#4363D8]/50"
           >
-            <PanelLeftClose size={16} />
+            <PanelLeftClose size={22} strokeWidth={2.35} />
           </button>
           <button
             type="button"
             onClick={onToggleTheme}
             title={theme === "dark" ? nl.themeLight : nl.themeDark}
             aria-label={theme === "dark" ? nl.themeLight : nl.themeDark}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+            className={`flex min-h-11 min-w-11 items-center justify-center rounded-xl border shadow-sm transition ${
+              theme === "dark"
+                ? "border-amber-400/55 bg-amber-400/20 text-amber-300 hover:border-amber-300/80 hover:bg-amber-400/35"
+                : "border-gray-300 bg-gray-800 text-white hover:bg-gray-900"
+            }`}
           >
-            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+            {theme === "dark" ? (
+              <Sun size={18} strokeWidth={2.25} />
+            ) : (
+              <Moon size={18} strokeWidth={2.25} />
+            )}
           </button>
         </div>
       </div>
@@ -108,23 +116,53 @@ export function Sidebar({
         })}
       </div>
 
-      <div className="mb-5 rounded-lg bg-gray-100 p-3 text-sm dark:bg-gray-900">
-        <div className="flex items-center gap-2">
-          <TrainFront size={15} className="text-gray-500 dark:text-gray-400" />
-          <span>
-            <span className="font-semibold tabular-nums">{trains.length}</span>{" "}
-            {nl.trainsInService}
-          </span>
+      <div className="mb-5 space-y-2.5 rounded-lg bg-gray-100 p-3 dark:bg-gray-900">
+        <div className="flex items-start gap-2.5">
+          <TrainFront
+            size={18}
+            className="mt-0.5 shrink-0 text-[#4363D8] dark:text-[#6b8cff]"
+          />
+          <div className="min-w-0 leading-snug">
+            <div className="text-base font-bold tabular-nums tracking-tight text-gray-900 dark:text-gray-50">
+              {trains.length}
+            </div>
+            <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
+              {nl.trainsInService}
+            </div>
+          </div>
         </div>
         {status && (
-          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {status.rt_trip_count} {nl.liveTripUpdates}
+          <div className="flex items-start gap-2.5">
+            <span
+              className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center"
+              aria-hidden
+            >
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500 dark:bg-emerald-400" />
+            </span>
+            <div className="min-w-0 leading-snug">
+              <div className="text-base font-bold tabular-nums tracking-tight text-gray-900 dark:text-gray-50">
+                {status.rt_trip_count}
+              </div>
+              <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                {nl.liveTripUpdates}
+              </div>
+            </div>
           </div>
         )}
         {lastUpdated && (
-          <div className="mt-1 flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
-            <Clock size={11} />
-            {lastUpdated.toLocaleTimeString("nl-NL")}
+          <div className="flex items-start gap-2.5 border-t border-gray-200/80 pt-2.5 dark:border-gray-700/80">
+            <Clock
+              size={15}
+              className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+            />
+            <div className="min-w-0 leading-snug">
+              <div className="text-base font-bold tabular-nums tracking-tight text-gray-900 dark:text-gray-50">
+                {lastUpdated.toLocaleTimeString("nl-NL")}
+              </div>
+              <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                {nl.updatedAt}
+              </div>
+            </div>
           </div>
         )}
       </div>
