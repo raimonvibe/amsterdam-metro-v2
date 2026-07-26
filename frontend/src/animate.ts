@@ -1,5 +1,48 @@
 import { AnimatedTrain, ShapeGeom } from "./types";
 
+const EARTH_R_M = 6371000;
+
+/**
+ * Shift a lon/lat polyline sideways by `offsetM` metres.
+ *
+ * The side is stable across travel direction: the perpendicular is flipped so
+ * it always points into the western half-plane. Positive `offsetM` therefore
+ * means "west of the corridor" for both inbound and outbound shapes — without
+ * that, right-of-travel offsets put opposite directions on opposite sides and
+ * two lines with +/− offsets stack on top of each other again.
+ *
+ * Trains stay on the unshifted geometry.
+ */
+export function offsetPathMeters(
+  path: [number, number][],
+  offsetM: number,
+): [number, number][] {
+  if (!offsetM || path.length < 2) return path;
+  const out: [number, number][] = new Array(path.length);
+  for (let i = 0; i < path.length; i++) {
+    const prev = path[Math.max(0, i - 1)];
+    const next = path[Math.min(path.length - 1, i + 1)];
+    const [lon, lat] = path[i];
+    const cosLat = Math.cos((lat * Math.PI) / 180);
+    const east =
+      ((next[0] - prev[0]) * Math.PI) / 180 * cosLat * EARTH_R_M;
+    const north = ((next[1] - prev[1]) * Math.PI) / 180 * EARTH_R_M;
+    const len = Math.hypot(east, north) || 1;
+    // Unit perpendicular; bias to the west so both directions share a lane.
+    let rx = north / len;
+    let ry = -east / len;
+    if (rx > 0 || (rx === 0 && ry > 0)) {
+      rx = -rx;
+      ry = -ry;
+    }
+    out[i] = [
+      lon + ((rx * offsetM) / (EARTH_R_M * cosLat)) * (180 / Math.PI),
+      lat + ((ry * offsetM) / EARTH_R_M) * (180 / Math.PI),
+    ];
+  }
+  return out;
+}
+
 /** Position (lon, lat, bearing) at distance d along a shape polyline. */
 export function pointAt(shape: ShapeGeom, d: number): [number, number, number] {
   const { coords, cum } = shape;
