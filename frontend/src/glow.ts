@@ -1,21 +1,20 @@
 /**
- * Soft glow sprite for trains.
+ * Soft bloom sprite for trains (halo only).
  *
- * A ScatterplotLayer disc has a hard edge, and stacking ever-wider PathLayers
- * to fake a falloff bands visibly. Instead we generate one radial-gradient
- * texture whose alpha falls off as (1-r)^2 and let deck.gl's IconLayer tint it
- * per line (`mask: true`), which gives a genuinely smooth halo for the cost of
- * a single instanced quad per train.
- *
- * The sprite is 2:1, so the icon renders elongated along the track once it is
- * rotated to the train's bearing.
+ * The hard train body is no longer this icon — MetroMap draws a rail-following
+ * TripsLayer that fades at both ends so the nose dissolves ahead without a
+ * detached look-ahead path. This sprite is only the soft glow around mid-body.
  */
 
 const W = 256;
 const H = 128;
-const STOPS = 16;
 
 let cached: string | null = null;
+
+function smooth(t: number): number {
+  const x = Math.min(Math.max(t, 0), 1);
+  return x * x * (3 - 2 * x);
+}
 
 /** Data-URL for the sprite; built once on first use, then reused. */
 export function glowSpriteUrl(): string {
@@ -26,20 +25,24 @@ export function glowSpriteUrl(): string {
   const ctx = canvas.getContext("2d");
   if (!ctx) return (cached = "");
 
-  // Draw a circular gradient into a 2x-stretched space → an ellipse whose long
-  // axis is the sprite's local +x, which is what getAngle rotates.
-  ctx.translate(W / 2, H / 2);
-  ctx.scale(2, 1);
-  const r = H / 2;
-  const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-  for (let i = 0; i <= STOPS; i++) {
-    const t = i / STOPS;
-    gradient.addColorStop(t, `rgba(255,255,255,${(1 - t) ** 2})`);
+  const img = ctx.createImageData(W, H);
+  const data = img.data;
+
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const u = (x / (W - 1)) * 2 - 1;
+      const v = (y / (H - 1)) * 2 - 1;
+      const lat = Math.max(0, 1 - Math.abs(v));
+      const axial = smooth(1 - Math.abs(u));
+      const a = Math.round(255 * lat * lat * axial * axial);
+      const i = (y * W + x) * 4;
+      data[i] = 255;
+      data[i + 1] = 255;
+      data[i + 2] = 255;
+      data[i + 3] = a;
+    }
   }
-  ctx.fillStyle = gradient;
-  ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.putImageData(img, 0, 0);
 
   cached = canvas.toDataURL("image/png");
   return cached;
@@ -53,7 +56,7 @@ export const GLOW_ICON_MAPPING = {
     height: H,
     anchorX: W / 2,
     anchorY: H / 2,
-    mask: true, // tint from getColor instead of the texture's own rgb
+    mask: true,
   },
 } as const;
 

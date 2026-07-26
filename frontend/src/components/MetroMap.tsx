@@ -12,6 +12,7 @@ import {
   offsetPathMeters,
   pathBetween,
   pointAt,
+  samplePathBetween,
 } from "../animate";
 import { formatPlaceName } from "../format";
 import { angleForBearing, GLOW_ICON_MAPPING, glowSpriteUrl } from "../glow";
@@ -47,10 +48,19 @@ interface MetroMapProps {
 
 /** Amsterdam metro trainsets are ~90-116m; 100m reads well at city zoom. */
 const TRAIN_LENGTH_M = 100;
-/** Halo height across the track; the 2:1 sprite makes it twice that along it. */
-const TRAIN_GLOW_M = 130;
-/** Hot centre, sized so its 2:1 sprite spans roughly one trainset. */
-const TRAIN_CORE_M = 52;
+/**
+ * Soft dissolve past both ends of the trainset, on the rails. TripsLayer cannot
+ * fade both ends (timestamps must rise along the path), so the body is short
+ * PathLayer segments with an alpha envelope — bright at mid, 0 at rear tip and
+ * nose tip. Long fade zones + fine steps keep the dissolve smooth.
+ */
+const TRAIN_TAIL_FADE_M = 120;
+const TRAIN_NOSE_FADE_M = 120;
+/** Bright plateau around mid-train; outside this the cosine dissolve runs. */
+const TRAIN_CORE_HALF_M = 22;
+const TRAIN_BODY_STEP_M = 4;
+/** Soft bloom only — no hard core sprite. */
+const TRAIN_GLOW_M = 120;
 const DELAY_THRESHOLD_S = 120;
 /**
  * Late trains breathe; they do not change colour.
@@ -212,6 +222,13 @@ interface Trail {
   timestamps: number[];
   /** Distance along the shape at the last recorded sample. */
   lastDist: number;
+}
+
+/** One short rail segment of the faded train body. */
+interface TrainBodySeg {
+  path: [number, number][];
+  color: [number, number, number, number];
+  train: PositionedTrain;
 }
 
 export function MetroMap({
@@ -524,6 +541,50 @@ export function MetroMap({
     (tr) => tr.path.length > 1 && visibleLines.includes(tr.line),
   );
 
+  // Faded train body: fine samples, long cosine dissolve at both tips so the
+  // alpha steps are small and the ends do not read as hard caps.
+  const bodySegs: TrainBodySeg[] = positioned.flatMap((tr) => {
+    const shape = shapes[tr.shape_id];
+    const drawn = shape ? laneShape(tr.line, tr.shape_id, shape) : null;
+    if (!drawn?.cum.length) return [];
+    const end = drawn.cum[drawn.cum.length - 1];
+    const peak = tr.head - TRAIN_LENGTH_M / 2;
+    const coreLo = peak - TRAIN_CORE_HALF_M;
+    const coreHi = peak + TRAIN_CORE_HALF_M;
+    const rear = Math.max(0, peak - TRAIN_LENGTH_M / 2 - TRAIN_TAIL_FADE_M);
+    const tip = Math.min(end, peak + TRAIN_LENGTH_M / 2 + TRAIN_NOSE_FADE_M);
+    if (tip - rear < 20) return [];
+    const path = samplePathBetween(drawn, rear, tip, TRAIN_BODY_STEP_M);
+    if (path.length < 2) return [];
+    const rgb = hotten(tr.color, t.coreWhiten);
+    const segs: TrainBodySeg[] = [];
+    const weightAt = (d: number): number => {
+      if (d >= coreLo && d <= coreHi) return 1;
+      let t: number;
+      if (d < coreLo) t = (d - rear) / (coreLo - rear || 1);
+      else t = (tip - d) / (tip - coreHi || 1);
+      t = Math.min(Math.max(t, 0), 1);
+      // Cosine ease: flat at the tip, gentle rise — smoother than smoothstep².
+      const cosine = 0.5 - 0.5 * Math.cos(Math.PI * t);
+      // Extra soft toe so the last metres dissolve almost linearly to 0.
+      return cosine * cosine * Math.sqrt(cosine);
+    };
+    for (let i = 0; i < path.length - 1; i++) {
+      const d0 = rear + ((tip - rear) * i) / (path.length - 1);
+      const d1 = rear + ((tip - rear) * (i + 1)) / (path.length - 1);
+      // Average endpoints so neighbouring segments share a continuous ramp.
+      const w = (weightAt(d0) + weightAt(d1)) / 2;
+      const alpha = Math.round(255 * w);
+      if (alpha < 2) continue;
+      segs.push({
+        path: [path[i], path[i + 1]],
+        color: [...rgb, alpha],
+        train: tr,
+      });
+    }
+    return segs;
+  });
+
   const haloParams = t.additiveGlow ? ADDITIVE : FLAT;
 
   // Rides the same ~30fps clock as the dead-reckoned movement: `positioned` is
@@ -687,10 +748,33 @@ export function MetroMap({
         ]
       : []),
 
-    // Train halo — always the line's own colour, pulsing when running late (see
-    // DELAY_PULSE_MS). A gradient sprite rather than stacked paths: the alpha
-    // falloff is smooth, so there is no edge where the halo stops, which is the
-    // whole point of it.
+    // Train body — bright mid, alpha→0 at rear and nose (both ends fade).
+    new PathLayer({
+      id: "train-body",
+      data: bodySegs,
+      getPath: (d: TrainBodySeg) => d.path,
+      getColor: (d: TrainBodySeg) => d.color,
+      getWidth: 15,
+      widthMinPixels: 3.5,
+      widthMaxPixels: 11,
+      // Flat caps: round caps on near-zero-alpha tips still read as hard pills.
+      capRounded: false,
+      jointRounded: false,
+      parameters: FLAT,
+      pickable: true,
+      onHover: (info) =>
+        onTrainHover(((info.object as TrainBodySeg | null)?.train as AnimatedTrain) || null),
+      onClick: (info) => {
+        const seg = info.object as TrainBodySeg | null;
+        if (seg?.train) {
+          deckPickRef.current = true;
+          onTrainClick(seg.train);
+        }
+      },
+      updateTriggers: { getColor: [theme, trailNow] },
+    }),
+
+    // Soft bloom only (no opaque core sprite — that was the hard pill).
     new IconLayer({
       id: "train-glow",
       data: positioned,
@@ -701,52 +785,15 @@ export function MetroMap({
       getAngle: (d: PositionedTrain) => d.angle,
       getSize: TRAIN_GLOW_M,
       sizeUnits: "meters",
-      sizeMinPixels: 26,
-      sizeMaxPixels: 140,
-      // Lies flat on the ground plane so it foreshortens with the pitched
-      // camera, like light cast on the street, instead of facing the viewer.
+      sizeMinPixels: 22,
+      sizeMaxPixels: 120,
       billboard: false,
-      alphaCutoff: 0, // keep the faint tail; the default 0.05 clips a visible ring
+      alphaCutoff: 0,
       getColor: (d: PositionedTrain) =>
         [...d.color, d.delay_s > DELAY_THRESHOLD_S ? delayedAlpha : t.trainGlowAlpha] as
           [number, number, number, number],
       parameters: haloParams,
       updateTriggers: { getColor: [theme] },
-    }),
-
-    // The train itself: a second, smaller pass of the same gradient sprite,
-    // washed toward white so it reads as the hot centre of the halo. It is a
-    // sprite and not a path so that the nose and tail fall off as softly as the
-    // sides do — a PathLayer pill ends in a hard cap however narrow it is, and
-    // that flat-ended bar was the thing that stopped it looking like light.
-    // Also the picking target: its quad is roughly the train's own footprint.
-    new IconLayer({
-      id: "train-core",
-      data: positioned,
-      iconAtlas: glowSpriteUrl(),
-      iconMapping: GLOW_ICON_MAPPING,
-      getIcon: () => "glow",
-      getPosition: (d: PositionedTrain) => d.center,
-      getAngle: (d: PositionedTrain) => d.angle,
-      getSize: TRAIN_CORE_M,
-      sizeUnits: "meters",
-      sizeMinPixels: 11,
-      sizeMaxPixels: 60,
-      billboard: false,
-      // Unlike the halo this one clips its faintest edge, which keeps the
-      // pickable area close to the visible blob instead of the whole quad.
-      alphaCutoff: 0.04,
-      getColor: (d: PositionedTrain) =>
-        [...hotten(d.color, t.coreWhiten), 255] as [number, number, number, number],
-      parameters: FLAT,
-      pickable: true,
-      onHover: (info) => onTrainHover((info.object as AnimatedTrain) || null),
-      onClick: (info) => {
-        if (info.object) {
-          deckPickRef.current = true;
-          onTrainClick(info.object as AnimatedTrain);
-        }
-      },
     }),
   ];
 

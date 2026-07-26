@@ -241,3 +241,32 @@ export function pathBetween(
   path.push([x1, y1]);
   return path;
 }
+
+/**
+ * Evenly sampled polyline d0→d1. Needed for a smooth TripsLayer alpha fade;
+ * pathBetween alone can be only 2 points on a straight stretch, which makes
+ * the nose fade look like a hard cap.
+ */
+export function samplePathBetween(
+  shape: ShapeGeom,
+  d0: number,
+  d1: number,
+  stepM = 12,
+): [number, number][] {
+  const { cum } = shape;
+  if (!cum.length) return [];
+  const lo = Math.max(Math.min(d0, d1), 0);
+  const hi = Math.min(Math.max(d0, d1), cum[cum.length - 1]);
+  if (hi - lo < 1) {
+    const [lon, lat] = pointAt(shape, lo);
+    return [[lon, lat]];
+  }
+  const path: [number, number][] = [];
+  const steps = Math.max(2, Math.ceil((hi - lo) / stepM));
+  for (let i = 0; i <= steps; i++) {
+    const d = lo + ((hi - lo) * i) / steps;
+    const [lon, lat] = pointAt(shape, d);
+    path.push([lon, lat]);
+  }
+  return path;
+}
