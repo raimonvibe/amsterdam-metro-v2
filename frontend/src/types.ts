@@ -2,7 +2,14 @@ export interface Line {
   id: string;
   name: string;
   color: string;
+  /** Representative (longest) shape. Kept for callers that want one polyline
+   *  for the whole line; the map draws `tracks` instead. */
   shape: [number, number][];
+  /** Every distinct stretch of rail the line runs on, each drawn once. A line
+   *  is not one polyline — the two directions have separate GTFS shapes, and
+   *  in separate tunnel bores they are metres apart. Optional so the frontend
+   *  still renders against a backend that predates the field. */
+  tracks?: [number, number][][];
 }
 
 export interface Station {

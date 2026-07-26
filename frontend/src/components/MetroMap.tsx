@@ -45,6 +45,23 @@ const TRAIN_GLOW_M = 130;
 /** Hot centre, sized so its 2:1 sprite spans roughly one trainset. */
 const TRAIN_CORE_M = 52;
 const DELAY_THRESHOLD_S = 120;
+/**
+ * Late trains breathe; they do not change colour.
+ *
+ * Recolouring them amber cost more than it bought. Line 54 is #FFE119 and 51
+ * is #F58231, both within a hair of the amber that meant "late" — so a late 54
+ * and an on-time 54 were the same pixel, and the cue was ambiguous in both
+ * directions. It also threw away the line identity of exactly the trains you
+ * most want to identify, and the extra alpha it carried made a two-minute
+ * delay the brightest thing on the map.
+ *
+ * A slow pulse is orthogonal to hue, so it reads the same on all four lines
+ * and collides with nothing. Kept deliberately slow and shallow — this is a
+ * breathe, not a blink; at DELAY_THRESHOLD_S it should catch the eye without
+ * pulling it off the map.
+ */
+const DELAY_PULSE_MS = 1800;
+const DELAY_PULSE_DEPTH = 0.3;
 const TRAIL_SECONDS = 40;
 const TRAIL_SAMPLE_MS = 200;
 /**
@@ -149,6 +166,13 @@ interface PositionedTrain extends AnimatedTrain {
   center: [number, number];
   /** Sprite rotation, derived from the track bearing at `center`. */
   angle: number;
+  color: [number, number, number];
+}
+
+/** One drawn stretch of rail. A line contributes several — see Line.tracks. */
+interface Track {
+  line: string;
+  path: [number, number][];
   color: [number, number, number];
 }
 
@@ -260,6 +284,20 @@ export function MetroMap({
     return m;
   }, [lines]);
 
+  // Flattened so the four line tiers each draw one quad per stretch of rail.
+  // The backend has already merged the stretches the shapes share, so nothing
+  // here is drawn twice — which matters because these tiers blend normally and
+  // overlapping copies would compound their alpha into a bright ribbon.
+  const tracks = useMemo<Track[]>(
+    () =>
+      lines.flatMap((l) => {
+        const color = lineColor[l.id] ?? hexToRgb(l.color);
+        const paths = l.tracks?.length ? l.tracks : [l.shape];
+        return paths.map((path) => ({ line: l.id, path, color }));
+      }),
+    [lines, lineColor],
+  );
+
   const nowMs = Date.now();
   const positioned: PositionedTrain[] = trains
     .filter((tr) => visibleLines.includes(tr.line))
@@ -344,7 +382,7 @@ export function MetroMap({
     };
   }, [followedTrainId, trains, shapes, onStopFollow]);
 
-  const visibleLineData = lines.filter((l) => visibleLines.includes(l.id));
+  const visibleTracks = tracks.filter((tk) => visibleLines.includes(tk.line));
   const visibleStations = stations.filter((s) =>
     s.lines.some((l) => visibleLines.includes(l)),
   );
@@ -356,6 +394,17 @@ export function MetroMap({
 
   const haloParams = t.additiveGlow ? ADDITIVE : FLAT;
 
+  // Rides the same ~30fps clock as the dead-reckoned movement: `positioned` is
+  // a fresh array every frame, so deck.gl re-runs the colour accessor anyway
+  // and the pulse costs nothing beyond this one sine.
+  const delayedAlpha = Math.min(
+    255,
+    Math.round(
+      t.trainGlowAlpha *
+        (1 + DELAY_PULSE_DEPTH * Math.sin((nowMs / DELAY_PULSE_MS) * 2 * Math.PI)),
+    ),
+  );
+
   const layers = [
     // Three widening tiers under the line. A PathLayer edge is hard, so a
     // single wide band reads as a translucent ribbon with a visible border;
@@ -363,10 +412,10 @@ export function MetroMap({
     // gradient and gives the corridor a glow that tints the blocks beside it.
     new PathLayer({
       id: "line-wash",
-      data: visibleLineData,
-      getPath: (d: Line) => d.shape,
-      getColor: (d: Line) =>
-        [...hexToRgb(d.color), t.lineWashAlpha] as [number, number, number, number],
+      data: visibleTracks,
+      getPath: (d: Track) => d.path,
+      getColor: (d: Track) =>
+        [...d.color, t.lineWashAlpha] as [number, number, number, number],
       getWidth: 64,
       widthMinPixels: 15,
       widthMaxPixels: 56,
@@ -378,10 +427,10 @@ export function MetroMap({
 
     new PathLayer({
       id: "line-mid",
-      data: visibleLineData,
-      getPath: (d: Line) => d.shape,
-      getColor: (d: Line) =>
-        [...hexToRgb(d.color), t.lineMidAlpha] as [number, number, number, number],
+      data: visibleTracks,
+      getPath: (d: Track) => d.path,
+      getColor: (d: Track) =>
+        [...d.color, t.lineMidAlpha] as [number, number, number, number],
       getWidth: 42,
       widthMinPixels: 11,
       widthMaxPixels: 38,
@@ -394,10 +443,10 @@ export function MetroMap({
     // soft halo under every line — the classic dark transit-map glow
     new PathLayer({
       id: "line-glow",
-      data: visibleLineData,
-      getPath: (d: Line) => d.shape,
-      getColor: (d: Line) =>
-        [...hexToRgb(d.color), t.glowAlpha] as [number, number, number, number],
+      data: visibleTracks,
+      getPath: (d: Track) => d.path,
+      getColor: (d: Track) =>
+        [...d.color, t.glowAlpha] as [number, number, number, number],
       getWidth: 26,
       widthMinPixels: 7,
       widthMaxPixels: 26,
@@ -410,10 +459,10 @@ export function MetroMap({
     // crisp core line
     new PathLayer({
       id: "line-core",
-      data: visibleLineData,
-      getPath: (d: Line) => d.shape,
-      getColor: (d: Line) =>
-        [...hexToRgb(d.color), t.lineAlpha] as [number, number, number, number],
+      data: visibleTracks,
+      getPath: (d: Track) => d.path,
+      getColor: (d: Track) =>
+        [...d.color, t.lineAlpha] as [number, number, number, number],
       getWidth: 5,
       widthMinPixels: 1.5,
       widthMaxPixels: 5,
@@ -506,9 +555,10 @@ export function MetroMap({
         ]
       : []),
 
-    // Train halo — amber when running late, line-colored otherwise. A gradient
-    // sprite rather than stacked paths: the alpha falloff is smooth, so there
-    // is no edge where the halo stops, which is the whole point of it.
+    // Train halo — always the line's own colour, pulsing when running late (see
+    // DELAY_PULSE_MS). A gradient sprite rather than stacked paths: the alpha
+    // falloff is smooth, so there is no edge where the halo stops, which is the
+    // whole point of it.
     new IconLayer({
       id: "train-glow",
       data: positioned,
@@ -526,9 +576,8 @@ export function MetroMap({
       billboard: false,
       alphaCutoff: 0, // keep the faint tail; the default 0.05 clips a visible ring
       getColor: (d: PositionedTrain) =>
-        d.delay_s > DELAY_THRESHOLD_S
-          ? ([251, 191, 36, t.trainGlowAlpha + 40] as [number, number, number, number])
-          : ([...d.color, t.trainGlowAlpha] as [number, number, number, number]),
+        [...d.color, d.delay_s > DELAY_THRESHOLD_S ? delayedAlpha : t.trainGlowAlpha] as
+          [number, number, number, number],
       parameters: haloParams,
       updateTriggers: { getColor: [theme] },
     }),
@@ -556,9 +605,7 @@ export function MetroMap({
       // pickable area close to the visible blob instead of the whole quad.
       alphaCutoff: 0.04,
       getColor: (d: PositionedTrain) =>
-        d.delay_s > DELAY_THRESHOLD_S
-          ? ([254, 231, 160, 255] as [number, number, number, number])
-          : ([...hotten(d.color, t.coreWhiten), 255] as [number, number, number, number]),
+        [...hotten(d.color, t.coreWhiten), 255] as [number, number, number, number],
       parameters: FLAT,
       pickable: true,
       onHover: (info) => onTrainHover((info.object as AnimatedTrain) || null),
