@@ -65,15 +65,16 @@ export const MAP_THEME = {
     labelColor: [55, 60, 75, 235] as [number, number, number, number],
     labelHalo: [248, 248, 250, 255] as [number, number, number, number],
     additiveGlow: false,
-    lineAlpha: 175,
-    lineWashAlpha: 8,
-    lineMidAlpha: 13,
-    glowAlpha: 22,
-    trailCoreAlpha: 180,
-    // Normal blending over a pale basemap needs far more alpha than additive
-    // over a dark one to reach the same visual weight — at 110 the halo was
-    // effectively invisible and only the hot centre showed.
-    trainGlowAlpha: 200,
-    coreWhiten: 0.08,
+    // Rails a notch quieter so coloured train shimmer is not fighting them.
+    lineAlpha: 150,
+    lineWashAlpha: 7,
+    lineMidAlpha: 11,
+    glowAlpha: 18,
+    trailCoreAlpha: 210,
+    // Normal blending on a pale basemap needs more alpha than additive-on-dark;
+    // kept below full so the glow stays a shimmer, not a neon blot.
+    trainGlowAlpha: 235,
+    // Keep saturation — whitening on light dissolves the line colour into the map.
+    coreWhiten: 0.02,
   },
 } as const;
