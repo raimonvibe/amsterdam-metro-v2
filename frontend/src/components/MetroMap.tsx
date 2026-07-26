@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Map, useControl, AttributionControl } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import { MapboxOverlay, MapboxOverlayProps } from "@deck.gl/mapbox";
-import { PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
+import { IconLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { TripsLayer } from "@deck.gl/geo-layers";
 import { AnimatedTrain, Line, ShapeGeom, Station } from "../types";
 import { currentDistance, pathBetween, pointAt } from "../animate";
 import { formatPlaceName } from "../format";
+import { angleForBearing, GLOW_ICON_MAPPING, glowSpriteUrl } from "../glow";
 import { MAP_THEME, Theme } from "../theme";
 import { ChurchMarkers } from "./ChurchMarkers";
 import { getWebGLStatus } from "../webgl";
@@ -39,9 +40,68 @@ interface MetroMapProps {
 
 /** Amsterdam metro trainsets are ~90-116m; 100m reads well at city zoom. */
 const TRAIN_LENGTH_M = 100;
+/** Halo height across the track; the 2:1 sprite makes it twice that along it. */
+const TRAIN_GLOW_M = 130;
+/** Hot centre, sized so its 2:1 sprite spans roughly one trainset. */
+const TRAIN_CORE_M = 52;
 const DELAY_THRESHOLD_S = 120;
-const TRAIL_SECONDS = 25;
-const TRAIL_SAMPLE_MS = 700;
+const TRAIL_SECONDS = 40;
+const TRAIL_SAMPLE_MS = 200;
+/**
+ * Trails are sampled by distance travelled, not by the clock. On a fixed timer
+ * a train at line speed lays down segments a few metres long — sub-pixel at
+ * city zoom — and dozens of their round joints overlap; summed by additive
+ * blending that moirés into speckle instead of a smooth tail. A slow or
+ * dwelling train is worse still, stacking near-identical points on one spot.
+ * Spacing samples out in metres keeps the geometry clean at any speed.
+ */
+const TRAIL_MIN_STEP_M = 25;
+/**
+ * Trail times are seconds since page load, never Unix epoch seconds.
+ *
+ * TripsLayer uploads timestamps as float32, which holds integers exactly only
+ * up to 2^24. Around 1.79e9 — where Unix seconds now sit — consecutive
+ * representable floats are 128 seconds apart, so every timestamp in a 40s trail
+ * quantises onto the same one or two values and the shader's fade/discard test
+ * turns to noise. It renders as random stipple along the tail, which is easy to
+ * mistake for a blending or geometry bug. Small numbers keep the mantissa.
+ */
+const TRAIL_EPOCH_MS = Date.now();
+
+/**
+ * Every layer here is a flat decal on the ground plane, drawn in a deliberate
+ * back-to-front order. Many are exactly coplanar — the three line tiers and the
+ * trail all sit on the same rails — so leaving the depth buffer in charge lets
+ * the GPU pick a winner per fragment where they meet. Array order is the only
+ * ordering we want.
+ */
+const FLAT = {
+  depthCompare: "always",
+  depthWriteEnabled: false,
+} as const;
+
+/**
+ * Additive blending, so overlapping glows sum instead of occluding each other —
+ * what makes the shared Centraal-Waterlooplein corridor read as hot when
+ * several trains stack up on it. Only ever applied on the dark theme; see the
+ * note in MAP_THEME.
+ *
+ * Reserved for the train halo, which is one quad per train. Additive is only
+ * safe on geometry that never overlaps itself: a polyline's segment quads share
+ * edges and its joints pile on extra coverage, and additive double-counts every
+ * one of them — on a GTFS shape, whose vertices are metres apart, that reads as
+ * stipple running the length of the track.
+ */
+const ADDITIVE = {
+  ...FLAT,
+  blend: true,
+  blendColorOperation: "add",
+  blendColorSrcFactor: "src-alpha",
+  blendColorDstFactor: "one",
+  blendAlphaOperation: "add",
+  blendAlphaSrcFactor: "one",
+  blendAlphaDstFactor: "one",
+} as const;
 
 const INTRO_START = {
   longitude: 4.9004,
@@ -60,6 +120,20 @@ const INTRO_END = {
   bearing: 20,
 };
 
+/** Wash a line colour toward white — the centre of a light source is hotter
+ *  and less saturated than its halo, and the darker line colours (52's navy)
+ *  otherwise have no headroom left to read as bright over a dark basemap. Over
+ *  a pale one the opposite holds, so the amount comes from the theme: whitening
+ *  a blob that already sits on near-white just dissolves it. */
+const hotten = (
+  [r, g, b]: [number, number, number],
+  amount: number,
+): [number, number, number] => [
+  Math.round(r + (255 - r) * amount),
+  Math.round(g + (255 - g) * amount),
+  Math.round(b + (255 - b) * amount),
+];
+
 const hexToRgb = (hex: string): [number, number, number] => {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return m
@@ -69,6 +143,12 @@ const hexToRgb = (hex: string): [number, number, number] => {
 
 interface PositionedTrain extends AnimatedTrain {
   path: [number, number][];
+  /** Dead-reckoned distance along the shape of the train's leading end. */
+  head: number;
+  /** Middle of the pill — where the glow sprite is anchored. */
+  center: [number, number];
+  /** Sprite rotation, derived from the track bearing at `center`. */
+  angle: number;
   color: [number, number, number];
 }
 
@@ -76,6 +156,8 @@ interface Trail {
   line: string;
   path: [number, number][];
   timestamps: number[];
+  /** Distance along the shape at the last recorded sample. */
+  lastDist: number;
 }
 
 export function MetroMap({
@@ -187,24 +269,42 @@ export function MetroMap({
       const path = shape
         ? pathBetween(shape, head - TRAIN_LENGTH_M, head)
         : ([[tr.longitude, tr.latitude]] as [number, number][]);
-      return { ...tr, path, color: lineColor[tr.line] ?? [255, 255, 255] };
+      // The halo is one sprite rather than a path, so it hangs off the middle
+      // of the pill and is rotated to the track bearing there — close enough on
+      // Amsterdam's curve radii, and far cheaper than a per-curve mesh.
+      const [lon, lat, bearing] = shape
+        ? pointAt(shape, head - TRAIN_LENGTH_M / 2)
+        : [tr.longitude, tr.latitude, tr.bearing];
+      return {
+        ...tr,
+        path,
+        head,
+        center: [lon, lat] as [number, number],
+        angle: angleForBearing(bearing),
+        color: lineColor[tr.line] ?? [255, 255, 255],
+      };
     });
 
-  // Fading motion trails: sample each train's head position on a slow clock
+  // Fading motion trails: record each train's head position every
+  // TRAIL_MIN_STEP_M of track it covers (see the constant for why not by clock)
+  const trailNow = (nowMs - TRAIL_EPOCH_MS) / 1000;
   if (nowMs - lastSampleRef.current > TRAIL_SAMPLE_MS) {
     lastSampleRef.current = nowMs;
-    const nowS = nowMs / 1000;
+    const nowS = trailNow;
     const alive = new Set<string>();
     for (const tr of positioned) {
       alive.add(tr.id);
-      const head = tr.path[tr.path.length - 1];
       const trail = (trailsRef.current[tr.id] ??= {
         line: tr.line,
         path: [],
         timestamps: [],
+        lastDist: -Infinity,
       });
-      trail.path.push(head);
-      trail.timestamps.push(nowS);
+      if (tr.head - trail.lastDist >= TRAIL_MIN_STEP_M) {
+        trail.lastDist = tr.head;
+        trail.path.push(tr.path[tr.path.length - 1]);
+        trail.timestamps.push(nowS);
+      }
       while (trail.timestamps.length && trail.timestamps[0] < nowS - TRAIL_SECONDS) {
         trail.path.shift();
         trail.timestamps.shift();
@@ -254,7 +354,43 @@ export function MetroMap({
     (tr) => tr.path.length > 1 && visibleLines.includes(tr.line),
   );
 
+  const haloParams = t.additiveGlow ? ADDITIVE : FLAT;
+
   const layers = [
+    // Three widening tiers under the line. A PathLayer edge is hard, so a
+    // single wide band reads as a translucent ribbon with a visible border;
+    // stepping the width up while stepping alpha down turns that border into a
+    // gradient and gives the corridor a glow that tints the blocks beside it.
+    new PathLayer({
+      id: "line-wash",
+      data: visibleLineData,
+      getPath: (d: Line) => d.shape,
+      getColor: (d: Line) =>
+        [...hexToRgb(d.color), t.lineWashAlpha] as [number, number, number, number],
+      getWidth: 64,
+      widthMinPixels: 15,
+      widthMaxPixels: 56,
+      capRounded: true,
+      jointRounded: true,
+      parameters: FLAT,
+      updateTriggers: { data: [visibleLines], getColor: [theme] },
+    }),
+
+    new PathLayer({
+      id: "line-mid",
+      data: visibleLineData,
+      getPath: (d: Line) => d.shape,
+      getColor: (d: Line) =>
+        [...hexToRgb(d.color), t.lineMidAlpha] as [number, number, number, number],
+      getWidth: 42,
+      widthMinPixels: 11,
+      widthMaxPixels: 38,
+      capRounded: true,
+      jointRounded: true,
+      parameters: FLAT,
+      updateTriggers: { data: [visibleLines], getColor: [theme] },
+    }),
+
     // soft halo under every line — the classic dark transit-map glow
     new PathLayer({
       id: "line-glow",
@@ -267,6 +403,7 @@ export function MetroMap({
       widthMaxPixels: 26,
       capRounded: true,
       jointRounded: true,
+      parameters: FLAT,
       updateTriggers: { data: [visibleLines], getColor: [theme] },
     }),
 
@@ -282,25 +419,37 @@ export function MetroMap({
       widthMaxPixels: 5,
       capRounded: true,
       jointRounded: true,
+      parameters: FLAT,
       updateTriggers: { data: [visibleLines], getColor: [theme] },
     }),
 
-    // fading movement trails behind trains
+    // One fading trail, not two. A second wide low-alpha pass was meant to read
+    // as light spilling off the train; in practice it just fogged the corridor
+    // and doubled the overdraw. The tail's shape comes from fadeTrail alone.
+    //
+    // Deliberately never additive, even on dark. A trail is one long polyline
+    // whose segment quads share edges, and additive blending double-counts
+    // every shared edge — which shows up as a bright seam at each vertex, a
+    // ladder running the length of the tail. The halo below is a single quad
+    // per train and has no such self-overlap, so it can still be additive.
     new TripsLayer({
-      id: "train-trails",
+      id: "train-trail",
       data: trailData,
       getPath: (d: Trail) => d.path,
       getTimestamps: (d: Trail) => d.timestamps,
       getColor: (d: Trail) =>
-        [...(lineColor[d.line] ?? [255, 255, 255]), 160] as [number, number, number, number],
-      currentTime: nowMs / 1000,
+        [...(lineColor[d.line] ?? [255, 255, 255]), t.trailCoreAlpha] as [number, number, number, number],
+      currentTime: trailNow,
       trailLength: TRAIL_SECONDS,
       fadeTrail: true,
       getWidth: 14,
       widthMinPixels: 3,
-      widthMaxPixels: 12,
+      widthMaxPixels: 11,
       capRounded: true,
-      jointRounded: true,
+      // Mitred, not rounded: a round joint is a disc drawn at every vertex, so
+      // rounded joints pile extra coverage on top of the segments they join.
+      jointRounded: false,
+      parameters: FLAT,
       updateTriggers: { getColor: [theme] },
     }),
 
@@ -316,6 +465,7 @@ export function MetroMap({
       getLineColor: t.stationRing,
       lineWidthMinPixels: 1.5,
       stroked: true,
+      parameters: FLAT,
       pickable: true,
       onHover: (info) => onStationHover((info.object as Station) || null),
       onClick: (info) => {
@@ -346,6 +496,7 @@ export function MetroMap({
             outlineWidth: 2,
             outlineColor: t.labelHalo,
             fontSettings: { sdf: true },
+            parameters: FLAT,
             updateTriggers: {
               data: [stations, visibleLines],
               getColor: [theme],
@@ -355,47 +506,60 @@ export function MetroMap({
         ]
       : []),
 
-    // train halo — amber when running late, line-colored otherwise
-    new PathLayer({
+    // Train halo — amber when running late, line-colored otherwise. A gradient
+    // sprite rather than stacked paths: the alpha falloff is smooth, so there
+    // is no edge where the halo stops, which is the whole point of it.
+    new IconLayer({
       id: "train-glow",
       data: positioned,
-      getPath: (d: PositionedTrain) => d.path,
+      iconAtlas: glowSpriteUrl(),
+      iconMapping: GLOW_ICON_MAPPING,
+      getIcon: () => "glow",
+      getPosition: (d: PositionedTrain) => d.center,
+      getAngle: (d: PositionedTrain) => d.angle,
+      getSize: TRAIN_GLOW_M,
+      sizeUnits: "meters",
+      sizeMinPixels: 26,
+      sizeMaxPixels: 140,
+      // Lies flat on the ground plane so it foreshortens with the pitched
+      // camera, like light cast on the street, instead of facing the viewer.
+      billboard: false,
+      alphaCutoff: 0, // keep the faint tail; the default 0.05 clips a visible ring
       getColor: (d: PositionedTrain) =>
         d.delay_s > DELAY_THRESHOLD_S
           ? ([251, 191, 36, t.trainGlowAlpha + 40] as [number, number, number, number])
           : ([...d.color, t.trainGlowAlpha] as [number, number, number, number]),
-      getWidth: 38,
-      widthMinPixels: 10,
-      widthMaxPixels: 34,
-      capRounded: true,
-      jointRounded: true,
+      parameters: haloParams,
       updateTriggers: { getColor: [theme] },
     }),
 
-    // train body: a pill riding the track, slightly wider than the line
-    new PathLayer({
-      id: "train-outline",
+    // The train itself: a second, smaller pass of the same gradient sprite,
+    // washed toward white so it reads as the hot centre of the halo. It is a
+    // sprite and not a path so that the nose and tail fall off as softly as the
+    // sides do — a PathLayer pill ends in a hard cap however narrow it is, and
+    // that flat-ended bar was the thing that stopped it looking like light.
+    // Also the picking target: its quad is roughly the train's own footprint.
+    new IconLayer({
+      id: "train-core",
       data: positioned,
-      getPath: (d: PositionedTrain) => d.path,
-      getColor: t.trainOutline,
-      getWidth: 15,
-      widthMinPixels: 5.5,
-      widthMaxPixels: 14,
-      capRounded: true,
-      jointRounded: true,
-      updateTriggers: { getColor: [theme] },
-    }),
-    new PathLayer({
-      id: "train-body",
-      data: positioned,
-      getPath: (d: PositionedTrain) => d.path,
+      iconAtlas: glowSpriteUrl(),
+      iconMapping: GLOW_ICON_MAPPING,
+      getIcon: () => "glow",
+      getPosition: (d: PositionedTrain) => d.center,
+      getAngle: (d: PositionedTrain) => d.angle,
+      getSize: TRAIN_CORE_M,
+      sizeUnits: "meters",
+      sizeMinPixels: 11,
+      sizeMaxPixels: 60,
+      billboard: false,
+      // Unlike the halo this one clips its faintest edge, which keeps the
+      // pickable area close to the visible blob instead of the whole quad.
+      alphaCutoff: 0.04,
       getColor: (d: PositionedTrain) =>
-        [...d.color, 255] as [number, number, number, number],
-      getWidth: 10,
-      widthMinPixels: 3.5,
-      widthMaxPixels: 10,
-      capRounded: true,
-      jointRounded: true,
+        d.delay_s > DELAY_THRESHOLD_S
+          ? ([254, 231, 160, 255] as [number, number, number, number])
+          : ([...hotten(d.color, t.coreWhiten), 255] as [number, number, number, number]),
+      parameters: FLAT,
       pickable: true,
       onHover: (info) => onTrainHover((info.object as AnimatedTrain) || null),
       onClick: (info) => {
