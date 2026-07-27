@@ -40,17 +40,25 @@ a {
   margin: 0;
   padding: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0;
 }
 
 .social-icons li {
-  display: inline-block;
+  display: flex;
+  flex: 1 1 0;
+  justify-content: center;
   padding: 0;
   margin: 0;
+  min-width: 0;
 }
 
 .social-icons .icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
   border-bottom: none;
   position: relative;
@@ -73,7 +81,7 @@ a {
   text-transform: none !important;
   font-family: "Font Awesome 6 Free";
   font-weight: 400;
-  font-size: 0.95rem;
+  font-size: 1.35rem;
 }
 
 .social-icons .icon.solid::before {
@@ -137,7 +145,7 @@ a {
    offset cyan and magenta copies. */
 .social-icons .fa-tiktok::before {
   color: #000;
-  text-shadow: -1px -1px 0 #25f4ee, 1px 1px 0 #fe2c55;
+  text-shadow: -1.5px -1.5px 0 #25f4ee, 1.5px 1.5px 0 #fe2c55;
 }
 
 /* Instagram is the one that genuinely needs a gradient. Instagram publishes no
