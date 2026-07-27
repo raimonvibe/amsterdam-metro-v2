@@ -55,6 +55,9 @@ export const MAP_THEME = {
     trailCoreAlpha: 175,
     trainGlowAlpha: 190,
     coreWhiten: 0.45,
+    // Nothing to darken: the palette is already carrying light on a dark map.
+    trainShade: 0,
+    trainShadeSkipLuminance: 0,
   },
   light: {
     styleUrl: "https://tiles.openfreemap.org/styles/positron",
@@ -76,5 +79,14 @@ export const MAP_THEME = {
     trainGlowAlpha: 235,
     // Keep saturation — whitening on light dissolves the line colour into the map.
     coreWhiten: 0.02,
+    // Trains only, never the rails — the rails staying pale is what the train
+    // reads against, so darkening both would move them together and spend the
+    // contrast this is buying.
+    trainShade: 0.16,
+    // Line 54's yellow sits at 0.75 luminance, roughly 1.2:1 against this
+    // basemap, and is the one line no amount of darkening rescues: it turns
+    // olive long before it turns legible. Anything above this is left at its
+    // published colour and leans on the glow and trail to read instead.
+    trainShadeSkipLuminance: 0.5,
   },
 } as const;

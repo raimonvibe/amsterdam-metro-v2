@@ -191,6 +191,59 @@ const hotten = (
   Math.round(b + (255 - b) * amount),
 ];
 
+const srgbToLinear = (c: number): number => {
+  const x = c / 255;
+  return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+};
+
+const relLuminance = ([r, g, b]: [number, number, number]): number =>
+  0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b);
+
+const hslLightness = (rgb: [number, number, number]): number =>
+  (Math.max(...rgb) + Math.min(...rgb)) / 2;
+
+const hslChroma = (rgb: [number, number, number]): number =>
+  Math.max(...rgb) - Math.min(...rgb);
+
+/** Chroma available at a given HSL lightness — the denominator of HSL S. */
+const chromaSpan = (l: number): number => 255 - Math.abs(2 * l - 255);
+
+/**
+ * Darken toward black, holding both hue and saturation.
+ *
+ * A plain channel multiply keeps hue but quietly bleeds saturation: it drags
+ * every channel toward zero, so the gap between the brightest and darkest
+ * channel closes faster than the midpoint falls. Line 51's orange loses a
+ * quarter of its saturation that way (91% -> 67%) and turns muddy. So the
+ * multiply only decides *how far down* to go; the chroma is then re-expanded
+ * around the new lightness to the saturation the line started with.
+ *
+ * Lines paler than `skipAboveLum` are returned untouched. Holding saturation
+ * keeps a darkened yellow gold rather than brown, but only up to a point — past
+ * it any yellow reads as olive, and the line stops being recognisably itself.
+ * For those, identity is worth more than the contrast darkening would buy.
+ */
+const shade = (
+  rgb: [number, number, number],
+  amount: number,
+  skipAboveLum: number,
+): [number, number, number] => {
+  if (amount === 0 || relLuminance(rgb) > skipAboveLum) return rgb;
+  const dark = rgb.map((c) => c * (1 - amount)) as [number, number, number];
+
+  const span = chromaSpan(hslLightness(rgb));
+  const chroma = hslChroma(dark);
+  // Greys have no hue to preserve, and pure black/white no room to hold chroma.
+  if (chroma === 0 || span === 0) return dark.map(Math.round) as [number, number, number];
+
+  const l = hslLightness(dark);
+  const saturation = hslChroma(rgb) / span;
+  const scale = (saturation * chromaSpan(l)) / chroma;
+  return dark.map((c) =>
+    Math.round(Math.min(255, Math.max(0, l + (c - l) * scale))),
+  ) as [number, number, number];
+};
+
 const hexToRgb = (hex: string): [number, number, number] => {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return m
@@ -374,6 +427,17 @@ export function MetroMap({
     return m;
   }, [lines]);
 
+  // Trains ride a shaded copy of the palette; the painted rails keep `lineColor`
+  // untouched. Darkening both would move them together and cost the train the
+  // contrast this is buying — the rails staying pale is what it reads against.
+  const trainColor = useMemo(() => {
+    const m: Record<string, [number, number, number]> = {};
+    Object.entries(lineColor).forEach(([id, rgb]) => {
+      m[id] = shade(rgb, t.trainShade, t.trainShadeSkipLuminance);
+    });
+    return m;
+  }, [lineColor, t.trainShade, t.trainShadeSkipLuminance]);
+
   // Flattened so the four line tiers each draw one quad per stretch of rail.
   // Within one line the backend has already merged shared stretches; across
   // lines we offset onto each line's canonical lane (see laneRefs) so trains
@@ -428,7 +492,7 @@ export function MetroMap({
         head,
         center: [lon, lat] as [number, number],
         angle: angleForBearing(bearing),
-        color: lineColor[tr.line] ?? [255, 255, 255],
+        color: trainColor[tr.line] ?? [255, 255, 255],
       };
     });
 
@@ -680,7 +744,7 @@ export function MetroMap({
       getPath: (d: Trail) => d.path,
       getTimestamps: (d: Trail) => d.timestamps,
       getColor: (d: Trail) =>
-        [...(lineColor[d.line] ?? [255, 255, 255]), t.trailCoreAlpha] as [number, number, number, number],
+        [...(trainColor[d.line] ?? [255, 255, 255]), t.trailCoreAlpha] as [number, number, number, number],
       currentTime: trailNow,
       trailLength: TRAIL_SECONDS,
       fadeTrail: true,
