@@ -98,3 +98,86 @@ a {
 .dark .social-icons .icon:hover {
   color: rgba(255, 255, 255, 0.95);
 }
+
+/* Brand colours.
+   These sit on ::before, not on the <a>, for two reasons: the <a> also holds a
+   hidden .label span, and background-clip: text needs a box that hugs the glyph
+   or the gradient renders washed out. A colour declared directly on the pseudo
+   also beats the colour it would otherwise inherit from .icon:hover, so the
+   greyscale hover rules above keep working for the non-brand globe icon. */
+.social-icons .icon.brands::before {
+  opacity: 0.88;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+.social-icons .icon.brands:hover::before {
+  opacity: 1;
+  filter: saturate(1.15);
+}
+
+.social-icons .fa-youtube::before {
+  color: #ff0000;
+}
+
+.social-icons .fa-facebook-f::before {
+  color: #1877f2;
+}
+
+.social-icons .fa-linkedin-in::before {
+  color: #0a66c2;
+}
+
+.social-icons .fa-x-twitter::before,
+.social-icons .fa-github::before,
+.social-icons .fa-medium-m::before {
+  color: #000;
+}
+
+/* TikTok's logo is chromatic aberration, not a gradient — black glyph with
+   offset cyan and magenta copies. */
+.social-icons .fa-tiktok::before {
+  color: #000;
+  text-shadow: -1px -1px 0 #25f4ee, 1px 1px 0 #fe2c55;
+}
+
+/* Instagram is the one that genuinely needs a gradient. Instagram publishes no
+   hex values, so this is the widely-used 9-stop reading of their 5-colour
+   palette, angled to match the logo's bottom-left → top-right sweep. */
+.social-icons .fa-instagram::before {
+  background-image: linear-gradient(
+    45deg,
+    #ffdc80 0%,
+    #fcaf45 12%,
+    #f77737 25%,
+    #f56040 38%,
+    #fd1d1d 50%,
+    #e1306c 62%,
+    #c13584 75%,
+    #833ab4 87%,
+    #5851db 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* The four black brands would vanish against the dark sidebar. */
+.dark .social-icons .fa-x-twitter::before,
+.dark .social-icons .fa-github::before,
+.dark .social-icons .fa-medium-m::before,
+.dark .social-icons .fa-tiktok::before {
+  color: #fff;
+}
+
+/* Windows High Contrast renders transparent text as nothing at all. */
+@media (forced-colors: active) {
+  .social-icons .icon.brands::before {
+    background-image: none;
+    color: currentColor;
+    -webkit-text-fill-color: currentColor;
+    text-shadow: none;
+    filter: none;
+    opacity: 1;
+  }
+}
