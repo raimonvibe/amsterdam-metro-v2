@@ -12,7 +12,7 @@
     "@deck.gl/core": "9.3.7",
     "@deck.gl/geo-layers": "9.3.7",
     "@deck.gl/layers": "9.3.7",
-    "@deck.gl/mapbox": "9.3.7",
+    "@deck.gl/mapbox": "9.3.10",
     "lucide-react": "^0.364.0",
     "maplibre-gl": "^4.7.1",
     "react": "^19.2.8",
