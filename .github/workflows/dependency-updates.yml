@@ -48,12 +48,13 @@ jobs:
           BACKEND_DIR: backend
         run: |
           set -euo pipefail
-          outdated=0
 
           {
             echo "# Dependency updates"
             echo ""
             echo "Checked $(date -u +'%Y-%m-%d %H:%M UTC')."
+            echo ""
+            echo "This job reports drift only. Dependabot opens update PRs every Monday."
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -68,8 +69,7 @@ jobs:
             echo "All packages are up to date." >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
           else
-            outdated=1
-            echo "::warning::Frontend has outdated npm packages."
+            echo "::notice::Frontend has outdated npm packages. See the job summary."
             {
               echo "## Frontend (npm)"
               echo ""
@@ -92,8 +92,7 @@ jobs:
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "All packages are up to date." >> "$GITHUB_STEP_SUMMARY"
           else
-            outdated=1
-            echo "::warning::Backend has outdated pip packages."
+            echo "::notice::Backend has outdated pip packages. See the job summary."
             {
               echo "## Backend (pip)"
               echo ""
@@ -103,9 +102,4 @@ jobs:
               echo "$pip_json"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-          if [ "$outdated" -ne 0 ]; then
-            echo "Outdated dependencies found. Dependabot opens update PRs every Monday."
-            exit 1
           fi
