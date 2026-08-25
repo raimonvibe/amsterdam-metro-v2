@@ -1,0 +1,111 @@
+name: Dependency updates
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/dependency-updates.yml
+      - .github/dependabot.yml
+      - frontend/package.json
+      - frontend/package-lock.json
+      - backend/requirements.txt
+  schedule:
+    # Every Monday 06:00 UTC (08:00 in the Netherlands in summer).
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check outdated packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install frontend
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install backend
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Report outdated dependencies
+        env:
+          FRONTEND_DIR: frontend
+          BACKEND_DIR: backend
+        run: |
+          set -euo pipefail
+          outdated=0
+
+          {
+            echo "# Dependency updates"
+            echo ""
+            echo "Checked $(date -u +'%Y-%m-%d %H:%M UTC')."
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "::group::Frontend (npm outdated)"
+          npm_json="$(npm outdated --json --prefix "$FRONTEND_DIR" || true)"
+          echo "${npm_json:-{}}"
+          echo "::endgroup::"
+
+          if [ -z "$npm_json" ] || [ "$npm_json" = "{}" ]; then
+            echo "## Frontend (npm)" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "All packages are up to date." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          else
+            outdated=1
+            echo "::warning::Frontend has outdated npm packages."
+            {
+              echo "## Frontend (npm)"
+              echo ""
+              echo "Outdated packages:"
+              echo ""
+              echo '```json'
+              echo "$npm_json"
+              echo '```'
+              echo ""
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "::group::Backend (pip list --outdated)"
+          pip_json="$(pip list --outdated --format=json)"
+          echo "$pip_json"
+          echo "::endgroup::"
+
+          if [ "$pip_json" = "[]" ]; then
+            echo "## Backend (pip)" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "All packages are up to date." >> "$GITHUB_STEP_SUMMARY"
+          else
+            outdated=1
+            echo "::warning::Backend has outdated pip packages."
+            {
+              echo "## Backend (pip)"
+              echo ""
+              echo "Outdated packages:"
+              echo ""
+              echo '```json'
+              echo "$pip_json"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ "$outdated" -ne 0 ]; then
+            echo "Outdated dependencies found. Dependabot opens update PRs every Monday."
+            exit 1
+          fi
