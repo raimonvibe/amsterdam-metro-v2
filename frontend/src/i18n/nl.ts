@@ -30,9 +30,9 @@ export const nl = {
   backToMap: "Terug naar kaart",
   closePrivacy: "Privacybeleid sluiten",
   backendError: "Backend niet bereikbaar — draait die op :8020?",
-  webglTitle: "3D-kaart heeft WebGL nodig",
+  webglTitle: "3D-kaart heeft WebGL2 nodig",
   webglHint: "Chrome blokkeert GPU-rendering op dit apparaat. Probeer:",
   webglStep1: "Open chrome://settings/system en schakel Hardware-acceleratie in, herstart Chrome.",
   webglStep2: "Open chrome://flags/#enable-unsafe-swiftshader voor software-WebGL.",
-  webglStep3: "Controleer chrome://gpu — WebGL mag niet Unavailable of Disabled zijn.",
+  webglStep3: "Controleer chrome://gpu — WebGL2 mag niet Unavailable of Disabled zijn.",
 } as const;

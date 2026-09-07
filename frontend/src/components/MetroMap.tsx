@@ -923,7 +923,7 @@ export function MetroMap({
             deckPickRef.current = false;
           }, 0);
         }}
-        onError={(e) => setWebglError(e.error?.message ?? "WebGL map failed to start")}
+        onError={(e) => setWebglError(e.error?.message ?? "WebGL2 map failed to start")}
       >
         <AttributionControl compact />
         <DeckGLOverlay
