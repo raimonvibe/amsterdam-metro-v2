@@ -1,6 +1,7 @@
 fastapi>=0.141.1
 uvicorn[standard]>=0.53.0
 httpx>=0.28.1
+idna>=3.15
 gtfs-realtime-bindings>=3.0.0
 protobuf>=7.36.2
 tzdata>=2026.4
