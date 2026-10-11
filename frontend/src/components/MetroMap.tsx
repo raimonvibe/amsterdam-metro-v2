@@ -36,7 +36,11 @@ interface MetroMapProps {
   trains: AnimatedTrain[];
   shapes: Record<string, ShapeGeom>;
   visibleLines: string[];
+  /** Overlay palette — matches the basemap's brightness, not necessarily the page theme. */
   theme: Theme;
+  styleUrl: string;
+  /** Basemap background of the incoming style: the colour a style switch fades through. */
+  backdropColor: string;
   followedTrainId: string | null;
   onTrainHover: (train: AnimatedTrain | null) => void;
   onStationHover: (station: Station | null) => void;
@@ -45,6 +49,11 @@ interface MetroMapProps {
   onStopFollow: () => void;
   onMapBackgroundClick?: () => void;
 }
+
+/** Style-switch veil: quick cover, gentler reveal; reveal anyway if tiles stall. */
+const VEIL_IN_MS = 150;
+const VEIL_OUT_MS = 350;
+const VEIL_MAX_WAIT_MS = 1500;
 
 /** Amsterdam metro trainsets are ~90-116m; 100m reads well at city zoom. */
 const TRAIN_LENGTH_M = 100;
@@ -290,7 +299,9 @@ export function MetroMap({
   trains,
   shapes,
   visibleLines,
-  theme,
+  theme: targetTheme,
+  styleUrl: targetStyleUrl,
+  backdropColor,
   followedTrainId,
   onTrainHover,
   onStationHover,
@@ -354,7 +365,44 @@ export function MetroMap({
   const trailsRef = useRef<Record<string, Trail>>({});
   const lastSampleRef = useRef(0);
   const [mapReady, setMapReady] = useState(false);
+
+  // Style switches fade through a veil in the incoming basemap's colour: veil
+  // up, swap style + overlay palette together underneath, veil down once the
+  // new style has drawn. Hides the blank frame and tile pop-in of setStyle.
+  const [applied, setApplied] = useState({ styleUrl: targetStyleUrl, theme: targetTheme });
+  const { styleUrl, theme } = applied;
+  const [veil, setVeil] = useState({ on: false, color: backdropColor });
+
+  useEffect(() => {
+    if (targetStyleUrl === applied.styleUrl && targetTheme === applied.theme) return;
+    const next = { styleUrl: targetStyleUrl, theme: targetTheme };
+    if (!mapReady || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setApplied(next);
+      return;
+    }
+    setVeil({ on: true, color: backdropColor });
+    const id = setTimeout(() => setApplied(next), VEIL_IN_MS);
+    return () => clearTimeout(id);
+  }, [targetStyleUrl, targetTheme]);
+
+  useEffect(() => {
+    if (!veil.on) return;
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+    const reveal = () => setVeil((v) => ({ ...v, on: false }));
+    map.once("idle", reveal);
+    const id = setTimeout(reveal, VEIL_MAX_WAIT_MS);
+    return () => {
+      map.off("idle", reveal);
+      clearTimeout(id);
+    };
+    // Re-armed per applied style only; veil.on is read, not tracked.
+  }, [styleUrl]);
+
   const t = MAP_THEME[theme];
+  // Read by addBuildings, which runs from a style.load listener bound once.
+  const themeRef = useRef(theme);
+  themeRef.current = theme;
 
   // ~30fps animation clock for dead-reckoned train movement
   useEffect(() => {
@@ -377,12 +425,14 @@ export function MetroMap({
   const addBuildings = useCallback(() => {
     const map = mapRef.current?.getMap();
     if (!map || map.getLayer("3d-buildings")) return;
+    // Liberty ships its own extrusion; two coincident ones z-fight, so ours wins.
+    if (map.getLayer("building-3d")) map.setLayoutProperty("building-3d", "visibility", "none");
     const style = map.getStyle();
     const sourceId = Object.keys(style.sources).find(
       (k) => (style.sources[k] as { type?: string }).type === "vector",
     );
     if (!sourceId) return;
-    const th = MAP_THEME[document.documentElement.classList.contains("dark") ? "dark" : "light"];
+    const th = MAP_THEME[themeRef.current];
     map.addLayer({
       id: "3d-buildings",
       source: sourceId,
@@ -908,7 +958,7 @@ export function MetroMap({
       <Map
         ref={mapRef}
         initialViewState={INTRO_START}
-        mapStyle={t.styleUrl}
+        mapStyle={styleUrl}
         styleDiffing={false}
         attributionControl={false}
         style={{ width: "100%", height: "100%" }}
@@ -935,6 +985,15 @@ export function MetroMap({
         />
       </Map>
       <ChurchMarkers mapRef={mapRef} mapReady={mapReady} theme={theme} />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 transition-opacity ease-out"
+        style={{
+          backgroundColor: veil.color,
+          opacity: veil.on ? 1 : 0,
+          transitionDuration: `${veil.on ? VEIL_IN_MS : VEIL_OUT_MS}ms`,
+        }}
+      />
     </div>
   );
 }

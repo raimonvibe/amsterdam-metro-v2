@@ -1,64 +1,80 @@
-export const SOCIAL_LINKS = [
-  {
-    href: "https://www.raimonvibe.eu/",
-    label: "Website",
-    iconClass: "icon solid fa-globe",
-  },
-  {
-    href: "https://x.com/raimonvibe/",
-    label: "X",
-    iconClass: "icon brands fa-x-twitter",
-  },
-  {
-    href: "https://www.youtube.com/channel/UCDGDNuYb2b2Ets9CYCNVbuA/videos/",
-    label: "YouTube",
-    iconClass: "icon brands fa-youtube",
-  },
-  {
-    href: "https://www.tiktok.com/@raimonvibe/",
-    label: "TikTok",
-    iconClass: "icon brands fa-tiktok",
-  },
-  {
-    href: "https://www.instagram.com/raimonvibe/",
-    label: "Instagram",
-    iconClass: "icon brands fa-instagram",
-  },
-  {
-    href: "https://medium.com/@raimonvibe/",
-    label: "Medium",
-    iconClass: "icon brands fa-medium-m",
-  },
-  {
-    href: "https://github.com/raimonvibe/",
-    label: "GitHub",
-    iconClass: "icon brands fa-github",
-  },
-  {
-    href: "https://www.linkedin.com/in/raimonvibe/",
-    label: "LinkedIn",
-    iconClass: "icon brands fa-linkedin-in",
-  },
-  {
-    href: "https://www.facebook.com/profile.php?id=61563450007849",
-    label: "Facebook",
-    iconClass: "icon brands fa-facebook-f",
-  },
-] as const;
+/**
+ * Social links with inline SVG icons.
+ *
+ * Glyph outlines are Font Awesome Free 6 (CC BY 4.0, credited in Credits),
+ * extracted from its fonts into the 512-unit em box. Inlined rather than
+ * loading Font Awesome: its stylesheet was render-blocking and, with the two
+ * webfonts, ~370 KB for nine icons.
+ */
+const ICONS = {
+  globe: { width: 512, d: "M352 256Q352 289 349 320H163Q160 289 160 256Q160 223 163 192H349Q352 223 352 256ZM381 192H504H381H504Q512 223 512 256Q512 289 504 320H381Q384 289 384 256Q384 223 381 192ZM493 160H377H493H377Q361 62 321 8Q381 25 426 64Q470 104 493 160ZM344 160H168H344H168Q177 105 195 65Q211 30 228 14Q245 -1 256 0Q267 -1 284 14Q301 30 317 65Q335 105 344 160ZM135 160H19H135H19Q42 104 86 64Q131 25 191 8Q151 62 135 160ZM8 192H131H8H131Q128 223 128 256Q128 289 131 320H8Q0 289 0 256Q0 223 8 192ZM195 447Q177 407 168 352H344Q335 407 317 447Q301 482 284 498Q267 513 256 512Q245 513 228 498Q211 482 195 447ZM135 352Q151 450 191 504Q131 487 86 448Q42 408 19 352H135ZM493 352Q470 408 426 448Q381 487 322 504Q361 450 377 352H493Z" },
+  x: { width: 512, d: "M389 48H460H389H460L306 224L487 464H345L234 319L107 464H36L201 276L27 48H172L273 181L389 48ZM364 422H404H364H404L151 88H109L364 422Z" },
+  youtube: { width: 576, d: "M550 124Q538 87 501 75Q477 70 427 67Q377 65 334 64Q291 64 288 64Q285 64 242 64Q199 65 149 67Q99 70 75 75Q38 87 26 124Q21 147 18 177Q16 208 15 232Q15 255 15 256Q15 258 15 281Q16 305 18 335Q21 366 26 389Q38 426 75 437Q99 442 149 445Q199 447 242 448Q285 448 288 448Q288 448 288 448Q291 448 334 448Q377 447 427 445Q477 442 501 437Q538 426 550 389Q555 366 558 335Q560 305 561 281Q561 258 561 256Q561 255 561 232Q560 208 558 177Q555 147 550 124ZM232 338V175V338V175L375 256L232 338Z" },
+  tiktok: { width: 448, d: "M448 210Q380 210 325 171V349Q325 401 296 442Q268 483 220 502Q171 519 123 507Q75 495 40 456Q7 417 1 367Q-4 318 20 272Q45 227 89 204Q134 182 185 188V278Q161 271 139 279Q117 286 102 306Q88 326 88 350Q88 373 102 394Q117 413 140 420Q162 428 186 420Q209 412 223 393Q237 374 237 349V0H325Q325 11 327 22Q338 73 381 102Q412 122 448 123Z" },
+  instagram: { width: 448, d: "M224 141Q175 142 143 175Q110 207 109 256Q110 305 143 337Q175 370 224 371Q273 370 305 337Q338 305 339 256Q338 207 305 175Q273 142 224 141ZM224 331Q192 330 171 309Q150 288 149 256Q150 224 171 203Q192 182 224 181Q256 182 277 203Q298 224 299 256Q298 288 277 309Q256 330 224 331ZM371 136Q368 161 344 163Q319 161 317 136Q317 125 325 117Q332 110 344 110Q355 110 363 117Q370 125 371 136ZM447 164Q447 109 410 70Q371 33 317 33Q297 32 260 32Q224 32 188 32Q151 32 132 33Q78 33 38 70Q1 109 2 163Q0 183 0 220Q0 256 0 292Q0 328 2 348Q1 403 38 442Q77 479 132 478Q151 479 188 480Q224 480 260 480Q297 479 317 478Q371 479 410 442Q447 403 447 348Q448 328 448 292Q448 256 448 220Q448 183 447 163ZM399 388Q386 418 356 431Q336 438 302 439Q268 440 240 440Q231 440 224 440Q217 440 208 440Q180 440 146 439Q113 438 92 431Q62 418 49 388Q42 367 41 334Q40 300 40 272Q40 263 40 256Q40 249 40 240Q40 212 41 178Q42 144 49 124Q62 94 92 81Q113 74 146 73Q180 71 208 72Q217 72 224 72Q231 72 240 72Q268 72 302 73Q336 74 356 81Q386 94 399 124Q406 144 407 178Q409 212 408 240Q408 249 408 256Q408 263 408 272Q409 300 407 334Q406 368 399 388Z" },
+  medium: { width: 640, d: "M181 74Q104 76 53 127Q2 179 0 256Q2 333 53 385Q104 436 181 438Q257 436 308 385Q359 333 361 256Q359 179 308 127Q257 76 181 74ZM469 85Q430 87 405 135Q379 183 379 256Q379 329 405 377Q430 425 469 427Q507 425 533 377Q558 329 559 256Q558 183 533 135Q507 87 469 85ZM608 103Q595 104 586 148Q577 191 577 256Q577 321 586 364Q595 408 608 409Q622 408 631 364Q640 321 640 256Q640 191 631 148Q622 104 608 103Z" },
+  github: { width: 496, d: "M166 397Q165 401 161 401Q155 401 155 397Q156 394 160 394Q165 394 166 397ZM135 393Q134 396 139 398Q144 399 145 396Q146 392 141 391Q136 390 135 393ZM179 391Q174 392 174 396Q175 399 180 399Q185 397 185 394Q184 391 179 391ZM245 8Q138 10 70 78Q2 146 0 252Q1 337 47 401Q93 465 170 491Q188 492 187 479Q187 475 187 464Q187 441 187 418Q185 418 168 420Q150 421 130 416Q110 410 102 388Q102 386 94 372Q86 359 74 351Q72 350 66 343Q59 337 76 336Q77 335 90 340Q103 344 114 362Q132 389 153 389Q175 389 187 383Q191 359 203 349Q159 347 126 327Q93 308 91 238Q91 218 97 205Q102 192 114 180Q112 174 110 156Q108 138 117 112Q135 109 159 123Q184 136 186 139Q186 139 186 139Q216 130 249 130Q281 130 312 139Q312 138 325 130Q337 122 353 116Q369 109 381 112Q390 138 388 156Q386 174 383 180Q395 192 402 205Q409 218 409 238Q408 286 392 309Q375 331 349 339Q323 347 294 349Q310 360 311 395Q311 432 311 461Q311 474 311 479Q310 492 328 491Q404 465 450 401Q495 337 496 252Q495 182 462 127Q428 72 372 40Q315 9 245 8ZM97 353Q95 355 98 358Q101 361 103 359Q105 357 102 354Q100 351 97 353ZM86 345Q86 347 89 349Q92 350 93 348Q94 346 91 344Q88 343 86 345ZM119 380Q117 383 120 387Q124 390 127 388Q128 385 125 381Q121 378 119 380ZM107 366Q105 368 107 372Q110 375 113 374Q115 372 113 368Q110 364 107 366Z" },
+  linkedin: { width: 448, d: "M100 448H7H100H7V149H100ZM54 108Q31 107 16 92Q1 77 0 54Q1 23 27 7Q54 -7 81 7Q107 23 108 54Q107 77 92 92Q77 107 54 108ZM448 448H355H448H355V302Q357 275 349 250Q341 225 307 223Q272 224 261 247Q250 270 251 300V448H158V149H248V190H249Q258 171 280 157Q303 142 337 141Q405 143 428 182Q450 222 448 284V448Z" },
+  facebook: { width: 320, d: "M80 299V512V299V512H196V299H283L301 201H196V167Q196 129 213 112Q230 95 269 95Q294 95 306 97V8Q294 5 273 2Q252 0 236 0Q78 -2 80 159V202H14V299H80Z" },
+} as const;
+
+type IconName = keyof typeof ICONS;
+
+export const SOCIAL_LINKS: readonly { href: string; label: string; icon: IconName }[] = [
+  { href: "https://www.raimonvibe.eu/", label: "Website", icon: "globe" },
+  { href: "https://x.com/raimonvibe/", label: "X", icon: "x" },
+  { href: "https://www.youtube.com/channel/UCDGDNuYb2b2Ets9CYCNVbuA/videos/", label: "YouTube", icon: "youtube" },
+  { href: "https://www.tiktok.com/@raimonvibe/", label: "TikTok", icon: "tiktok" },
+  { href: "https://www.instagram.com/raimonvibe/", label: "Instagram", icon: "instagram" },
+  { href: "https://medium.com/@raimonvibe/", label: "Medium", icon: "medium" },
+  { href: "https://github.com/raimonvibe/", label: "GitHub", icon: "github" },
+  { href: "https://www.linkedin.com/in/raimonvibe/", label: "LinkedIn", icon: "linkedin" },
+  { href: "https://www.facebook.com/profile.php?id=61563450007849", label: "Facebook", icon: "facebook" },
+];
+
+const ICON_REM = 1.35;
+
+function Icon({ name }: { name: IconName }) {
+  const { width, d } = ICONS[name];
+  return (
+    <svg
+      viewBox={`0 0 ${width} 512`}
+      style={{ height: `${ICON_REM}rem`, width: `${((ICON_REM * width) / 512).toFixed(3)}rem` }}
+      className={`social-svg social-${name}`}
+      aria-hidden
+      focusable="false"
+    >
+      {name === "instagram" && (
+        // Instagram publishes no hex values: the widely-used 9-stop reading
+        // of its palette, swept bottom-left → top-right like the logo.
+        <defs>
+          <linearGradient id="ig-gradient" x1="0" y1="1" x2="1" y2="0">
+            {["#ffdc80", "#fcaf45", "#f77737", "#f56040", "#fd1d1d", "#e1306c", "#c13584", "#833ab4", "#5851db"].map(
+              (c, i) => <stop key={c} offset={i / 8} stopColor={c} />,
+            )}
+          </linearGradient>
+        </defs>
+      )}
+      {name === "tiktok" && (
+        // TikTok's logo is chromatic aberration, not a gradient: offset cyan
+        // and magenta copies under the main glyph (~1.5px at this size).
+        <>
+          <path className="tiktok-cyan" d={d} transform="translate(-32 -32)" />
+          <path className="tiktok-magenta" d={d} transform="translate(32 32)" />
+        </>
+      )}
+      <path d={d} />
+    </svg>
+  );
+}
 
 export function SocialIcons() {
   return (
     <ul className="social-icons" aria-label="Social links">
-      {SOCIAL_LINKS.map(({ href, label, iconClass }) => (
+      {SOCIAL_LINKS.map(({ href, label, icon }) => (
         <li key={href}>
-          <a
-            href={href}
-            className={iconClass}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={label}
-          >
-            <span className="label">{label}</span>
+          <a href={href} className="icon" target="_blank" rel="noopener noreferrer" aria-label={label}>
+            <Icon name={icon} />
           </a>
         </li>
       ))}

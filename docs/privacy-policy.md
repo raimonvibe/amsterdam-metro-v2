@@ -1,6 +1,6 @@
 # Privacy Policy — Amsterdam Metro Live
 
-**Last updated:** 2026-07-22  
+**Last updated:** 2026-10-11  
 **App URL:** https://amsterdammetro.nl
 
 The in-app version is shown at `/privacy` in the frontend. Operator details are defined in `frontend/src/legal/site.ts`.
@@ -28,7 +28,7 @@ Amsterdam Metro Live is designed to collect as little personal data as possible.
 
 ## 3. Data we process
 
-- **Theme preference (localStorage):** Stored in your browser only; not sent to our servers.
+- **Map style (localStorage):** The chosen map style (e.g. Liberty, Dark) is stored in your browser so the app reopens in that style. A single setting, not an identifier; never sent to our servers.
 - **Technical logs (hosting):** IP address, browser type, URL, and timestamp may be logged by our host when you use the site or API.
 - **Map and transit data:** Loaded from third-party services in your browser or by our backend (see section 5).
 
@@ -42,7 +42,7 @@ We do not intentionally collect names, email addresses, precise location, or pay
 |---|---|
 | Providing the live metro map and API | Art. 6(1)(f) GDPR — legitimate interest |
 | Security and abuse prevention (server logs) | Art. 6(1)(f) GDPR |
-| Theme preference in localStorage | Art. 6(1)(a) GDPR — consent by action |
+| Map style in localStorage | Art. 6(1)(f) GDPR — legitimate interest (functional setting needed to show the chosen style) |
 
 ---
 
@@ -60,7 +60,7 @@ We do not sell personal data or share it with advertisers.
 
 ## 6. Cookies
 
-No tracking or advertising cookies. Only **localStorage** for theme preference.
+No tracking or advertising cookies. Only **localStorage** for the map style: a functional setting, not tracking.
 
 ---
 

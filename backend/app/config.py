@@ -1,7 +1,9 @@
 from pathlib import Path
 import os
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+# Point at a persistent disk (e.g. a Render disk mount) to keep the 240MB zip
+# and the subset across deploys/restarts instead of re-downloading each time.
+DATA_DIR = Path(os.getenv("GTFS_DATA_DIR") or Path(__file__).resolve().parent.parent / "data")
 CACHE_DIR = DATA_DIR / "cache"
 
 GTFS_STATIC_URL = "https://gtfs.ovapi.nl/nl/gtfs-nl.zip"

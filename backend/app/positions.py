@@ -22,6 +22,10 @@ logger = logging.getLogger(__name__)
 EARTH_R = 6371000.0
 # Ignore RT absolute times that are still far from schedule after day-alignment.
 MAX_RT_DRIFT_S = 6 * 3600
+# Cheap pre-filter before the per-stop RT solve: a run whose *scheduled* window
+# is further than this from now cannot be on the track. Matches MAX_RT_DRIFT_S
+# so no run the full solve could place is ever skipped.
+SOLVE_MARGIN_S = MAX_RT_DRIFT_S
 
 
 def _align_rt_epoch(rt_epoch: float, sched_epoch: float) -> float:
@@ -269,8 +273,19 @@ class MetroData:
                 "headsign": t["headsign"],
                 "service_id": t["service_id"],
                 "stops": stops,
+                # scheduled offsets from service-date midnight, for the pre-filter
+                "sched_start": stops[0][3],
+                "sched_end": stops[-1][2],
             }
+        # station name -> trip ids calling there, so departures scans only those
+        self._trips_by_station: Dict[str, List[str]] = {}
+        for trip_id, t in self.trips.items():
+            for name in {self.stops[s[1]]["name"] for s in t["stops"]}:
+                self._trips_by_station.setdefault(name, []).append(trip_id)
         logger.info("MetroData ready: %d usable trips, %d shapes", len(self.trips), len(self.shapes))
+
+    def station_names(self) -> set:
+        return set(self._trips_by_station)
 
     def _stop_dist(self, shape_id: str, stop_id: str, shape: Shape) -> float:
         key = (shape_id, stop_id)
@@ -359,15 +374,18 @@ class MetroData:
         # RT overrides carry absolute times, so the same trip can produce
         # identical entries for each of its service dates — dedupe on the run.
         seen: set = set()
-        for trip_id, t in self.trips.items():
-            stop_ids = {s[1] for s in t["stops"]}
-            if not (stop_ids & target_stops):
-                continue
+        for trip_id in self._trips_by_station.get(station_name, ()):
+            t = self.trips[trip_id]
             rt_trip = rt.trip_updates.get(trip_id)
+            rt_stops = rt_trip["stops"] if rt_trip else {}
             for date in self.service_dates.get(t["service_id"], []):
+                if rt.is_cancelled(trip_id, date) or not self._may_run(t, date, now, horizon):
+                    continue
                 times = self._effective_times(t, date, rt_trip)
                 for i, (seq, stop_id, *_rest) in enumerate(t["stops"]):
                     if stop_id in target_stops:
+                        if rt_stops.get(seq, {}).get("skipped"):
+                            continue
                         arr, dep, _dist, delay = times[i]
                         if now - 30 <= dep <= horizon and i < len(t["stops"]) - 1:
                             key = (t["line"], t["headsign"], int(dep))
@@ -395,11 +413,22 @@ class MetroData:
             )
             rt_trip = rt.trip_updates.get(trip_id)
             for date in dates:
+                if not self._may_run(t, date, now, now) or rt.is_cancelled(trip_id, date):
+                    continue
                 train = self._solve(trip_id, t, date, rt_trip, now)
                 if train:
                     out.append(train)
                     break
         return out
+
+    def _may_run(self, t: dict, date: str, start: float, end: float) -> bool:
+        """Could this run overlap [start, end]? Schedule-only, so it is padded
+        by the most a realtime correction is ever allowed to move a time."""
+        base = service_date_epoch(date)
+        return (
+            base + t["sched_start"] - SOLVE_MARGIN_S <= end
+            and start <= base + t["sched_end"] + SOLVE_MARGIN_S
+        )
 
     def _effective_times(
         self, t: dict, date: str, rt_trip: Optional[dict],

@@ -2,21 +2,65 @@ import { useEffect, useState } from "react";
 
 export type Theme = "dark" | "light";
 
-const STORAGE_KEY = "metro-live:theme";
+/**
+ * One choice drives the whole look: the OpenFreeMap basemap and, through its
+ * palette, both the page chrome (`.dark`) and the map overlay colours below.
+ * A style rides on the palette whose basemap brightness it matches, so trains
+ * keep the contrast tuned there.
+ */
+export type MapStyle = "light" | "dark" | "liberty" | "bright" | "fiord";
 
-export function useTheme(): [Theme, () => void] {
-  const [theme, setTheme] = useState<Theme>(() => {
+export const MAP_STYLES: Record<
+  MapStyle,
+  { styleUrl: string; palette: Theme; swatch: [string, string, string] }
+> = {
+  // Swatch = background, water, park — taken from each style's JSON.
+  light: {
+    styleUrl: "https://tiles.openfreemap.org/styles/positron",
+    palette: "light",
+    swatch: ["#f2f3f0", "#c2c8ca", "#e6e9e5"],
+  },
+  dark: {
+    styleUrl: "https://tiles.openfreemap.org/styles/dark",
+    palette: "dark",
+    swatch: ["#0c0c0c", "#1b1b1d", "#202020"],
+  },
+  liberty: {
+    styleUrl: "https://tiles.openfreemap.org/styles/liberty",
+    palette: "light",
+    swatch: ["#f8f4f0", "#9ebdff", "#d8e8c8"],
+  },
+  bright: {
+    styleUrl: "https://tiles.openfreemap.org/styles/bright",
+    palette: "light",
+    swatch: ["#f8f4f0", "#aecfe2", "#d8e8c8"],
+  },
+  fiord: {
+    styleUrl: "https://tiles.openfreemap.org/styles/fiord",
+    palette: "dark",
+    swatch: ["#45516e", "#38435c", "#4a5d6b"],
+  },
+};
+
+// The old light/dark toggle saved under "metro-live:theme" on every visit, chosen
+// or not, so it is deliberately not migrated: everyone starts on Liberty.
+const STORAGE_KEY = "metro-live:map-style";
+
+export function useMapStyle(): [MapStyle, (s: MapStyle) => void] {
+  const [style, setStyle] = useState<MapStyle>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved === "light" ? "light" : "dark";
+    return saved && saved in MAP_STYLES ? (saved as MapStyle) : "liberty";
   });
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem(STORAGE_KEY, theme);
-  }, [theme]);
+    const dark = MAP_STYLES[style].palette === "dark";
+    document.documentElement.classList.toggle("dark", dark);
+    // Mobile browser chrome: match the page background (white / gray-950).
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#030712" : "#ffffff");
+    localStorage.setItem(STORAGE_KEY, style);
+  }, [style]);
 
-  const toggle = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
-  return [theme, toggle];
+  return [style, setStyle];
 }
 
 /**
@@ -40,7 +84,6 @@ export function useTheme(): [Theme, () => void] {
  */
 export const MAP_THEME = {
   dark: {
-    styleUrl: "https://tiles.openfreemap.org/styles/dark",
     buildingColor: "#2a2f3a",
     buildingOpacity: 0.75,
     stationFill: [238, 240, 248, 235] as [number, number, number, number],
@@ -60,7 +103,6 @@ export const MAP_THEME = {
     trainShadeSkipLuminance: 0,
   },
   light: {
-    styleUrl: "https://tiles.openfreemap.org/styles/positron",
     buildingColor: "#d8d8e0",
     buildingOpacity: 0.85,
     stationFill: [255, 255, 255, 255] as [number, number, number, number],

@@ -124,16 +124,17 @@ Example `render.yaml` (already at repo root):
 |---|---|---|
 | `PYTHON_VERSION` | `3.12.8` | Match local dev |
 | `CORS_ORIGINS` | `https://amsterdammetro.nl,https://www.amsterdammetro.nl` | Set in `render.yaml` |
+| `GTFS_DATA_DIR` | e.g. `/var/data/gtfs` | Optional. Point at a persistent disk mount to keep the GTFS zip + subset across deploys/restarts |
 
 ### First startup behavior
 
-On first boot (and after redeploy on free tier):
+On first boot (and after every redeploy, unless `GTFS_DATA_DIR` is on a persistent disk):
 
-1. Downloads national GTFS zip (~**240 MB**) from OVapi
-2. Parses and caches GVB metro subset (~few MB JSON)
-3. Starts realtime poller
+1. Uvicorn starts serving immediately; `/healthz` and the APIs return **503** while static data loads
+2. A **child process** downloads the national GTFS zip (~**240 MB**) from OVapi and builds the GVB metro subset (~30 s CPU locally, longer on 0.5 CPU, ~115 MB peak RAM). It runs out-of-process so the rebuild never stalls request handling.
+3. The realtime poller and the 1-second train snapshot start serving
 
-**Expect 2–5 minutes** before APIs respond. `/healthz` returns immediately once Uvicorn is up; `/api/status` returns 503 until GTFS load finishes.
+**Expect 1–3 minutes** before `/healthz` passes. Render keeps the previous instance serving until it does, so deploys are zero-downtime. If OVapi is unreachable, the backend falls back to the previous cached subset (still valid for about a day) instead of failing to start.
 
 ### Verify backend
 
@@ -210,13 +211,21 @@ Open `https://amsterdammetro.nl` — map loads, sidebar shows live train count, 
 
 **Good for:** demos, personal use, testing.
 
-### Render Starter (~$7/month per service)
+### Render Starter (~$7/month per service) — what production runs on
 
 | Benefit | Impact |
 |---|---|
 | Always on | No cold starts; realtime poller stays live |
-| More RAM/CPU | Faster GTFS parse |
-| Optional **persistent disk** ($0.25/GB) | Keep GTFS cache between deploys |
+| 512 MB RAM / 0.5 CPU | Plenty: ~100 MB steady, ~115 MB more during the daily rebuild |
+| Optional **persistent disk** ($0.25/GB) | Keep GTFS cache between deploys (set `GTFS_DATA_DIR`). Note: Render disables zero-downtime deploys for services with a disk |
+
+#### How the backend stays cheap per viewer
+
+- Train positions are solved **once per second** into a shared, pre-serialised, pre-gzipped snapshot (~5 ms CPU). `/api/trains` and `/api/status` just send those bytes, so cost does not grow with the number of viewers.
+- `/api/lines`, `/api/stations`, `/api/shapes` are serialised and gzipped once per GTFS refresh and served with `ETag` + `Cache-Control: max-age=300` (shapes: 909 KB → 234 KB on the wire; repeat visits get a 304).
+- Departures are cached per station for 10 s.
+- Browsers pause polling in background tabs.
+- Access logging is off (`--no-access-log`): every viewer polls every 5 s.
 
 **Recommended for production:** Starter backend + free static frontend ≈ **$7/month**.
 
@@ -232,7 +241,7 @@ Open `https://amsterdammetro.nl` — map loads, sidebar shows live train count, 
 
 ### GTFS cache refresh
 
-Backend refreshes static GTFS when cache is older than 24 hours (`GTFS_MAX_AGE_HOURS` in `backend/app/config.py`). On ephemeral disk, redeploys always trigger a full re-download.
+Backend re-checks hourly and rebuilds static GTFS (in a child process) when the cache is older than 24 hours or no longer covers today (`GTFS_MAX_AGE_HOURS` in `backend/app/config.py`). On ephemeral disk, redeploys always trigger a full re-download.
 
 ### WebGL / browsers
 

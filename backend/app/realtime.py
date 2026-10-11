@@ -7,7 +7,7 @@ feed), with entity ids like "2026-07-21:GVB:54:79827".
 import asyncio
 import logging
 import time
-from typing import Dict, Optional
+from typing import Dict, Optional, Set, Tuple
 
 import httpx
 from google.transit import gtfs_realtime_pb2
@@ -19,10 +19,18 @@ logger = logging.getLogger(__name__)
 
 class RealtimeState:
     def __init__(self) -> None:
-        # trip_id -> {stop_seq -> {"arr": epoch|None, "dep": epoch|None, "delay": s}}
+        # trip_id -> {"stops": {stop_seq -> {"arr", "dep", "delay", "skipped"}}, "ts"}
         self.trip_updates: Dict[str, dict] = {}
+        # trip_id -> service dates (YYYYMMDD) it is cancelled on; "" = every date
+        # (no start_date in the update). Kept apart from trip_updates so a
+        # cancelled trip never counts as live and never falls back to schedule.
+        self.cancelled: Dict[str, Set[str]] = {}
         self.last_success_ts: Optional[int] = None
         self.last_error: Optional[str] = None
+
+    def is_cancelled(self, trip_id: str, date: str) -> bool:
+        dates = self.cancelled.get(trip_id)
+        return dates is not None and ("" in dates or date in dates)
 
     @property
     def is_live(self) -> bool:
@@ -32,10 +40,21 @@ class RealtimeState:
 state = RealtimeState()
 
 
-def _parse(feed_bytes: bytes, metro_trip_ids: set) -> Dict[str, dict]:
+_CANCELED = gtfs_realtime_pb2.TripDescriptor.CANCELED
+_SKIPPED = gtfs_realtime_pb2.TripUpdate.StopTimeUpdate.SKIPPED
+
+
+def _parse(feed_bytes: bytes, metro_trip_ids: set) -> Tuple[Dict[str, dict], Dict[str, Set[str]]]:
+    """(trip updates, cancellations) for metro trips in the feed.
+
+    OVapi keeps cancelled runs in the feed (measured: ~90% of metro entries are
+    CANCELED, mostly the previous service day's) — they must not count as live
+    updates, and a cancelled run must not be drawn from its schedule either.
+    """
     feed = gtfs_realtime_pb2.FeedMessage()
     feed.ParseFromString(feed_bytes)
     updates: Dict[str, dict] = {}
+    cancelled: Dict[str, Set[str]] = {}
     for entity in feed.entity:
         if not entity.HasField("trip_update"):
             continue
@@ -43,9 +62,15 @@ def _parse(feed_bytes: bytes, metro_trip_ids: set) -> Dict[str, dict]:
         trip_id = tu.trip.trip_id
         if trip_id not in metro_trip_ids:
             continue
+        if tu.trip.schedule_relationship == _CANCELED:
+            cancelled.setdefault(trip_id, set()).add(tu.trip.start_date)
+            continue
         stops: Dict[int, dict] = {}
         for stu in tu.stop_time_update:
-            rec: dict = {"arr": None, "dep": None, "delay": 0}
+            rec: dict = {
+                "arr": None, "dep": None, "delay": 0,
+                "skipped": stu.schedule_relationship == _SKIPPED,
+            }
             if stu.HasField("arrival"):
                 if stu.arrival.HasField("time") and stu.arrival.time:
                     rec["arr"] = stu.arrival.time
@@ -62,7 +87,7 @@ def _parse(feed_bytes: bytes, metro_trip_ids: set) -> Dict[str, dict]:
                 "stops": stops,
                 "ts": tu.timestamp or feed.header.timestamp,
             }
-    return updates
+    return updates, cancelled
 
 
 async def poll_forever(get_metro_trip_ids) -> None:
@@ -78,11 +103,15 @@ async def poll_forever(get_metro_trip_ids) -> None:
                 else:
                     resp.raise_for_status()
                     trip_ids = get_metro_trip_ids()
-                    updates = await asyncio.to_thread(_parse, resp.content, trip_ids)
+                    updates, cancelled = await asyncio.to_thread(_parse, resp.content, trip_ids)
                     state.trip_updates = updates
+                    state.cancelled = cancelled
                     state.last_success_ts = int(time.time())
                     state.last_error = None
-                    logger.info("RT poll ok: %d metro trip updates", len(updates))
+                    logger.info(
+                        "RT poll ok: %d metro trip updates, %d cancelled",
+                        len(updates), len(cancelled),
+                    )
                     if etag := resp.headers.get("etag"):
                         conditional_headers["If-None-Match"] = etag
                     if modified := resp.headers.get("last-modified"):

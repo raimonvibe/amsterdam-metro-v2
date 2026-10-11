@@ -12,4 +12,4 @@ export const SITE_OPERATOR = {
   appUrl: "https://amsterdammetro.nl",
 } as const;
 
-export const PRIVACY_POLICY_VERSION = "2026-07-22";
+export const PRIVACY_POLICY_VERSION = "2026-10-11";
