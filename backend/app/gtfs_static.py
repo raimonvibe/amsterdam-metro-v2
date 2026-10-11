@@ -11,6 +11,7 @@ import logging
 import time
 import zipfile
 from datetime import datetime, timedelta
+from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Tuple
 from zoneinfo import ZoneInfo
@@ -315,29 +316,62 @@ def build_subset(zip_path: Path) -> dict:
     return subset
 
 
-def load_subset(force_refresh: bool = False) -> dict:
-    if GTFS_CACHE_FILE.exists() and not force_refresh:
-        age_h = (time.time() - GTFS_CACHE_FILE.stat().st_mtime) / 3600
-        if age_h < GTFS_MAX_AGE_HOURS:
-            with open(GTFS_CACHE_FILE, encoding="utf-8") as f:
-                subset = json.load(f)
-            # Cache must cover today's service dates (guards midnight rollover)
-            today = datetime.now(TZ).strftime("%Y%m%d")
-            version_ok = subset.get("subset_version") == SUBSET_VERSION
-            dates_ok = any(
-                today in d for d in subset.get("service_dates", {}).values()
-            )
-            if version_ok and dates_ok:
-                logger.info("Loaded cached subset (%.1fh old)", age_h)
-                return subset
-    zip_path = download_static()
-    subset = build_subset(zip_path)
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    with open(GTFS_CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(subset, f)
+def init_worker_logging() -> None:
+    """ProcessPoolExecutor initializer: a spawned rebuild process starts with
+    unconfigured logging and would drop its progress lines otherwise."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s[rebuild] - %(levelname)s - %(message)s",
+    )
+
+
+def cached_subset(require_fresh: bool = True) -> Optional[dict]:
+    """The on-disk subset, or None. Fresh = younger than GTFS_MAX_AGE_HOURS and
+    covering today's service date (guards midnight rollover). Cheap: one small
+    JSON read, so it can run in-process before deciding to rebuild."""
+    if not GTFS_CACHE_FILE.exists():
+        return None
+    age_h = (time.time() - GTFS_CACHE_FILE.stat().st_mtime) / 3600
+    if require_fresh and age_h >= GTFS_MAX_AGE_HOURS:
+        return None
+    try:
+        with open(GTFS_CACHE_FILE, encoding="utf-8") as f:
+            subset = json.load(f)
+    except (OSError, ValueError) as e:
+        logger.warning("Unreadable subset cache: %s", e)
+        return None
+    if subset.get("subset_version") != SUBSET_VERSION:
+        return None
+    today = datetime.now(TZ).strftime("%Y%m%d")
+    if require_fresh and not any(today in d for d in subset.get("service_dates", {}).values()):
+        return None
+    logger.info("Loaded cached subset (%.1fh old)", age_h)
     return subset
 
 
+def load_subset(force_refresh: bool = False) -> dict:
+    if not force_refresh and (subset := cached_subset()) is not None:
+        return subset
+    try:
+        subset = build_subset(download_static())
+    except Exception:
+        # OVapi down or the feed malformed: an outdated subset still covers
+        # today for about a day (it spans yesterday..tomorrow), which beats
+        # serving nothing. The caller retries on its next refresh.
+        stale = cached_subset(require_fresh=False)
+        if stale is None:
+            raise
+        logger.exception("GTFS rebuild failed; serving the previous subset")
+        return stale
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    tmp = GTFS_CACHE_FILE.with_suffix(".part")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(subset, f)
+    tmp.replace(GTFS_CACHE_FILE)  # never leave a half-written cache behind
+    return subset
+
+
+@lru_cache(maxsize=64)
 def service_date_epoch(date_yyyymmdd: str) -> int:
     """Epoch of midnight (local) for a GTFS service date; GTFS times are
     seconds relative to this (and can exceed 24h)."""

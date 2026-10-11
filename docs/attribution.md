@@ -58,7 +58,8 @@ See `package.json` and `backend/requirements.txt` for full dependency lists.
 
 | Provider | URL | Notice |
 |---|---|---|
-| **Font Awesome Free** | https://fontawesome.com/license/free | Social icons — icons by [Fonticons, Inc.](https://fontawesome.com/) |
+| **Font Awesome Free** | https://fontawesome.com/license/free | Social icons (inlined as SVG) — icons by [Fonticons, Inc.](https://fontawesome.com/) |
+| **Lucide** | https://lucide.dev/license | UI and map-style icons (ISC license) |
 
 ## Inspiration
 

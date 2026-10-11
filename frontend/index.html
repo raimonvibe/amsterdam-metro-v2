@@ -14,12 +14,23 @@
     />
     <meta name="author" content="raimonvibe" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
-    <meta name="theme-color" content="#0f172a" />
+    <!-- Updated at runtime to the chosen map style; default style (Liberty) is light. -->
+    <meta name="theme-color" content="#ffffff" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/social-share.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="canonical" href="https://amsterdammetro.nl/" />
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <!-- Start the slow parts while the JS bundle downloads: connections to the
+         tile and API hosts, and the static map data (~280 KB gzipped) the app
+         needs before it can draw anything. crossorigin matches fetch()'s CORS
+         mode so the app's own requests reuse these responses. -->
+    <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin />
+    <link rel="preconnect" href="%VITE_API_URL%" crossorigin />
+    <link rel="preload" as="fetch" href="%VITE_API_URL%/api/shapes" crossorigin />
+    <link rel="preload" as="fetch" href="%VITE_API_URL%/api/lines" crossorigin />
+    <link rel="preload" as="fetch" href="%VITE_API_URL%/api/stations" crossorigin />
 
     <!-- Open Graph -->
     <meta property="og:site_name" content="Metro Amsterdam Live" />
@@ -88,8 +99,6 @@
         ]
       }
     </script>
-
-    <link rel="stylesheet" href="/css/fontawesome-all.min.css" />
   </head>
   <body>
     <div id="root"></div>

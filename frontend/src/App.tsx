@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { PanelLeftOpen } from "lucide-react";
 import { MetroMap } from "./components/MetroMap";
 import { Sidebar } from "./components/Sidebar";
 import { LiveBadge } from "./components/LiveBadge";
 import { DepartureBoard } from "./components/DepartureBoard";
 import { FollowChip } from "./components/FollowChip";
-import { PrivacyPolicy } from "./components/PrivacyPolicy";
 import {
   fetchLines,
   fetchShapes,
@@ -14,10 +13,16 @@ import {
   fetchTrains,
 } from "./api";
 import { AnimatedTrain, Line, ShapeGeom, Station, Status } from "./types";
-import { useTheme } from "./theme";
+import { MAP_STYLES, useMapStyle } from "./theme";
+import { pollWhileVisible } from "./poll";
 import { usePrivacyRoute } from "./hooks/usePrivacyRoute";
 import { useSidebarOpen } from "./hooks/useSidebarOpen";
 import { nl } from "./i18n/nl";
+
+// Rarely opened; kept out of the initial bundle.
+const PrivacyPolicy = lazy(() =>
+  import("./components/PrivacyPolicy").then((m) => ({ default: m.PrivacyPolicy })),
+);
 
 const TRAINS_POLL_MS = 5000;
 const STATUS_POLL_MS = 30000;
@@ -26,9 +31,12 @@ const STATUS_POLL_MS = 30000;
 // reply is more likely a transient backend hiccup (e.g. mid-refresh) than
 // every train vanishing at once.
 const EMPTY_POLLS_BEFORE_CLEAR = 3;
+const STATIC_RETRY_MIN_MS = 2000;
+const STATIC_RETRY_MAX_MS = 30000;
 
 export default function App() {
-  const [theme, toggleTheme] = useTheme();
+  const [mapStyle, setMapStyle] = useMapStyle();
+  const { palette, styleUrl, swatch } = MAP_STYLES[mapStyle];
   const [lines, setLines] = useState<Line[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
   const [shapes, setShapes] = useState<Record<string, ShapeGeom>>({});
@@ -59,69 +67,78 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [showPrivacy, closePrivacy]);
 
+  // Tracks, stations and shapes: everything else is drawn on top of them, so
+  // keep retrying (backoff) until they arrive — the backend may still be
+  // loading GTFS after a deploy, or briefly unreachable.
   useEffect(() => {
-    (async () => {
+    let stop = false;
+    let timer: number | undefined;
+    let delay = STATIC_RETRY_MIN_MS;
+    const load = async () => {
       try {
         const [l, s, sh] = await Promise.all([
           fetchLines(),
           fetchStations(),
           fetchShapes(),
         ]);
+        if (stop) return;
         setLines(l);
         setStations(s);
         setShapes(sh);
         setVisibleLines(l.map((x) => x.id));
         setError(null);
       } catch {
+        if (stop) return;
         setError(nl.backendError);
+        timer = window.setTimeout(load, delay);
+        delay = Math.min(delay * 2, STATIC_RETRY_MAX_MS);
       }
-    })();
+    };
+    load();
+    return () => {
+      stop = true;
+      window.clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
     let stop = false;
     let emptyStreak = 0;
-    const poll = async () => {
+    const cleanup = pollWhileVisible(async () => {
       try {
-        const t = await fetchTrains();
+        const { trains: t, asOf } = await fetchTrains();
         if (stop) return;
-        const fetchedAt = Date.now();
         if (t.length === 0) {
           emptyStreak += 1;
           if (emptyStreak >= EMPTY_POLLS_BEFORE_CLEAR) setTrains([]);
         } else {
           emptyStreak = 0;
-          setTrains(t.map((x) => ({ ...x, fetchedAt })));
+          setTrains(t.map((x) => ({ ...x, fetchedAt: asOf })));
         }
         setLastUpdated(new Date());
-        setError(null);
       } catch {
         /* transient; keep last state */
       }
-    };
-    poll();
-    const id = setInterval(poll, TRAINS_POLL_MS);
+    }, TRAINS_POLL_MS);
     return () => {
       stop = true;
-      clearInterval(id);
+      cleanup();
     };
   }, []);
 
   useEffect(() => {
     let stop = false;
-    const poll = async () => {
+    const cleanup = pollWhileVisible(async () => {
       try {
         const s = await fetchStatus();
         if (!stop) setStatus(s);
       } catch {
         /* transient */
       }
-    };
-    poll();
-    const id = setInterval(poll, STATUS_POLL_MS);
+    }, STATUS_POLL_MS);
     return () => {
       stop = true;
-      clearInterval(id);
+      cleanup();
     };
   }, []);
 
@@ -168,8 +185,8 @@ export default function App() {
           hoveredTrain={hoveredTrain}
           hoveredStation={hoveredStation}
           lastUpdated={lastUpdated}
-          theme={theme}
-          onToggleTheme={toggleTheme}
+          mapStyle={mapStyle}
+          onMapStyleChange={setMapStyle}
           onOpenPrivacy={openPrivacy}
           onClose={closeSidebar}
         />
@@ -202,7 +219,9 @@ export default function App() {
           trains={trains}
           shapes={shapes}
           visibleLines={visibleLines}
-          theme={theme}
+          theme={palette}
+          styleUrl={styleUrl}
+          backdropColor={swatch[0]}
           followedTrainId={followedTrainId}
           onTrainHover={setHoveredTrain}
           onStationHover={setHoveredStation}
@@ -233,7 +252,11 @@ export default function App() {
             ) : null;
           })()}
       </main>
-      {showPrivacy && <PrivacyPolicy onClose={closePrivacy} />}
+      {showPrivacy && (
+        <Suspense fallback={null}>
+          <PrivacyPolicy onClose={closePrivacy} />
+        </Suspense>
+      )}
     </div>
   );
 }

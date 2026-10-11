@@ -70,31 +70,10 @@ a {
   color: rgba(255, 255, 255, 0.72);
 }
 
-.social-icons .icon::before {
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-font-smoothing: antialiased;
-  display: inline-block;
-  font-style: normal;
-  font-variant: normal;
-  text-rendering: auto;
-  line-height: 1;
-  text-transform: none !important;
-  font-family: "Font Awesome 6 Free";
-  font-weight: 400;
-  font-size: 1.35rem;
-}
-
-.social-icons .icon.solid::before {
-  font-weight: 900;
-}
-
-.social-icons .icon.brands::before {
-  font-family: "Font Awesome 6 Brands";
-  font-weight: 400;
-}
-
-.social-icons .icon > .label {
-  display: none;
+.social-svg {
+  display: block;
+  fill: currentColor;
+  transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
 .social-icons .icon:hover {
@@ -107,84 +86,61 @@ a {
   color: rgba(255, 255, 255, 0.95);
 }
 
-/* Brand colours.
-   These sit on ::before, not on the <a>, for two reasons: the <a> also holds a
-   hidden .label span, and background-clip: text needs a box that hugs the glyph
-   or the gradient renders washed out. A colour declared directly on the pseudo
-   also beats the colour it would otherwise inherit from .icon:hover, so the
-   greyscale hover rules above keep working for the non-brand globe icon. */
-.social-icons .icon.brands::before {
+/* Brand colours. Set as fill on the svg, which beats the colour inherited from
+   .icon:hover — so the greyscale hover rules above only move the globe. */
+.social-svg:not(.social-globe) {
   opacity: 0.88;
-  transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
-.social-icons .icon.brands:hover::before {
+.social-icons .icon:hover .social-svg:not(.social-globe) {
   opacity: 1;
   filter: saturate(1.15);
 }
 
-.social-icons .fa-youtube::before {
-  color: #ff0000;
+.social-youtube {
+  fill: #ff0000;
 }
 
-.social-icons .fa-facebook-f::before {
-  color: #1877f2;
+.social-facebook {
+  fill: #1877f2;
 }
 
-.social-icons .fa-linkedin-in::before {
-  color: #0a66c2;
+.social-linkedin {
+  fill: #0a66c2;
 }
 
-.social-icons .fa-x-twitter::before,
-.social-icons .fa-github::before,
-.social-icons .fa-medium-m::before {
-  color: #000;
+.social-x,
+.social-github,
+.social-medium,
+.social-tiktok {
+  fill: #000;
 }
 
-/* TikTok's logo is chromatic aberration, not a gradient — black glyph with
-   offset cyan and magenta copies. */
-.social-icons .fa-tiktok::before {
-  color: #000;
-  text-shadow: -1.5px -1.5px 0 #25f4ee, 1.5px 1.5px 0 #fe2c55;
+.social-tiktok .tiktok-cyan {
+  fill: #25f4ee;
 }
 
-/* Instagram is the one that genuinely needs a gradient. Instagram publishes no
-   hex values, so this is the widely-used 9-stop reading of their 5-colour
-   palette, angled to match the logo's bottom-left → top-right sweep. */
-.social-icons .fa-instagram::before {
-  background-image: linear-gradient(
-    45deg,
-    #ffdc80 0%,
-    #fcaf45 12%,
-    #f77737 25%,
-    #f56040 38%,
-    #fd1d1d 50%,
-    #e1306c 62%,
-    #c13584 75%,
-    #833ab4 87%,
-    #5851db 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+.social-tiktok .tiktok-magenta {
+  fill: #fe2c55;
+}
+
+.social-instagram {
+  fill: url(#ig-gradient);
 }
 
 /* The four black brands would vanish against the dark sidebar. */
-.dark .social-icons .fa-x-twitter::before,
-.dark .social-icons .fa-github::before,
-.dark .social-icons .fa-medium-m::before,
-.dark .social-icons .fa-tiktok::before {
-  color: #fff;
+.dark .social-x,
+.dark .social-github,
+.dark .social-medium,
+.dark .social-tiktok {
+  fill: #fff;
 }
 
-/* Windows High Contrast renders transparent text as nothing at all. */
+/* Windows High Contrast: one system colour, no gradient or offset copies. */
 @media (forced-colors: active) {
-  .social-icons .icon.brands::before {
-    background-image: none;
-    color: currentColor;
-    -webkit-text-fill-color: currentColor;
-    text-shadow: none;
+  .social-svg,
+  .social-svg path {
+    fill: currentColor !important;
     filter: none;
     opacity: 1;
   }

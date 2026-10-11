@@ -32,8 +32,9 @@ export const CREDITS = [
         name: "Font Awesome Free",
         href: "https://fontawesome.com/license/free",
       },
+      { name: "Lucide", href: "https://lucide.dev/license" },
     ],
-    note: "Pictogrammen door Fonticons, Inc.",
+    note: "Social-pictogrammen door Fonticons, Inc.; overige pictogrammen door Lucide.",
   },
   {
     label: "Inspiratie",
@@ -83,7 +84,7 @@ export function Credits({ onOpenPrivacy }: { onOpenPrivacy: () => void }) {
         ))}
       </ul>
       <p className="mt-2.5 text-gray-600 dark:text-gray-300">
-        Thema wordt alleen lokaal opgeslagen.{" "}
+        Kaartstijl wordt alleen lokaal opgeslagen.{" "}
         <button type="button" onClick={onOpenPrivacy} className={creditLink}>
           Privacybeleid
         </button>

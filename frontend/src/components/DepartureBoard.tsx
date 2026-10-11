@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { fetchDepartures } from "../api";
+import { pollWhileVisible } from "../poll";
 import { nl } from "../i18n/nl";
 import { formatPlaceName } from "../format";
 import { Departure, Line, Station } from "../types";
@@ -24,19 +25,17 @@ export function DepartureBoard({ station, lines, onClose }: DepartureBoardProps)
   useEffect(() => {
     setDepartures(null);
     let stop = false;
-    const poll = async () => {
+    const cleanup = pollWhileVisible(async () => {
       try {
         const d = await fetchDepartures(station.name);
         if (!stop) setDepartures(d);
       } catch {
         /* transient */
       }
-    };
-    poll();
-    const id = setInterval(poll, 15000);
+    }, 15000);
     return () => {
       stop = true;
-      clearInterval(id);
+      cleanup();
     };
   }, [station.name]);
 

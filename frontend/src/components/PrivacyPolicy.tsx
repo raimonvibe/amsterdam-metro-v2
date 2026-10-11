@@ -87,9 +87,10 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             </h2>
             <ul className="list-disc space-y-2 pl-5">
               <li>
-                <strong>Themavoorkeur (localStorage):</strong> Als u wisselt tussen donker/licht
-                thema, wordt uw keuze alleen in de localStorage van uw browser opgeslagen. Wij
-                ontvangen deze gegevens niet op onze servers.
+                <strong>Kaartstijl (localStorage):</strong> De kaartstijl (bijvoorbeeld Liberty
+                of Donker) wordt in de localStorage van uw browser bewaard, zodat de app bij een
+                volgend bezoek in dezelfde stijl opent. Het is één instelling, geen identificatie;
+                wij ontvangen deze gegevens niet op onze servers.
               </li>
               <li>
                 <strong>Technische logs (hosting):</strong> Wanneer u de app laadt of onze API
@@ -123,9 +124,9 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
                 kortetermijnserverlogs om de dienst betrouwbaar en veilig te houden.
               </li>
               <li>
-                <strong>Themavoorkeur</strong> (art. 6 lid 1 onder a AVG — toestemming door
-                handelen): lokaal opgeslagen wanneer u een thema kiest; u kunt dit wissen in uw
-                browserinstellingen.
+                <strong>Kaartstijl onthouden</strong> (art. 6 lid 1 onder f AVG — gerechtvaardigd
+                belang): een functionele instelling die nodig is om de app in de door u gekozen
+                stijl te tonen; u kunt dit wissen in uw browserinstellingen.
               </li>
             </ul>
           </section>
@@ -173,8 +174,9 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             </h2>
             <p>
               Deze app plaatst <strong>geen</strong> tracking- of advertentiecookies. De enige
-              opslag aan clientzijde is <strong>localStorage</strong> voor uw themavoorkeur. U kunt
-              dit op elk moment verwijderen via uw browserinstellingen.
+              opslag aan clientzijde is <strong>localStorage</strong> voor de kaartstijl: een
+              functionele instelling, geen tracking. U kunt dit op elk moment verwijderen via uw
+              browserinstellingen.
             </p>
           </section>
 
@@ -182,8 +184,8 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">7. Bewaartermijnen</h2>
             <ul className="list-disc space-y-2 pl-5">
               <li>
-                <strong>localStorage (thema):</strong> totdat u sitegegevens wist of de waarde
-                wijzigt.
+                <strong>localStorage (kaartstijl):</strong> totdat u sitegegevens wist of een
+                andere stijl kiest.
               </li>
               <li>
                 <strong>Hostinglogs:</strong> bewaard door Render volgens uw hostingabonnement
@@ -197,9 +199,8 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             <p>
               Als u in de Europese Economische Ruimte of het Verenigd Koninkrijk bent, heeft u
               mogelijk het recht op inzage, rectificatie, wissing, beperking of bezwaar tegen
-              verwerking van uw persoonsgegevens, en op dataportabiliteit waar van toepassing. U
-              kunt toestemming te allen tijde intrekken (bijvoorbeeld door localStorage te
-              wissen).
+              verwerking van uw persoonsgegevens, en op dataportabiliteit waar van toepassing. De
+              opgeslagen kaartstijl kunt u op elk moment wissen via uw browserinstellingen.
             </p>
             <p className="mt-2">
               Neem contact met ons op via{" "}

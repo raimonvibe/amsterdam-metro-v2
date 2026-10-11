@@ -1,6 +1,7 @@
-import { Clock, Moon, PanelLeftClose, Sun, TrainFront } from "lucide-react";
+import { Clock, PanelLeftClose, TrainFront } from "lucide-react";
 import { AnimatedTrain, Line, Station, Status } from "../types";
-import { Theme } from "../theme";
+import { MapStyle } from "../theme";
+import { StyleSwitcher } from "./StyleSwitcher";
 import { nl } from "../i18n/nl";
 import { formatPlaceName } from "../format";
 import { SocialIcons } from "./SocialIcons";
@@ -15,8 +16,8 @@ interface SidebarProps {
   hoveredTrain: AnimatedTrain | null;
   hoveredStation: Station | null;
   lastUpdated: Date | null;
-  theme: Theme;
-  onToggleTheme: () => void;
+  mapStyle: MapStyle;
+  onMapStyleChange: (style: MapStyle) => void;
   onOpenPrivacy: () => void;
   onClose: () => void;
 }
@@ -47,8 +48,8 @@ export function Sidebar({
   hoveredTrain,
   hoveredStation,
   lastUpdated,
-  theme,
-  onToggleTheme,
+  mapStyle,
+  onMapStyleChange,
   onOpenPrivacy,
   onClose,
 }: SidebarProps) {
@@ -69,26 +70,13 @@ export function Sidebar({
           >
             <PanelLeftClose size={22} strokeWidth={2.35} />
           </button>
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            title={theme === "dark" ? nl.themeLight : nl.themeDark}
-            aria-label={theme === "dark" ? nl.themeLight : nl.themeDark}
-            className={`flex min-h-11 min-w-11 items-center justify-center rounded-xl border shadow-sm transition ${
-              theme === "dark"
-                ? "border-amber-400/55 bg-amber-400/20 text-amber-300 hover:border-amber-300/80 hover:bg-amber-400/35"
-                : "border-gray-300 bg-gray-800 text-white hover:bg-gray-900"
-            }`}
-          >
-            {theme === "dark" ? (
-              <Sun size={18} strokeWidth={2.25} />
-            ) : (
-              <Moon size={18} strokeWidth={2.25} />
-            )}
-          </button>
         </div>
       </div>
-      <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">{nl.tagline}</p>
+      <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">{nl.tagline}</p>
+
+      <div className="mb-4">
+        <StyleSwitcher value={mapStyle} onChange={onMapStyleChange} />
+      </div>
 
       <div className="mb-5 min-w-0 space-y-1.5">
         {lines.map((line) => {
