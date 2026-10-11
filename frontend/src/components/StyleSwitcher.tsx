@@ -2,12 +2,17 @@ import { Map as MapIcon, Moon, Mountain, Sparkles, Sun, type LucideIcon } from "
 import { MapStyle } from "../theme";
 import { nl } from "../i18n/nl";
 
-const OPTIONS: { id: MapStyle; label: string; Icon: LucideIcon }[] = [
-  { id: "liberty", label: "Liberty", Icon: MapIcon },
-  { id: "bright", label: "Bright", Icon: Sparkles },
-  { id: "light", label: nl.styleLight, Icon: Sun },
-  { id: "dark", label: nl.styleDark, Icon: Moon },
-  { id: "fiord", label: "Fiord", Icon: Mountain },
+/**
+ * Icon colour hints at each basemap (Liberty's parks, Fiord's blue-grey).
+ * Light-mode shades are the -600 end so the strokes keep >=3:1 against the
+ * gray-100 track; dark mode uses lighter shades for the same reason.
+ */
+const OPTIONS: { id: MapStyle; label: string; Icon: LucideIcon; color: string }[] = [
+  { id: "liberty", label: "Liberty", Icon: MapIcon, color: "text-emerald-600 dark:text-emerald-400" },
+  { id: "bright", label: "Bright", Icon: Sparkles, color: "text-pink-600 dark:text-pink-400" },
+  { id: "light", label: nl.styleLight, Icon: Sun, color: "text-amber-600 dark:text-amber-300" },
+  { id: "dark", label: nl.styleDark, Icon: Moon, color: "text-indigo-600 dark:text-indigo-300" },
+  { id: "fiord", label: "Fiord", Icon: Mountain, color: "text-[#45516e] dark:text-[#9fb0d0]" },
 ];
 
 interface StyleSwitcherProps {
@@ -38,7 +43,7 @@ export function StyleSwitcher({ value, onChange }: StyleSwitcherProps) {
       onKeyDown={onKeyDown}
       className="grid grid-cols-5 gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-900"
     >
-      {OPTIONS.map(({ id, label, Icon }) => {
+      {OPTIONS.map(({ id, label, Icon, color }) => {
         const on = id === value;
         return (
           <button
@@ -50,13 +55,22 @@ export function StyleSwitcher({ value, onChange }: StyleSwitcherProps) {
             tabIndex={on ? 0 : -1}
             title={label}
             onClick={() => onChange(id)}
+            // Selected = raised card with a blue ring rather than a solid blue
+            // fill, so the icon keeps its colour when chosen.
             className={`flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 transition ${
               on
-                ? "bg-[#4363D8] text-white shadow-sm"
+                ? "bg-white text-[#4363D8] shadow-sm ring-2 ring-[#4363D8] dark:bg-gray-800 dark:text-blue-200 dark:ring-[#6b8cff]"
                 : "text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800"
             }`}
           >
-            <Icon size={18} strokeWidth={2.25} aria-hidden />
+            <Icon
+              size={18}
+              strokeWidth={2.25}
+              fill="currentColor"
+              fillOpacity={0.22}
+              className={color}
+              aria-hidden
+            />
             <span className="max-w-full truncate text-[10px] font-semibold leading-tight">{label}</span>
           </button>
         );
