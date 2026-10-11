@@ -92,9 +92,17 @@ def _parse(feed_bytes: bytes, metro_trip_ids: set) -> Tuple[Dict[str, dict], Dic
 
 async def poll_forever(get_metro_trip_ids) -> None:
     conditional_headers: dict[str, str] = {}
+    # Trip ids the current state was filtered against. A 304 only means the
+    # *feed* is unchanged; if the static subset changed since the last parse
+    # (first load after boot, daily rebuild) the cached state was filtered
+    # against the wrong ids, so drop the validators and take a full copy.
+    parsed_for: set = set()
     async with httpx.AsyncClient(timeout=60, headers=HTTP_HEADERS) as client:
         while True:
             try:
+                trip_ids = get_metro_trip_ids()
+                if trip_ids != parsed_for:
+                    conditional_headers.clear()
                 resp = await client.get(TRIP_UPDATES_URL, headers=conditional_headers)
                 if resp.status_code == 304:
                     state.last_success_ts = int(time.time())
@@ -102,10 +110,10 @@ async def poll_forever(get_metro_trip_ids) -> None:
                     logger.debug("RT poll not modified (304)")
                 else:
                     resp.raise_for_status()
-                    trip_ids = get_metro_trip_ids()
                     updates, cancelled = await asyncio.to_thread(_parse, resp.content, trip_ids)
                     state.trip_updates = updates
                     state.cancelled = cancelled
+                    parsed_for = trip_ids
                     state.last_success_ts = int(time.time())
                     state.last_error = None
                     logger.info(

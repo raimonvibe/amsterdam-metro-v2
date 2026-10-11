@@ -88,15 +88,16 @@ Local dev: leave unset → allows all origins.
 
 | File | Purpose |
 |---|---|
-| `render.yaml` | Blueprint: both services in one click |
+| `render.yaml` | Blueprint describing both services (see note below) |
 | `backend/runtime.txt` | Python 3.12.8 |
-| `frontend/public/_redirects` | SPA routing on static host |
 
-Example `render.yaml` (already at repo root):
-
-```yaml
-# See render.yaml at repo root — deploy via Render Blueprint or copy settings manually.
-```
+> **`render.yaml` is not applied to the production services.** They were created by hand in the Render dashboard, not from a Blueprint, so Render never reads this file: start command, headers and rewrites in it have no effect. **The dashboard is the source of truth.** Keep `render.yaml` in sync as documentation (or link it as a Blueprint), and make real changes in the dashboard:
+>
+> | Service | Dashboard setting | Value |
+> |---|---|---|
+> | `amsterdam-metro-api` | Settings → Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT --no-access-log` |
+> | `amsterdam-metro` | Manage → Headers | `/assets/*` → `Cache-Control: public, max-age=31536000, immutable`; `/*` → `Referrer-Policy: strict-origin-when-cross-origin` |
+> | `amsterdam-metro` | Manage → Redirects/Rewrites | Source `/*` → Destination `/index.html`, action **Rewrite** |
 
 ---
 
@@ -115,7 +116,7 @@ Example `render.yaml` (already at repo root):
 | **Root directory** | `backend` |
 | **Runtime** | Python 3 |
 | **Build command** | `pip install -r requirements.txt` |
-| **Start command** | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| **Start command** | `uvicorn app.main:app --host 0.0.0.0 --port $PORT --no-access-log` |
 | **Health check path** | `/healthz` |
 
 ### Environment variables
@@ -170,13 +171,7 @@ curl https://api.amsterdammetro.nl/api/status
 
 ### SPA routing
 
-Add a `_redirects` file in `frontend/public/` (copied to `dist` on build):
-
-```
-/*    /index.html   200
-```
-
-Or use Render’s **Rewrite** rule: `/*` → `/index.html`.
+Render static sites do **not** read a `_redirects` file (that is a Netlify convention). Add the rule in the dashboard: **Manage → Redirects/Rewrites** → Source `/*`, Destination `/index.html`, action **Rewrite**. Without it, opening `/privacy` directly (shared link, refresh, search engines) returns 404. Real files (`/assets/…`, `/sitemap.xml`, `/robots.txt`) are still served as-is.
 
 ### Verify frontend
 
