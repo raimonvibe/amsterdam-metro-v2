@@ -1,3 +1,7 @@
+# NOTE: the production services were created in the Render dashboard, not
+# from this Blueprint, so Render does not read this file. It documents the
+# intended settings; apply changes in the dashboard (see
+# docs/render-deploy-plan.md, "Deploy files").
 services:
   - type: web
     name: amsterdam-metro-api
