@@ -32,6 +32,9 @@
   "overrides": {
     "fflate": "0.7.5",
     "source-map-js": "^1.2.2",
-    "image-size": "npm:image-size-next@2.1.1"
+    "image-size": "npm:image-size-next@2.1.1",
+    "texture-compressor": {
+      "argparse": "^2.0.1"
+    }
   }
 }
