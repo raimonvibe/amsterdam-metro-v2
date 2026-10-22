@@ -62,13 +62,18 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
             </span>{" "}
             · {placed.length} {placed.length === 1 ? "metro" : "metro's"} onderweg · ritduur ~{minutes[minutes.length - 1]} min
           </p>
-          <div className="mb-1 grid grid-cols-[1.25rem_minmax(0,1fr)_4.75rem_4.75rem] gap-x-1.5 text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
+          <div className="mb-1 grid grid-cols-[1.25rem_minmax(0,1fr)_2.5rem_2.5rem] sm:grid-cols-[1.25rem_minmax(0,1fr)_4.75rem_4.75rem] gap-x-1.5 text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
             <span />
             <span className="smallcaps">station · reistijd</span>
-            <span className="smallcaps truncate text-center">↓ {formatPlaceName(dirA.headsign)}</span>
-            <span className="smallcaps truncate text-center">↑ {dirB ? formatPlaceName(dirB.headsign) : ""}</span>
+            {/* Phones: just the arrows; the chips below carry the direction too. */}
+            <span className="smallcaps truncate text-center" title={formatPlaceName(dirA.headsign)}>
+              ↓<span className="sr-only sm:not-sr-only"> {formatPlaceName(dirA.headsign)}</span>
+            </span>
+            <span className="smallcaps truncate text-center" title={dirB ? formatPlaceName(dirB.headsign) : ""}>
+              ↑<span className="sr-only sm:not-sr-only"> {dirB ? formatPlaceName(dirB.headsign) : ""}</span>
+            </span>
           </div>
-          <div className="relative grid grid-cols-[1.25rem_minmax(0,1fr)_4.75rem_4.75rem] gap-x-1.5" style={{ height }}>
+          <div className="relative grid grid-cols-[1.25rem_minmax(0,1fr)_2.5rem_2.5rem] sm:grid-cols-[1.25rem_minmax(0,1fr)_4.75rem_4.75rem] gap-x-1.5" style={{ height }}>
             {/* the track */}
             <span
               className="absolute left-[calc(0.625rem-2px)] w-1 rounded"
@@ -109,13 +114,15 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
             {placed.map(({ train, pos, forward }) => (
               <span
                 key={train.id}
-                className={`absolute z-[2] flex h-4 w-[4.5rem] -translate-y-1/2 items-center justify-center gap-0.5 rounded-full text-[9px] font-bold text-gray-950 shadow-sm transition-[top] duration-1000 ease-linear ${
-                  forward ? "right-[calc(4.75rem+0.375rem+0.125rem)]" : "right-0.5"
+                // Phones: narrower chip columns, so station names keep their room.
+                className={`absolute z-[2] flex h-4 w-[2.25rem] -translate-y-1/2 items-center justify-center gap-0.5 rounded-full text-[9px] font-bold text-gray-950 shadow-sm transition-[top] duration-1000 ease-linear sm:w-[4.5rem] ${
+                  forward ? "right-[calc(2.5rem+0.375rem+0.125rem)] sm:right-[calc(4.75rem+0.375rem+0.125rem)]" : "right-0.5"
                 }`}
                 style={{ top: pos * ROW_H + ROW_H / 2, backgroundColor: line.color }}
                 title={`${train.status === "dwelling" ? "Staat op" : "Rijdt na"} ${formatPlaceName(train.prev_station ?? "")}`}
               >
-                {forward ? "↓" : "↑"} {train.delay_s >= 60 ? `+${Math.round(train.delay_s / 60)}′` : "op tijd"}
+                {forward ? "↓" : "↑"}{" "}
+                {train.delay_s >= 60 ? `+${Math.round(train.delay_s / 60)}′` : <span className="sr-only sm:not-sr-only">op tijd</span>}
               </span>
             ))}
           </div>
