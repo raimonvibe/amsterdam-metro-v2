@@ -95,7 +95,7 @@ Local dev: leave unset → allows all origins.
 >
 > | Service | Dashboard setting | Value |
 > |---|---|---|
-> | `amsterdam-metro-api` | Settings → Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT --no-access-log` |
+> | `amsterdam-metro-api` | Settings → Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT --no-access-log --timeout-graceful-shutdown 5` |
 > | `amsterdam-metro` | Manage → Headers | `/assets/*` → `Cache-Control: public, max-age=31536000, immutable`; `/*` → `Referrer-Policy: strict-origin-when-cross-origin` |
 > | `amsterdam-metro` | Manage → Redirects/Rewrites | Source `/*` → Destination `/index.html`, action **Rewrite** |
 
@@ -116,7 +116,7 @@ Local dev: leave unset → allows all origins.
 | **Root directory** | `backend` |
 | **Runtime** | Python 3 |
 | **Build command** | `pip install -r requirements.txt` |
-| **Start command** | `uvicorn app.main:app --host 0.0.0.0 --port $PORT --no-access-log` |
+| **Start command** | `uvicorn app.main:app --host 0.0.0.0 --port $PORT --no-access-log --timeout-graceful-shutdown 5` |
 | **Health check path** | `/healthz` |
 
 ### Environment variables

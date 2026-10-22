@@ -5,16 +5,10 @@ import { Sidebar } from "./components/Sidebar";
 import { LiveBadge } from "./components/LiveBadge";
 import { DepartureBoard } from "./components/DepartureBoard";
 import { FollowChip } from "./components/FollowChip";
-import {
-  fetchLines,
-  fetchShapes,
-  fetchStations,
-  fetchStatus,
-  fetchTrains,
-} from "./api";
+import { fetchLines, fetchShapes, fetchStations } from "./api";
 import { AnimatedTrain, Line, ShapeGeom, Station, Status } from "./types";
 import { MAP_STYLES, useMapStyle } from "./theme";
-import { pollWhileVisible } from "./poll";
+import { streamWhileVisible } from "./stream";
 import { usePrivacyRoute } from "./hooks/usePrivacyRoute";
 import { useSidebarOpen } from "./hooks/useSidebarOpen";
 import { nl } from "./i18n/nl";
@@ -24,13 +18,11 @@ const PrivacyPolicy = lazy(() =>
   import("./components/PrivacyPolicy").then((m) => ({ default: m.PrivacyPolicy })),
 );
 
-const TRAINS_POLL_MS = 5000;
-const STATUS_POLL_MS = 30000;
-// Require a few consecutive empty responses before actually clearing the
+// Require a few consecutive empty snapshots before actually clearing the
 // map: metro service does legitimately stop overnight, but a single empty
-// reply is more likely a transient backend hiccup (e.g. mid-refresh) than
+// one is more likely a transient backend hiccup (e.g. mid-refresh) than
 // every train vanishing at once.
-const EMPTY_POLLS_BEFORE_CLEAR = 3;
+const EMPTY_SNAPSHOTS_BEFORE_CLEAR = 3;
 const STATIC_RETRY_MIN_MS = 2000;
 const STATIC_RETRY_MAX_MS = 30000;
 
@@ -100,45 +92,21 @@ export default function App() {
     };
   }, []);
 
+  // Trains and status arrive together on one server-sent event stream
+  // (pushed every 5s). On a dropped connection the last state stays drawn.
   useEffect(() => {
-    let stop = false;
     let emptyStreak = 0;
-    const cleanup = pollWhileVisible(async () => {
-      try {
-        const { trains: t, asOf } = await fetchTrains();
-        if (stop) return;
-        if (t.length === 0) {
-          emptyStreak += 1;
-          if (emptyStreak >= EMPTY_POLLS_BEFORE_CLEAR) setTrains([]);
-        } else {
-          emptyStreak = 0;
-          setTrains(t.map((x) => ({ ...x, fetchedAt: asOf })));
-        }
-        setLastUpdated(new Date());
-      } catch {
-        /* transient; keep last state */
+    return streamWhileVisible(({ trains: t, status: s, asOf }) => {
+      if (t.length === 0) {
+        emptyStreak += 1;
+        if (emptyStreak >= EMPTY_SNAPSHOTS_BEFORE_CLEAR) setTrains([]);
+      } else {
+        emptyStreak = 0;
+        setTrains(t.map((x) => ({ ...x, fetchedAt: asOf })));
       }
-    }, TRAINS_POLL_MS);
-    return () => {
-      stop = true;
-      cleanup();
-    };
-  }, []);
-
-  useEffect(() => {
-    let stop = false;
-    const cleanup = pollWhileVisible(async () => {
-      try {
-        const s = await fetchStatus();
-        if (!stop) setStatus(s);
-      } catch {
-        /* transient */
-      }
-    }, STATUS_POLL_MS);
-    return () => {
-      stop = true;
-      cleanup();
-    };
+      setStatus(s);
+      setLastUpdated(new Date());
+    });
   }, []);
 
   useEffect(() => {

@@ -9,9 +9,12 @@ services:
     plan: starter
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    # No per-request access log: every viewer polls every few seconds, and on a
-    # 0.5-CPU instance formatting those lines is measurable overhead.
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --no-access-log
+    # No per-request access log: on a 0.5-CPU instance formatting those lines
+    # is measurable overhead. --timeout-graceful-shutdown: uvicorn otherwise
+    # waits on every open /api/trains/stream connection before exiting, so a
+    # deploy would hang until Render kills the old instance; after 5s the
+    # streams are cut and browsers reconnect to the new instance.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --no-access-log --timeout-graceful-shutdown 5
     healthCheckPath: /healthz
     envVars:
       - key: PYTHON_VERSION
