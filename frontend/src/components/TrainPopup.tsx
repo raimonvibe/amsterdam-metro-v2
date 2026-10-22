@@ -64,24 +64,20 @@ function ArrivalClock({ nowMs, arrivalMs, color }: { nowMs: number; arrivalMs: n
   const hourDeg = ((h % 12) + m / 60) * 30;
   // A full hour or more would close the circle; stop just short so it still reads as a wedge.
   const sweep = Math.min(Math.max(((arrivalMs - nowMs) / 3_600_000) * 360, 0), 359);
-  const R = 28;
+  // Out to the inner edge of the dial's border, so the slice meets the rim
+  // with no gap and needs no outline of its own.
+  const R = 29.25;
   const [ax, ay] = polar(R, minuteDeg);
   const [bx, by] = polar(R, minuteDeg + sweep);
-  const rim = `M ${ax} ${ay} A ${R} ${R} 0 ${sweep > 180 ? 1 : 0} 1 ${bx} ${by}`;
   // Pie slice from the hub: the whole time span is filled, not just traced on the rim.
-  const wedge = `M 32 32 L ${ax} ${ay} ${rim.slice(rim.indexOf("A"))} Z`;
+  const wedge = `M 32 32 L ${ax} ${ay} A ${R} ${R} 0 ${sweep > 180 ? 1 : 0} 1 ${bx} ${by} Z`;
   const [mx, my] = polar(21, minuteDeg);
   const [hx, hy] = polar(14, hourDeg);
 
   return (
     <svg viewBox="0 0 64 64" className="h-16 w-16 shrink-0" aria-hidden>
       <circle cx="32" cy="32" r="30" className="fill-white stroke-gray-300 dark:fill-gray-900 dark:stroke-gray-700" strokeWidth="1.5" />
-      {sweep > 0.5 && (
-        <>
-          <path d={wedge} fill={color} fillOpacity="0.35" stroke={color} strokeWidth="1" strokeLinejoin="round" />
-          <path d={rim} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
-        </>
-      )}
+      {sweep > 0.5 && <path d={wedge} fill={color} fillOpacity="0.45" />}
       {Array.from({ length: 12 }, (_, i) => {
         const [x0, y0] = polar(i % 3 === 0 ? 25 : 27, i * 30);
         const [x1, y1] = polar(29, i * 30);
