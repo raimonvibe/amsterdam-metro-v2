@@ -311,7 +311,9 @@ async def trains_stream(request: Request):
             yield _stream_event(item)
             sent = item.seq
 
-    return EventStream(events(), on_close=lambda: broadcaster.unsubscribe(queue))
+    # Same check as Payload.respond. EventSource requests always offer gzip.
+    gzip = "gzip" in request.headers.get("accept-encoding", "")
+    return EventStream(events(), on_close=lambda: broadcaster.unsubscribe(queue), gzip=gzip)
 
 
 @app.get("/api/status")
