@@ -47,10 +47,9 @@ Rough **inbound** from OVapi (your server downloads):
 
 Rough **outbound** from your API (depends on traffic):
 
-| Endpoint | Client poll | Size (order of) |
+| Endpoint | Client traffic | Size (order of) |
 |---|---|---|
-| `/api/trains` | Every 5 s / user | ~2–20 KB |
-| `/api/status` | Every 30 s / user | ~200 B |
+| `/api/trains/stream` | One SSE connection / visible tab, trains + status pushed every 5 s (not gzipped) | ~2–20 KB per push |
 | `/api/shapes`, `/api/lines`, `/api/stations` | Once on load | ~100–500 KB total |
 
 **Example:** 10 concurrent users ≈ **~1–3 GB/month** API egress (very rough).

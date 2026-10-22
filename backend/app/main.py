@@ -10,13 +10,17 @@ from typing import Dict, Optional, Tuple
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
+from fastapi.sse import format_sse_event
 
 from . import gtfs_static, realtime
+from .broadcast import DROPPED, Broadcaster
 from .config import CORS_ORIGINS, GTFS_REFRESH_SECONDS
 from .gtfs_static import TZ
 from .models import StatusOut
 from .payload import Payload
 from .positions import MetroData
+from .sse import HEARTBEAT, EventStream
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,6 +38,22 @@ DEPARTURES_TTL_SECONDS = 10
 # Static data changes at most once per GTFS refresh; ETags make repeats cheap.
 STATIC_CACHE_CONTROL = "public, max-age=300"
 SNAPSHOT_AGE_HEADER = "X-Snapshot-Age-Ms"
+# /api/trains/stream pushes every Nth snapshot, not all of them: clients
+# dead-reckon between updates, so the old 5s poll cadence is still plenty.
+STREAM_PUSH_SECONDS = 5.0
+# Comment line sent when nothing else went out for this long, so idle-timeout
+# layers (Render's proxy, CDNs, corporate firewalls) keep the connection open.
+# Only fires while no snapshots are pushed, e.g. while static data loads.
+STREAM_HEARTBEAT_SECONDS = 20.0
+# A client this many pushes behind (30s) is not reading; drop it rather than
+# buffer for it. Its browser reconnects and resumes from the newest snapshot.
+STREAM_MAX_QUEUED = 6
+# Browser reconnect delay after a dropped connection (EventSource `retry:`).
+STREAM_RETRY_MS = 3000
+# Open streams allowed at once. Each holds a socket and a queue; without a cap
+# anyone could open connections until the instance runs out of memory or file
+# descriptors. Far above real traffic for this app.
+STREAM_MAX_CLIENTS = 500
 
 
 @dataclass(frozen=True)
@@ -47,6 +67,9 @@ class StaticData:
 
 @dataclass(frozen=True)
 class Snapshot:
+    # SSE event id. Seeded from the clock at boot and +1 per snapshot (at most
+    # one per second), so ids keep rising across restarts too.
+    seq: int
     computed_at: float
     trains: Payload
     status: Payload
@@ -55,6 +78,7 @@ class Snapshot:
 static: Optional[StaticData] = None
 snapshot: Optional[Snapshot] = None
 _departures_cache: Dict[Tuple[str, int], Tuple[float, Payload]] = {}
+broadcaster = Broadcaster(STREAM_MAX_QUEUED)
 
 
 def _prepare(subset: dict) -> StaticData:
@@ -106,7 +130,7 @@ async def keep_static_fresh() -> None:
         await asyncio.sleep(GTFS_REFRESH_SECONDS if static else STATIC_RETRY_SECONDS)
 
 
-def _solve_snapshot(data: StaticData) -> Snapshot:
+def _solve_snapshot(data: StaticData, seq: int) -> Snapshot:
     now = time.time()
     trains = data.metro.trains(realtime.state, now)
     rt = realtime.state
@@ -119,6 +143,7 @@ def _solve_snapshot(data: StaticData) -> Snapshot:
         is_live=rt.is_live,
     )
     return Snapshot(
+        seq=seq,
         computed_at=now,
         trains=Payload.of([t.model_dump() for t in trains]),
         status=Payload.of(status.model_dump()),
@@ -127,13 +152,21 @@ def _solve_snapshot(data: StaticData) -> Snapshot:
 
 async def keep_snapshot_fresh() -> None:
     global snapshot
+    last_push = 0.0
+    seq = int(time.time())
     while True:
         started = time.monotonic()
         if static:
             try:
-                snapshot = await asyncio.to_thread(_solve_snapshot, static)
+                seq += 1
+                snapshot = await asyncio.to_thread(_solve_snapshot, static, seq)
             except Exception:
                 logger.exception("Train snapshot failed; keeping the previous one")
+            else:
+                # Half a tick of slack: loop jitter must not skip a push.
+                if snapshot.computed_at - last_push >= STREAM_PUSH_SECONDS - SNAPSHOT_SECONDS / 2:
+                    broadcaster.publish(snapshot)
+                    last_push = snapshot.computed_at
         await asyncio.sleep(max(0.1, SNAPSHOT_SECONDS - (time.monotonic() - started)))
 
 
@@ -222,6 +255,65 @@ async def trains(request: Request):
     return snap.trains.respond(request, "no-store", {SNAPSHOT_AGE_HEADER: age_ms})
 
 
+def _stream_event(snap: Snapshot) -> bytes:
+    # Built per client at send time so ageMs covers any time spent queued.
+    # Splices the pre-serialised bodies instead of re-encoding the trains.
+    age_ms = max(0, int((time.time() - snap.computed_at) * 1000))
+    return format_sse_event(
+        event="snapshot",  # never "error": that name is EventSource's own
+        id=str(snap.seq),
+        data_str='{"ageMs":%d,"trains":%s,"status":%s}'
+        % (age_ms, snap.trains.body.decode(), snap.status.body.decode()),
+    )
+
+
+@app.get("/api/trains/stream")
+async def trains_stream(request: Request):
+    """Train positions and status as Server-Sent Events: one `snapshot` event
+    per push, with the snapshot's sequence number as its id.
+
+    Every event is a full snapshot, so a reconnect has nothing to replay: a
+    resuming client (Last-Event-ID header from the browser's own reconnect,
+    or ?lastEventId= from the app's) gets the current snapshot at once, like
+    a new one, and never keeps showing positions from before the gap.
+
+    The only error status is 503 at STREAM_MAX_CLIENTS, which the client
+    retries with backoff (EventSource itself gives up for good on any non-200
+    reply). While data is still loading the stream just stays open (with
+    heartbeats) until the first snapshot arrives. The resume id is never
+    validated into an error either: a 422 would make the client retry with
+    the same id forever."""
+    if len(broadcaster) >= STREAM_MAX_CLIENTS:
+        logger.warning("SSE at capacity (%d streams); refusing a client", STREAM_MAX_CLIENTS)
+        return Response(status_code=503, headers={"Retry-After": "30", "Cache-Control": "no-store"})
+    resumed_from = request.headers.get("last-event-id") or request.query_params.get("lastEventId")
+    if resumed_from:
+        # %r and a length cap: the value is client-supplied, keep it inert in logs.
+        logger.debug("SSE client resuming after event %r", resumed_from[:32])
+    queue = broadcaster.subscribe()
+
+    async def events():
+        yield format_sse_event(retry=STREAM_RETRY_MS)
+        sent = -1
+        if (snap := snapshot) is not None:
+            yield _stream_event(snap)
+            sent = snap.seq
+        while True:
+            try:
+                item = await asyncio.wait_for(queue.get(), STREAM_HEARTBEAT_SECONDS)
+            except TimeoutError:
+                yield HEARTBEAT
+                continue
+            if item is DROPPED:
+                return  # too slow: end the stream, the browser reconnects
+            if item.seq <= sent:
+                continue  # already sent as the current snapshot on connect
+            yield _stream_event(item)
+            sent = item.seq
+
+    return EventStream(events(), on_close=lambda: broadcaster.unsubscribe(queue))
+
+
 @app.get("/api/status")
 async def status(request: Request):
     return _snapshot().status.respond(request, "no-store")
@@ -243,7 +335,11 @@ async def departures(
     if hit is None or hit[0] < now:
         # Keyed only by real station names x bounded limits, so the cache is
         # bounded too (~40 stations x 20) however the endpoint is called.
-        payload = Payload.of(data.metro.departures(station, realtime.state, now=now, limit=limit))
+        # Off the event loop: a miss costs tens of ms of CPU, and inline that
+        # would stall every open /api/trains/stream connection meanwhile.
+        payload = await asyncio.to_thread(
+            lambda: Payload.of(data.metro.departures(station, realtime.state, now=now, limit=limit))
+        )
         hit = (now + DEPARTURES_TTL_SECONDS, payload)
         _departures_cache[key] = hit
     return hit[1].respond(request, "no-store")

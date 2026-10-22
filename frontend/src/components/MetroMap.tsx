@@ -129,7 +129,7 @@ const TRAIL_MIN_STEP_M = 25;
 /**
  * A trail joins its samples with straight segments, so it is only honest while
  * consecutive samples are close along the track. A background tab stops the
- * animation clock and the poll; on return the trains jump to where they are
+ * animation clock and the train stream; on return the trains jump to where they are
  * now and the next sample would be a straight chord kilometres long, cutting
  * across the city. Past either limit the trail starts over instead.
  */
@@ -401,7 +401,7 @@ export function MetroMap({
   const trailsRef = useRef<Record<string, Trail>>({});
   const lastSampleRef = useRef(0);
   const [mapReady, setMapReady] = useState(false);
-  // Held by id, not object: every 5s poll replaces the train objects, and the
+  // Held by id, not object: every 5s snapshot replaces the train objects, and the
   // popup has to keep tracking the live one under the pointer. `source` says
   // which layer set it, so a leave event from one layer cannot clear a hover
   // another layer just set; x/y is the pointer, for the leave check.
