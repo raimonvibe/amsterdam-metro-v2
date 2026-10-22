@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 /** Shared building blocks of the travel-info page. */
 
@@ -133,4 +133,19 @@ export function SkeletonRows({ rows = 4 }: { rows?: number }) {
       ))}
     </div>
   );
+}
+
+/** Below Tailwind's sm breakpoint (40rem); follows rotation and resizing. */
+export function useNarrowScreen(): boolean {
+  const query = "(max-width: 39.99rem)";
+  const supported = typeof window !== "undefined" && typeof window.matchMedia === "function";
+  const [narrow, setNarrow] = useState(() => supported && window.matchMedia(query).matches);
+  useEffect(() => {
+    if (!supported) return;
+    const mq = window.matchMedia(query);
+    const update = () => setNarrow(mq.matches);
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [supported]);
+  return narrow;
 }
