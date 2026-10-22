@@ -51,6 +51,10 @@ export default function App() {
   // Bumped to ask the map to fly to a station (from "Op kaart").
   const [focusStation, setFocusStation] = useState<{ station: Station; nonce: number } | null>(null);
   const [sidebarOpen, openSidebar, closeSidebar] = useSidebarOpen();
+  // Open /reisinfo on the station selected on the map, if any; otherwise the
+  // page falls back to a favourite, a recent station or CS.
+  const openTravelForSelection = () =>
+    openTravel(selectedStation ? `?station=${encodeURIComponent(formatPlaceName(selectedStation.name))}` : "");
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -166,7 +170,7 @@ export default function App() {
           mapStyle={mapStyle}
           onMapStyleChange={setMapStyle}
           onOpenPrivacy={openPrivacy}
-          onOpenTravel={() => openTravel()}
+          onOpenTravel={openTravelForSelection}
           onClose={closeSidebar}
         />
       </div>
@@ -218,9 +222,7 @@ export default function App() {
             station={selectedStation}
             lines={lines}
             onClose={() => setSelectedStation(null)}
-            onMore={() =>
-              openTravel(`?station=${encodeURIComponent(formatPlaceName(selectedStation.name))}`)
-            }
+            onMore={openTravelForSelection}
           />
         )}
         {followedTrainId &&

@@ -82,7 +82,8 @@ export function Sidebar({
         <Landmark size={18} className="shrink-0 text-[#e2c977]" aria-hidden />
         <span className="min-w-0 flex-1 leading-tight">
           <span className="font-academic block text-sm font-semibold">{nl.travelInfo}</span>
-          <span className="block truncate text-[11px] text-blue-100/90">{nl.travelInfoHint}</span>
+          {/* Wraps rather than truncates: the sidebar is only 18rem wide. */}
+          <span className="mt-0.5 block text-[11px] leading-snug text-blue-100/90">{nl.travelInfoHint}</span>
         </span>
         <ChevronRight size={16} className="shrink-0 opacity-80" aria-hidden />
       </a>
