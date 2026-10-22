@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { X } from "lucide-react";
 import { delayLabel, formatPlaceName } from "../format";
 import { nl } from "../i18n/nl";
 import { AnimatedTrain } from "../types";
@@ -12,6 +13,9 @@ interface TrainPopupProps {
   y: number;
   containerWidth: number;
   nowMs: number;
+  /** Touch screens: the popup belongs to a followed train and gets a close
+   *  button, since there is no hover to end it. */
+  onClose?: () => void;
 }
 
 const CARD_W = 264;
@@ -101,7 +105,7 @@ function segmentProgress(train: AnimatedTrain, nowMs: number): number {
   return Math.min(Math.max((nowMs / 1000 - start) / (end - start), 0), 1);
 }
 
-export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs }: TrainPopupProps) {
+export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs, onClose }: TrainPopupProps) {
   const pct = Math.round(segmentProgress(train, nowMs) * 100);
   const nextMs = train.next_arrival_ts ? train.next_arrival_ts * 1000 : null;
   // An older backend sends no terminus time; the next stop is the best it has.
@@ -135,7 +139,18 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
         transform: below ? undefined : "translateY(-100%)",
       }}
     >
-      <div className="mb-2 flex items-center gap-2">
+      {onClose && (
+        // The card itself lets taps through to the map; only this button takes them.
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={nl.stopFollow}
+          className="pointer-events-auto absolute -right-1 -top-1 flex h-11 w-11 items-center justify-center rounded-full text-gray-500 active:bg-gray-200 dark:text-gray-400 dark:active:bg-gray-800"
+        >
+          <X size={18} />
+        </button>
+      )}
+      <div className={`mb-2 flex items-center gap-2 ${onClose ? "pr-8" : ""}`}>
         <span
           className="flex h-5 w-7 shrink-0 items-center justify-center rounded text-[11px] font-bold text-gray-950"
           style={{ backgroundColor: color }}

@@ -27,9 +27,9 @@ export function FollowChip({ train, lines, onStop }: FollowChipProps) {
         onClick={onStop}
         title={nl.stopFollowTitle}
         aria-label={nl.stopFollow}
-        className="flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+        className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
       >
-        <X size={13} />
+        <X size={16} />
       </button>
     </div>
   );

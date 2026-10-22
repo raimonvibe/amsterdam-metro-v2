@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { PanelLeftOpen } from "lucide-react";
 import { MetroMap } from "./components/MetroMap";
 import { Sidebar } from "./components/Sidebar";
@@ -51,6 +51,14 @@ export default function App() {
   // Bumped to ask the map to fly to a station (from "Op kaart").
   const [focusStation, setFocusStation] = useState<{ station: Station; nonce: number } | null>(null);
   const [sidebarOpen, openSidebar, closeSidebar] = useSidebarOpen();
+  // Phones: the sidebar is a drawer over the map. Left open from before the
+  // travel page, it would be all one sees on the way back, so close it on
+  // every return (page buttons and the browser's back button alike).
+  const wasTravel = useRef(showTravel);
+  useEffect(() => {
+    if (wasTravel.current && !showTravel && window.matchMedia("(max-width: 47.99rem)").matches) closeSidebar();
+    wasTravel.current = showTravel;
+  }, [showTravel, closeSidebar]);
   // Open /reisinfo on the station selected on the map, if any; otherwise the
   // page falls back to a favourite, a recent station or CS.
   const openTravelForSelection = () =>
@@ -213,7 +221,9 @@ export default function App() {
           }
           onStopFollow={() => setFollowedTrainId(null)}
           focusStation={focusStation}
-          onMapBackgroundClick={sidebarOpen ? closeSidebar : undefined}
+          // A tap on empty map closes the drawer first, else stops following a
+          // train: on a phone there is no hover to end its popup.
+          onMapBackgroundClick={sidebarOpen ? closeSidebar : followedTrainId ? () => setFollowedTrainId(null) : undefined}
           paused={showTravel}
         />
         <LiveBadge status={status} />
@@ -255,7 +265,12 @@ export default function App() {
               status={status}
               theme={palette}
               onToggleTheme={toggleTheme}
-              onClose={closeTravel}
+              onClose={(station) => {
+                closeTravel();
+                // Land on the station the visitor was looking at, without
+                // opening its departures card ("Op kaart" does that).
+                if (station) setFocusStation({ station, nonce: Date.now() });
+              }}
               onShowOnMap={(station) => {
                 closeTravel();
                 setSelectedStation(station);
