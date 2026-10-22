@@ -25,7 +25,9 @@ export interface TravelInfoPageProps {
   status: Status | null;
   theme: Theme;
   onToggleTheme: () => void;
-  onClose: () => void;
+  /** Back to the map, handing over the station being viewed (if any) so the
+   *  map can show it. */
+  onClose: (station: Station | null) => void;
   onShowOnMap: (station: Station) => void;
 }
 
@@ -223,7 +225,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
       const typing = el && (el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "TEXTAREA");
       if (e.key === "Escape" && !typing) {
         if (help) setHelp(false);
-        else onClose();
+        else onClose(station);
         return;
       }
       if (typing || e.metaKey || e.ctrlKey || e.altKey || e.repeat || !prefs.shortcuts) return;
@@ -312,7 +314,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
             </button>
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => onClose(station)}
               className="flex h-9 items-center gap-1.5 rounded-md bg-[#4363D8] px-3 text-sm font-semibold text-white shadow-sm hover:bg-[#3651b8]"
             >
               <ArrowLeft size={16} aria-hidden /> Kaart

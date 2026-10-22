@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { AnimatedTrain } from "../types";
 import { TrainPopup } from "./TrainPopup";
 
@@ -49,5 +50,16 @@ describe("TrainPopup platform", () => {
   it("says nothing where the timetable has no platform", () => {
     show(train({ next_station: "Amsterdam, Centraal Station", platform: null }));
     expect(screen.queryByText(/perron/)).toBeNull();
+  });
+});
+
+describe("TrainPopup close button", () => {
+  it("is only there for a followed train on touch screens, and stops following", async () => {
+    const onClose = vi.fn();
+    const { rerender } = render(<TrainPopup train={train({})} color="#E6194B" x={300} y={300} containerWidth={800} nowMs={NOW} />);
+    expect(screen.queryByRole("button", { name: "Stop met volgen" })).toBeNull();
+    rerender(<TrainPopup train={train({})} color="#E6194B" x={300} y={300} containerWidth={800} nowMs={NOW} onClose={onClose} />);
+    await userEvent.click(screen.getByRole("button", { name: "Stop met volgen" }));
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

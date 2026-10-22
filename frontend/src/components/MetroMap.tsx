@@ -1113,6 +1113,7 @@ export function MetroMap({
           y={popupScreen.y}
           containerWidth={map?.getContainer().clientWidth ?? 0}
           nowMs={nowMs}
+          onClose={NO_HOVER && popupTrain.id === followedTrainId ? onStopFollow : undefined}
         />
       )}
       <div
