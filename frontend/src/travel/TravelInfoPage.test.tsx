@@ -53,6 +53,16 @@ describe("TravelInfoPage", () => {
     expect(window.location.search).toContain("station=Rokin");
   });
 
+  it("puts the planner's departure station on the board too", async () => {
+    renderPage();
+    await waitFor(() => expect(boardHeading()).toHaveTextContent("Centraal Station"));
+    await userEvent.type(screen.getByRole("combobox", { name: "Van station" }), "gein");
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(boardHeading()).toHaveTextContent("Gein"));
+    expect(window.location.search).toContain("van=Gein");
+    expect(window.location.search).toContain("station=Gein");
+  });
+
   it("toggles a favourite with the button and with F", async () => {
     renderPage("/reisinfo?station=Noord");
     await waitFor(() => expect(boardHeading()).toHaveTextContent("Noord"));

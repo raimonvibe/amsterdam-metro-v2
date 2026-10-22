@@ -151,17 +151,33 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
     return () => window.clearTimeout(id);
   }, [toast]);
 
-  const selectStation = useCallback(
+  // Puts a station on the departure board without leaving the current tab.
+  const showStation = useCallback(
     (name: string) => {
       const s = byName.get(name);
-      if (!s) return;
+      if (!s) return false;
       setStationName(name);
       setRecent(pushRecent(name));
-      setTab("vertrekken");
       if (!s.lines.includes(lineId)) setLineId(s.lines[0]);
+      return true;
     },
     [byName, lineId],
   );
+
+  const selectStation = useCallback(
+    (name: string) => {
+      if (showStation(name)) setTab("vertrekken");
+    },
+    [showStation],
+  );
+
+  // The planner's "Van" station also goes on the board, as a pick from the
+  // search box does, so its departures show next to the journeys. Without
+  // switching tabs: on a phone that would take the visitor out of the planner.
+  const setFrom = (s: Station | null) => {
+    setFromName(s?.name ?? null);
+    if (s) showStation(s.name);
+  };
 
   const setPrefs = (p: TravelPrefs) => {
     setPrefsState(p);
@@ -274,7 +290,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
                 document.getElementById("lijnoverzicht")?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
               onRoute={(f, t) => {
-                setFromName(f.name);
+                setFrom(f);
                 setToName(t.name);
                 setTab("plannen");
                 document.getElementById("reisplanner")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -414,10 +430,10 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
               from={from}
               to={to}
               current={station}
-              onFrom={(s) => setFromName(s?.name ?? null)}
+              onFrom={setFrom}
               onTo={(s) => setToName(s?.name ?? null)}
               onStation={selectStation}
-              onNearby={() => locate((s) => setFromName(s.name))}
+              onNearby={() => locate(setFrom)}
               nowMs={nowMs}
             />
           </div>
