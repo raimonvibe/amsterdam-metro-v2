@@ -44,7 +44,6 @@ export default function App() {
   const [status, setStatus] = useState<Status | null>(null);
   const [visibleLines, setVisibleLines] = useState<string[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [hoveredTrain, setHoveredTrain] = useState<AnimatedTrain | null>(null);
   const [hoveredStation, setHoveredStation] = useState<Station | null>(null);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [followedTrainId, setFollowedTrainId] = useState<string | null>(null);
@@ -182,7 +181,6 @@ export default function App() {
           onToggleLine={toggleLine}
           trains={trains}
           status={status}
-          hoveredTrain={hoveredTrain}
           hoveredStation={hoveredStation}
           lastUpdated={lastUpdated}
           mapStyle={mapStyle}
@@ -223,7 +221,6 @@ export default function App() {
           styleUrl={styleUrl}
           backdropColor={swatch[0]}
           followedTrainId={followedTrainId}
-          onTrainHover={setHoveredTrain}
           onStationHover={setHoveredStation}
           onTrainClick={(t) => setFollowedTrainId(t.id)}
           onStationClick={(s) =>
