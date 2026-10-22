@@ -160,6 +160,17 @@ export function Sidebar({
         </div>
       )}
 
+      <section
+        aria-labelledby="about-title"
+        className="mt-4 space-y-2 border-t border-gray-200 pt-4 dark:border-gray-800"
+      >
+        <h2 id="about-title" className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+          {nl.aboutTitle}
+        </h2>
+        <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300">{nl.aboutIntro}</p>
+        <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300">{nl.aboutData}</p>
+      </section>
+
       <div className="mt-4 space-y-4 border-t border-gray-200 pt-4 dark:border-gray-800">
         <p className="text-xs font-medium text-gray-600 dark:text-gray-300">{nl.infoToggle}</p>
         <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:hidden">

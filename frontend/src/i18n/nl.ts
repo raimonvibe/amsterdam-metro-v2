@@ -17,6 +17,11 @@ export const nl = {
   helpMobile: "Knijp & sleep om te verkennen · tik stations voor vertrekken.",
   helpDesktop: "Rechts slepen om te draaien · klik een station voor vertrekken · zoom in voor gebouwen.",
   infoToggle: "Info & bronvermelding",
+  aboutTitle: "Live metrokaart van Amsterdam",
+  aboutIntro:
+    "Check live waar elke metro in Amsterdam nu rijdt. Deze live metro map toont alle GVB-metrolijnen — M50, M51, M52, M53 en M54 — op hun echte sporen, met vertragingen en vertrektijden per station.",
+  aboutData:
+    "De posities komen uit de officiële live ritupdates van het openbaar vervoer (GTFS-realtime) en worden elke paar seconden ververst. Tik of klik op een station voor de eerstvolgende vertrekken.",
   live: "LIVE",
   schedule: "REGEL",
   loadingDepartures: "Vertrektijden laden…",

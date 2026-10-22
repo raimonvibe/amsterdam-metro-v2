@@ -1,9 +1,9 @@
 /** Gedeelde SEO-teksten voor paginatitels en meta-updates. */
 export const SEO = {
   siteName: "Metro Amsterdam Live",
-  homeTitle: "Metro Amsterdam Live — Live GVB-metrokaart Amsterdam",
+  homeTitle: "Metro Amsterdam Live — Live metrokaart & metro map | GVB M50–M54",
   homeDescription:
-    "Volg live alle GVB-metrolijnen (M50, M51, M52, M53, M54) op een interactieve 3D-kaart van Amsterdam. Echte sporen, live ritupdates en vertrektijden per station.",
+    "Check live waar elke metro in Amsterdam nu rijdt. Live metrokaart van GVB-lijnen M50, M51, M52, M53 en M54 met vertragingen en vertrektijden per station.",
   privacyTitle: "Privacybeleid — Metro Amsterdam Live",
   privacyDescription:
     "Privacybeleid van Metro Amsterdam Live: welke gegevens worden verwerkt, cookies, externe diensten en uw rechten.",
