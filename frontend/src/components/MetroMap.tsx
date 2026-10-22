@@ -127,6 +127,15 @@ const TRAIL_SAMPLE_MS = 200;
  */
 const TRAIL_MIN_STEP_M = 25;
 /**
+ * A trail joins its samples with straight segments, so it is only honest while
+ * consecutive samples are close along the track. A background tab stops the
+ * animation clock and the poll; on return the trains jump to where they are
+ * now and the next sample would be a straight chord kilometres long, cutting
+ * across the city. Past either limit the trail starts over instead.
+ */
+const TRAIL_MAX_STEP_M = 400;
+const TRAIL_MAX_GAP_MS = 2000;
+/**
  * Trail times are seconds since page load, never Unix epoch seconds.
  *
  * TripsLayer uploads timestamps as float32, which holds integers exactly only
@@ -307,6 +316,7 @@ interface Track {
 
 interface Trail {
   line: string;
+  shapeId: string;
   path: [number, number][];
   timestamps: number[];
   /** Distance along the shape at the last recorded sample. */
@@ -586,17 +596,29 @@ export function MetroMap({
   // TRAIL_MIN_STEP_M of track it covers (see the constant for why not by clock)
   const trailNow = (nowMs - TRAIL_EPOCH_MS) / 1000;
   if (nowMs - lastSampleRef.current > TRAIL_SAMPLE_MS) {
+    // Frames stopped (background tab): every trail's last sample is stale.
+    if (lastSampleRef.current && nowMs - lastSampleRef.current > TRAIL_MAX_GAP_MS) {
+      trailsRef.current = {};
+    }
     lastSampleRef.current = nowMs;
     const nowS = trailNow;
     const alive = new Set<string>();
     for (const tr of positioned) {
       alive.add(tr.id);
-      const trail = (trailsRef.current[tr.id] ??= {
-        line: tr.line,
-        path: [],
-        timestamps: [],
-        lastDist: -Infinity,
-      });
+      let trail = trailsRef.current[tr.id];
+      const jumped =
+        trail &&
+        trail.path.length > 0 &&
+        Math.abs(tr.head - trail.lastDist) > TRAIL_MAX_STEP_M;
+      if (!trail || trail.shapeId !== tr.shape_id || jumped) {
+        trail = trailsRef.current[tr.id] = {
+          line: tr.line,
+          shapeId: tr.shape_id,
+          path: [],
+          timestamps: [],
+          lastDist: -Infinity,
+        };
+      }
       if (tr.head - trail.lastDist >= TRAIL_MIN_STEP_M) {
         trail.lastDist = tr.head;
         trail.path.push(tr.path[tr.path.length - 1]);
