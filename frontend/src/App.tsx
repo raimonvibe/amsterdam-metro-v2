@@ -50,6 +50,13 @@ export default function App() {
   const { showTravel, openTravel, closeTravel } = useTravelRoute();
   // Bumped to ask the map to fly to a station (from "Op kaart").
   const [focusStation, setFocusStation] = useState<{ station: Station; nonce: number } | null>(null);
+  // The camera follows the visitor's latest explicit choice: following a train
+  // and flying to a station are exclusive, or the follow-cam (which re-centres
+  // on its train every 0.7 s) pulls the map straight back from the station.
+  const flyToStation = (station: Station) => {
+    setFollowedTrainId(null);
+    setFocusStation({ station, nonce: Date.now() });
+  };
   const [sidebarOpen, openSidebar, closeSidebar] = useSidebarOpen();
   // Phones: the sidebar is a drawer over the map. Left open from before the
   // travel page, it would be all one sees on the way back, so close it on
@@ -66,6 +73,9 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // The travel page handles its own Escape (help panel, back to the map);
+      // it must not also drop the map's selection and followed train.
+      if (showTravel) return;
       if (e.key === "Escape") {
         if (showPrivacy) {
           closePrivacy();
@@ -77,7 +87,7 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [showPrivacy, closePrivacy]);
+  }, [showPrivacy, closePrivacy, showTravel]);
 
   // Tracks, stations and shapes: everything else is drawn on top of them, so
   // keep retrying (backoff) until they arrive — the backend may still be
@@ -216,9 +226,12 @@ export default function App() {
           followedTrainId={followedTrainId}
           onStationHover={setHoveredStation}
           onTrainClick={(t) => setFollowedTrainId(t.id)}
-          onStationClick={(s) =>
-            setSelectedStation((cur) => (cur?.name === s.name ? null : s))
-          }
+          onStationClick={(s) => {
+            // Picking a station is a new choice: stop following, or the
+            // follow-cam carries the map away from the station just opened.
+            if (selectedStation?.name !== s.name) setFollowedTrainId(null);
+            setSelectedStation((cur) => (cur?.name === s.name ? null : s));
+          }}
           onStopFollow={() => setFollowedTrainId(null)}
           focusStation={focusStation}
           // A tap on empty map closes the drawer first, else stops following a
@@ -271,14 +284,15 @@ export default function App() {
               onToggleTheme={toggleTheme}
               onClose={(station) => {
                 closeTravel();
-                // Land on the station the visitor was looking at, without
-                // opening its departures card ("Op kaart" does that).
-                if (station) setFocusStation({ station, nonce: Date.now() });
+                // Land on the station the visitor chose on the page, without
+                // opening its departures card ("Op kaart" does that). No
+                // station chosen: the map stays as it was, following included.
+                if (station) flyToStation(station);
               }}
               onShowOnMap={(station) => {
                 closeTravel();
                 setSelectedStation(station);
-                setFocusStation({ station, nonce: Date.now() });
+                flyToStation(station);
               }}
             />
           </Suspense>

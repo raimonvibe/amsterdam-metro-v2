@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NETWORK, STATIONS } from "../test/fixtures";
@@ -97,7 +97,22 @@ describe("TravelInfoPage", () => {
     await userEvent.keyboard("{Escape}"); // closes the (empty) search first
     (document.activeElement as HTMLElement).blur();
     await userEvent.keyboard("{Escape}");
-    expect(onClose).toHaveBeenCalledWith(expect.objectContaining({ name: "Amsterdam, Centraal Station" }));
+    // Only looked around (CS was the fallback): the map should stay as it was.
+    expect(onClose).toHaveBeenCalledWith(null);
+  });
+
+  it("hands the map the station the visitor chose, or arrived with", async () => {
+    const first = renderPage();
+    const index = await screen.findByRole("list", { name: "Alle stations" });
+    await userEvent.click(within(index).getByRole("button", { name: /Rokin/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Kaart/ }));
+    expect(first.onClose).toHaveBeenCalledWith(expect.objectContaining({ name: "Amsterdam, Rokin" }));
+    cleanup();
+
+    const linked = renderPage("/reisinfo?station=Zuid");
+    await waitFor(() => expect(boardHeading()).toHaveTextContent("Station Zuid"));
+    await userEvent.click(screen.getByRole("button", { name: /Kaart/ }));
+    expect(linked.onClose).toHaveBeenCalledWith(expect.objectContaining({ name: "Amsterdam, Station Zuid" }));
   });
 
   it("shows the station on the map", async () => {

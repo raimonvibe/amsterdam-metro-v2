@@ -651,7 +651,9 @@ export function MetroMap({
 
   // Follow-cam: glide toward the followed train; any manual drag exits
   useEffect(() => {
-    if (!followedTrainId) return;
+    // Not behind a full-screen page: nobody sees it, and returning should not
+    // find the camera mid-glide.
+    if (!followedTrainId || paused) return;
     const map = mapRef.current?.getMap();
     if (!map) return;
     const stop = () => onStopFollow();
@@ -682,7 +684,7 @@ export function MetroMap({
       clearInterval(id);
       map.off("dragstart", stop);
     };
-  }, [followedTrainId, trains, shapes, onStopFollow, laneRefs]);
+  }, [followedTrainId, trains, shapes, onStopFollow, laneRefs, paused]);
 
   const visibleTracks = tracks.filter((tk) => visibleLines.includes(tk.line));
   // Stations stay on raw GTFS coords; lane-offset rails would leave them in the

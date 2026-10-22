@@ -25,8 +25,9 @@ export interface TravelInfoPageProps {
   status: Status | null;
   theme: Theme;
   onToggleTheme: () => void;
-  /** Back to the map, handing over the station being viewed (if any) so the
-   *  map can show it. */
+  /** Back to the map. `station` is the one the visitor chose on this page
+   *  (or arrived with), for the map to fly to; null when they only looked
+   *  around, so the map stays as it was. */
   onClose: (station: Station | null) => void;
   onShowOnMap: (station: Station) => void;
 }
@@ -44,6 +45,9 @@ const DEFAULT_STATION = "Amsterdam, Centraal Station";
 export default function TravelInfoPage({ stations, lines, trains, status, theme, onToggleTheme, onClose, onShowOnMap }: TravelInfoPageProps) {
   const initial = useMemo(() => readParams(window.location.search), []);
   const [stationName, setStationName] = useState<string | null>(null);
+  // Whether the board's station is the visitor's choice (a link that named
+  // it, or a pick here) rather than the fallback filled in on arrival.
+  const [chosen, setChosen] = useState(Boolean(initial.station));
   const [fromName, setFromName] = useState<string | null>(null);
   const [toName, setToName] = useState<string | null>(null);
   const [lineId, setLineId] = useState<string>(initial.line ?? "52");
@@ -157,6 +161,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
       const s = byName.get(name);
       if (!s) return false;
       setStationName(name);
+      setChosen(true);
       setRecent(pushRecent(name));
       if (!s.lines.includes(lineId)) setLineId(s.lines[0]);
       return true;
@@ -241,7 +246,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
       const typing = el && (el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "TEXTAREA");
       if (e.key === "Escape" && !typing) {
         if (help) setHelp(false);
-        else onClose(station);
+        else onClose(chosen ? station : null);
         return;
       }
       if (typing || e.metaKey || e.ctrlKey || e.altKey || e.repeat || !prefs.shortcuts) return;
@@ -259,7 +264,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [help, onClose, station, prefs.shortcuts]);
+  }, [help, onClose, station, chosen, prefs.shortcuts]);
 
   const showTab = (t: Tab) => (tab === t ? "" : "hidden lg:block");
 
@@ -331,7 +336,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
             </button>
             <button
               type="button"
-              onClick={() => onClose(station)}
+              onClick={() => onClose(chosen ? station : null)}
               className="flex h-9 items-center gap-1.5 rounded-md bg-[#4363D8] px-3 text-sm font-semibold text-white shadow-sm hover:bg-[#3651b8]"
             >
               <ArrowLeft size={16} aria-hidden /> Kaart
