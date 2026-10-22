@@ -1,9 +1,9 @@
-import { KeyboardEvent, Ref, useEffect, useId, useMemo, useState } from "react";
+import { KeyboardEvent, Ref, useId, useMemo, useState } from "react";
 import { ArrowRight, LocateFixed, Search, TrainTrack } from "lucide-react";
 import { formatPlaceName } from "../format";
 import { Station } from "../types";
 import { SearchResult, search, searchStations } from "./search";
-import { LineBadge } from "./ui";
+import { LineBadge, useNarrowScreen } from "./ui";
 
 export interface SearchBoxProps {
   label: string;
@@ -219,19 +219,4 @@ function ResultRow({ result: r, colorOf }: { result: SearchResult; colorOf: (l: 
       </span>
     </>
   );
-}
-
-/** Below Tailwind's sm breakpoint (40rem); follows rotation and resizing. */
-function useNarrowScreen(): boolean {
-  const query = "(max-width: 39.99rem)";
-  const supported = typeof window !== "undefined" && typeof window.matchMedia === "function";
-  const [narrow, setNarrow] = useState(() => supported && window.matchMedia(query).matches);
-  useEffect(() => {
-    if (!supported) return;
-    const mq = window.matchMedia(query);
-    const update = () => setNarrow(mq.matches);
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, [supported]);
-  return narrow;
 }
