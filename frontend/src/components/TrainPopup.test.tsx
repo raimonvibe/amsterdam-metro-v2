@@ -63,3 +63,17 @@ describe("TrainPopup close button", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 });
+
+describe("TrainPopup progress", () => {
+  it("shows the segment progress with one decimal and a Dutch comma", () => {
+    // Left 60 s ago, arrives in 60 s: exactly halfway.
+    show(train({}));
+    expect(screen.getByText("50,0%")).toBeInTheDocument();
+  });
+
+  it("keeps one decimal between whole numbers", () => {
+    // 63.96 s of a 120 s run = 53.3%.
+    render(<TrainPopup train={train({})} color="#E6194B" x={300} y={300} containerWidth={800} nowMs={NOW + 3_960} />);
+    expect(screen.getByText("53,3%")).toBeInTheDocument();
+  });
+});

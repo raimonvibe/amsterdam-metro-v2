@@ -18,6 +18,9 @@ interface TrainPopupProps {
   onClose?: () => void;
 }
 
+// Dutch decimal comma, always one decimal: "47,3".
+const PCT = new Intl.NumberFormat("nl-NL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
 const CARD_W = 264;
 const EDGE_PAD = 8;
 /** Clear of the glow sprite so the card never covers the train it describes. */
@@ -106,7 +109,8 @@ function segmentProgress(train: AnimatedTrain, nowMs: number): number {
 }
 
 export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs, onClose }: TrainPopupProps) {
-  const pct = Math.round(segmentProgress(train, nowMs) * 100);
+  const progress = segmentProgress(train, nowMs) * 100;
+  const pct = Math.round(progress);
   const nextMs = train.next_arrival_ts ? train.next_arrival_ts * 1000 : null;
   // An older backend sends no terminus time; the next stop is the best it has.
   const finalMs = train.final_arrival_ts ? train.final_arrival_ts * 1000 : nextMs;
@@ -197,7 +201,7 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
 
       <div className="mb-2.5">
         <div className="mb-1 flex justify-between text-[11px] text-gray-500 dark:text-gray-400">
-          <span className="tabular-nums">{pct}%</span>
+          <span className="tabular-nums">{PCT.format(progress)}%</span>
           {train.stops_remaining != null && <span>{nl.stopsLeft(train.stops_remaining)}</span>}
         </div>
         <div
@@ -210,7 +214,7 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
           <div
             className="h-full rounded-full"
             style={{
-              width: `${pct}%`,
+              width: `${progress}%`,
               // Faint where the segment began, full line colour at the train;
               // translucent rather than whitened so it reads on both themes.
               backgroundImage: `linear-gradient(90deg, ${color}40, ${color})`,
