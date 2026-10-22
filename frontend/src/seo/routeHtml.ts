@@ -5,7 +5,9 @@ import { SEO } from "./site";
  *  JavaScript runs. At runtime setPageMeta() sets the same values. */
 export const ROUTE_PAGES = [
   { path: "/reisinfo", title: SEO.travelTitle, description: SEO.travelDescription },
-  { path: "/privacy", title: SEO.privacyTitle, description: SEO.privacyDescription },
+  // Kept out of search results (it would only clutter the site's sitelinks);
+  // "follow" still lets crawlers use its links. Not in sitemap.xml either.
+  { path: "/privacy", title: SEO.privacyTitle, description: SEO.privacyDescription, noindex: true },
 ] as const;
 
 const escape = (s: string) =>
@@ -16,7 +18,10 @@ const escape = (s: string) =>
  * be found exactly once: if index.html changes shape, the build fails here
  * instead of quietly shipping a page that still claims to be the homepage.
  */
-export function routeHtml(indexHtml: string, page: { path: string; title: string; description: string }): string {
+export function routeHtml(
+  indexHtml: string,
+  page: { path: string; title: string; description: string; noindex?: boolean },
+): string {
   const url = `${SEO.canonicalBase}${page.path}`;
   const title = escape(page.title);
   const description = escape(page.description);
@@ -30,6 +35,7 @@ export function routeHtml(indexHtml: string, page: { path: string; title: string
     [/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/g, `$1${title}$2`],
     [/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/g, `$1${description}$2`],
   ];
+  if (page.noindex) swaps.push([/(<meta\s+name="robots"\s+content=")[^"]*(")/g, "$1noindex, follow$2"]);
   let html = indexHtml;
   for (const [re, to] of swaps) {
     const found = html.match(re)?.length ?? 0;

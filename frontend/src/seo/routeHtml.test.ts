@@ -27,6 +27,13 @@ describe("routeHtml", () => {
     expect(html).toContain('<meta property="og:image" content="https://amsterdammetro.nl/social-share.png" />');
   });
 
+  it("keeps /privacy out of search results, but not /reisinfo", () => {
+    const privacy = routeHtml(INDEX, ROUTE_PAGES.find((p) => p.path === "/privacy")!);
+    expect(privacy).toContain('<meta name="robots" content="noindex, follow" />');
+    const travel = routeHtml(INDEX, ROUTE_PAGES.find((p) => p.path === "/reisinfo")!);
+    expect(travel).toContain('<meta name="robots" content="index, follow, max-image-preview:large" />');
+  });
+
   it("fails loudly when the page no longer has a tag it must rewrite", () => {
     const noCanonical = INDEX.replace(/<link rel="canonical"[^>]*>/, "");
     expect(() => routeHtml(noCanonical, ROUTE_PAGES[0])).toThrow(/canonical/);
