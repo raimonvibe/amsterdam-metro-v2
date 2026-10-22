@@ -87,7 +87,7 @@ describe("TravelInfoPage", () => {
     await userEvent.keyboard("{Escape}"); // closes the (empty) search first
     (document.activeElement as HTMLElement).blur();
     await userEvent.keyboard("{Escape}");
-    expect(onClose).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledWith(expect.objectContaining({ name: "Amsterdam, Centraal Station" }));
   });
 
   it("shows the station on the map", async () => {
