@@ -13,19 +13,12 @@ interface SidebarProps {
   onToggleLine: (id: string) => void;
   trains: AnimatedTrain[];
   status: Status | null;
-  hoveredTrain: AnimatedTrain | null;
   hoveredStation: Station | null;
   lastUpdated: Date | null;
   mapStyle: MapStyle;
   onMapStyleChange: (style: MapStyle) => void;
   onOpenPrivacy: () => void;
   onClose: () => void;
-}
-
-function delayLabel(s: number): string {
-  if (Math.abs(s) < 30) return nl.onTime;
-  const m = Math.round(Math.abs(s) / 60);
-  return s > 0 ? `+${m || 1} min` : `-${m || 1} min`;
 }
 
 function LineBadge({ id, color }: { id: string; color: string }) {
@@ -45,7 +38,6 @@ export function Sidebar({
   onToggleLine,
   trains,
   status,
-  hoveredTrain,
   hoveredStation,
   lastUpdated,
   mapStyle,
@@ -155,43 +147,7 @@ export function Sidebar({
         )}
       </div>
 
-      {hoveredTrain && (
-        <div className="mb-3 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-900">
-          <div className="mb-1 flex items-center gap-2">
-            <LineBadge id={hoveredTrain.line} color={colorOf(hoveredTrain.line)} />
-            <span className="min-w-0 truncate font-semibold">→ {formatPlaceName(hoveredTrain.headsign ?? "")}</span>
-          </div>
-          <div className="space-y-0.5 text-xs text-gray-600 dark:text-gray-300">
-            {hoveredTrain.status === "dwelling" ? (
-              <div>
-                {nl.atStation} {formatPlaceName(hoveredTrain.prev_station ?? "")}
-              </div>
-            ) : (
-              <div>
-                {formatPlaceName(hoveredTrain.prev_station ?? "")} →{" "}
-                {formatPlaceName(hoveredTrain.next_station ?? "")}
-              </div>
-            )}
-            <div>
-              {Math.round(hoveredTrain.speed_m_s * 3.6)} km/u ·{" "}
-              <span
-                className={
-                  hoveredTrain.delay_s > 60
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-emerald-600 dark:text-emerald-400"
-                }
-              >
-                {delayLabel(hoveredTrain.delay_s)}
-              </span>
-            </div>
-            {!hoveredTrain.realtime && (
-              <div className="text-gray-400 dark:text-gray-500">{nl.scheduledNoRt}</div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {hoveredStation && !hoveredTrain && (
+      {hoveredStation && (
         <div className="mb-3 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-900">
           <div className="font-semibold">
             {formatPlaceName(hoveredStation.name)}
