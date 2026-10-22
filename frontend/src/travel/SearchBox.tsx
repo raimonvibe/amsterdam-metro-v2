@@ -1,4 +1,4 @@
-import { KeyboardEvent, Ref, useId, useMemo, useState } from "react";
+import { KeyboardEvent, Ref, useEffect, useId, useMemo, useState } from "react";
 import { ArrowRight, LocateFixed, Search, TrainTrack } from "lucide-react";
 import { formatPlaceName } from "../format";
 import { Station } from "../types";
@@ -8,6 +8,8 @@ import { LineBadge } from "./ui";
 export interface SearchBoxProps {
   label: string;
   placeholder: string;
+  /** Used on phone-width screens, where the full placeholder gets cut off. */
+  shortPlaceholder?: string;
   stations: Station[];
   lineIds: string[];
   colorOf: (line: string) => string;
@@ -26,6 +28,7 @@ export interface SearchBoxProps {
 export function SearchBox({
   label,
   placeholder,
+  shortPlaceholder,
   stations,
   lineIds,
   colorOf,
@@ -39,6 +42,8 @@ export function SearchBox({
   onNearby,
 }: SearchBoxProps) {
   const id = useId();
+  const narrow = useNarrowScreen();
+  const shownPlaceholder = narrow && shortPlaceholder ? shortPlaceholder : placeholder;
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -106,7 +111,7 @@ export function SearchBox({
           aria-activedescendant={showList && results[active] ? `${id}-opt-${active}` : undefined}
           autoComplete="off"
           spellCheck={false}
-          placeholder={value ? formatPlaceName(value) : placeholder}
+          placeholder={value ? formatPlaceName(value) : shownPlaceholder}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -214,4 +219,19 @@ function ResultRow({ result: r, colorOf }: { result: SearchResult; colorOf: (l: 
       </span>
     </>
   );
+}
+
+/** Below Tailwind's sm breakpoint (40rem); follows rotation and resizing. */
+function useNarrowScreen(): boolean {
+  const query = "(max-width: 39.99rem)";
+  const supported = typeof window !== "undefined" && typeof window.matchMedia === "function";
+  const [narrow, setNarrow] = useState(() => supported && window.matchMedia(query).matches);
+  useEffect(() => {
+    if (!supported) return;
+    const mq = window.matchMedia(query);
+    const update = () => setNarrow(mq.matches);
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [supported]);
+  return narrow;
 }

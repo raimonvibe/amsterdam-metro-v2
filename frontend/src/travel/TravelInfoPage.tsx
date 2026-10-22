@@ -279,6 +279,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
             <SearchBox
               label="Zoek een station, lijn of reis"
               placeholder="Zoek station, lijn of ‘noord naar gein’…"
+              shortPlaceholder="Station, lijn of reis…"
               stations={stations}
               lineIds={lineIds}
               colorOf={colorOf}
@@ -434,6 +435,10 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
               onTo={(s) => setToName(s?.name ?? null)}
               onStation={selectStation}
               onNearby={() => locate(setFrom)}
+              onShowDepartures={(s) => {
+                selectStation(s.name);
+                document.getElementById("vertrekstaat")?.scrollIntoView({ block: "start" });
+              }}
               nowMs={nowMs}
             />
           </div>

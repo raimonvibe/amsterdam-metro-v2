@@ -112,6 +112,23 @@ describe("SearchBox", () => {
   });
 });
 
+describe("SearchBox placeholder", () => {
+  it("uses the short placeholder on phone-width screens", () => {
+    const mm = vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    vi.stubGlobal("matchMedia", mm);
+    render(<SearchBox label="Zoek" placeholder="Zoek station, lijn of reis" shortPlaceholder="Station of reis" stations={STATIONS} lineIds={LINES} colorOf={colorOf} onStation={vi.fn()} />);
+    expect(screen.getByRole("combobox", { name: "Zoek" })).toHaveAttribute("placeholder", "Station of reis");
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps the full placeholder on wider screens", () => {
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    render(<SearchBox label="Zoek" placeholder="Zoek station, lijn of reis" shortPlaceholder="Station of reis" stations={STATIONS} lineIds={LINES} colorOf={colorOf} onStation={vi.fn()} />);
+    expect(screen.getByRole("combobox", { name: "Zoek" })).toHaveAttribute("placeholder", "Zoek station, lijn of reis");
+    vi.unstubAllGlobals();
+  });
+});
+
 describe("StationBoard", () => {
   function renderBoard(over: Partial<React.ComponentProps<typeof StationBoard>> = {}) {
     const props: React.ComponentProps<typeof StationBoard> = {
@@ -277,6 +294,30 @@ describe("JourneyPlanner", () => {
     render(<JourneyPlanner {...props} />);
     return props;
   }
+
+  it("with only a departure station, confirms it and offers its departures", async () => {
+    const onShowDepartures = vi.fn();
+    const gein = byName("Amsterdam, Gein");
+    render(
+      <JourneyPlanner
+        stations={STATIONS}
+        lineIds={LINES}
+        colorOf={colorOf}
+        from={gein}
+        to={null}
+        current={gein}
+        onFrom={vi.fn()}
+        onTo={vi.fn()}
+        onStation={vi.fn()}
+        onNearby={vi.fn()}
+        onShowDepartures={onShowDepartures}
+        nowMs={NOW}
+      />,
+    );
+    expect(screen.getByText(/Kies nu waar je heen wilt/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Vertrektijden vanaf Gein/ }));
+    expect(onShowDepartures).toHaveBeenCalledWith(gein);
+  });
 
   it("shows options with transfers and labels the next and fastest", async () => {
     renderPlanner([journey(3, 30, 1), journey(8, 25, 1)]);
