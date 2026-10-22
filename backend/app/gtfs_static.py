@@ -11,6 +11,7 @@ import logging
 import time
 import zipfile
 from datetime import datetime, timedelta
+from email.utils import parsedate_to_datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Tuple
@@ -113,6 +114,34 @@ def _service_dates_of_interest() -> List[str]:
     return [(now + timedelta(days=d)).strftime("%Y%m%d") for d in (-1, 0, 1)]
 
 
+class StaticDownloadError(Exception):
+    """The national zip could not be fetched. Raised instead of httpx's own
+    errors because those cannot be unpickled on the way back from the rebuild
+    process (their __init__ takes keyword-only request/response), which
+    surfaced as a bare BrokenProcessPool that hid the real cause."""
+
+    def __init__(self, message: str, retry_after: Optional[float] = None) -> None:
+        super().__init__(message, retry_after)  # args must rebuild it when unpickled
+        self.retry_after = retry_after
+
+    def __str__(self) -> str:
+        return self.args[0]
+
+
+def _retry_after_seconds(value: Optional[str]) -> Optional[float]:
+    """Retry-After as seconds from now; it may be a number or an HTTP date."""
+    if not value:
+        return None
+    try:
+        return max(0.0, float(value))
+    except ValueError:
+        pass
+    try:
+        return max(0.0, parsedate_to_datetime(value).timestamp() - time.time())
+    except (TypeError, ValueError):
+        return None
+
+
 def download_static(force: bool = False) -> Path:
     if GTFS_STATIC_ZIP.exists() and not force:
         age_h = (time.time() - GTFS_STATIC_ZIP.stat().st_mtime) / 3600
@@ -122,17 +151,26 @@ def download_static(force: bool = False) -> Path:
     logger.info("Downloading %s ...", GTFS_STATIC_URL)
     GTFS_STATIC_ZIP.parent.mkdir(parents=True, exist_ok=True)
     tmp = GTFS_STATIC_ZIP.with_suffix(".part")
-    with httpx.stream(
-        "GET",
-        GTFS_STATIC_URL,
-        headers=HTTP_HEADERS,
-        timeout=600,
-        follow_redirects=True,
-    ) as r:
-        r.raise_for_status()
-        with open(tmp, "wb") as f:
-            for chunk in r.iter_bytes(1 << 20):
-                f.write(chunk)
+    try:
+        with httpx.stream(
+            "GET",
+            GTFS_STATIC_URL,
+            headers=HTTP_HEADERS,
+            timeout=600,
+            follow_redirects=True,
+        ) as r:
+            if r.status_code >= 400:
+                # 429 here is OVapi throttling repeat downloads of the zip
+                # (e.g. two deploys in a row on an ephemeral disk).
+                raise StaticDownloadError(
+                    f"GET {GTFS_STATIC_URL} -> HTTP {r.status_code}",
+                    _retry_after_seconds(r.headers.get("retry-after")),
+                )
+            with open(tmp, "wb") as f:
+                for chunk in r.iter_bytes(1 << 20):
+                    f.write(chunk)
+    except httpx.HTTPError as e:
+        raise StaticDownloadError(f"GET {GTFS_STATIC_URL} failed: {type(e).__name__}: {e}") from None
     tmp.replace(GTFS_STATIC_ZIP)
     logger.info("Downloaded %.1f MB", GTFS_STATIC_ZIP.stat().st_size / 1e6)
     return GTFS_STATIC_ZIP
