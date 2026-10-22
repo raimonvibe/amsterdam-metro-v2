@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { PanelLeftOpen } from "lucide-react";
-import { MetroMap } from "./components/MetroMap";
+import { MetroMap, NO_HOVER } from "./components/MetroMap";
 import { Sidebar } from "./components/Sidebar";
 import { LiveBadge } from "./components/LiveBadge";
 import { DepartureBoard } from "./components/DepartureBoard";
@@ -235,7 +235,11 @@ export default function App() {
             onMore={openTravelForSelection}
           />
         )}
+        {/* Touch screens: the followed train's popup has its own close button
+            and sits where this chip is, so the chip would only peek out
+            behind it. Desktop keeps it: there the popup ends with the hover. */}
         {followedTrainId &&
+          !NO_HOVER &&
           (() => {
             const train = trains.find((t) => t.id === followedTrainId);
             return train ? (

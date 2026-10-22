@@ -68,7 +68,7 @@ const VEIL_MAX_WAIT_MS = 1500;
 const POPUP_LEAVE_PX = 40;
 
 /** Phones and tablets: no hover, so the followed train gets the popup instead. */
-const NO_HOVER =
+export const NO_HOVER =
   typeof window !== "undefined" && window.matchMedia("(hover: none)").matches;
 
 /** Distance in px from (px, py) to the polyline `pts`. */
