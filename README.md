@@ -4,7 +4,7 @@
 
 ![Amsterdam Metro Live — Centraal Station, Nieuwmarkt and Waterlooplein at dusk, with live trains glowing on the shared corridor](docs/screenshot3.png)
 
-Built in the spirit of [londonunderground.live](https://www.londonunderground.live/) 🇬🇧 — but for Amsterdam 🇳🇱, and with your choice of dark 🌙 or light ☀️ mode.
+Built in the spirit of [londonunderground.live](https://www.londonunderground.live/) 🇬🇧 — but for Amsterdam 🇳🇱, with five map styles 🌗 and a full travel-info page 🧭 next to the live map.
 
 ---
 
@@ -14,11 +14,25 @@ Built in the spirit of [londonunderground.live](https://www.londonunderground.li
 - 🛤️ **Real track geometry** — trains ride the actual curves of the rails, not straight lines between stations
 - 🏙️ **3D buildings** rendered from vector tiles, with an orbitable, pitchable camera (right-drag to spin around the city)
 - ⏱️ **Live delays** — see which trains are running late, straight from the same feed GVB itself uses
-- 🚉 **Click a station** for a live departure board — next 8 trains, headsign, and countdown
-- 🎯 **Click a train** to follow it with the camera as it moves through the city
+- 🚉 **Click a station** for a live departure board — next 8 trains, headsign, and countdown — with a link to its full travel info
+- 🎯 **Click a train** to follow it with the camera; its card shows the next stop, delay, arrival time and **platform number**. On phones it has its own close button, and a tap on empty map stops following
 - 💫 **Fading motion trails** behind every train, so movement reads at a glance
-- 🌗 **Dark / light theme switch**, remembered across visits
+- 🌗 **Five map styles**: Liberty, Bright, Licht, Donker and Fiord. Each one drives the whole light or dark look, and your pick is remembered across visits
 - 🎬 Opens with a cinematic fly-in, landing right on the busiest, most building-dense part of the network
+
+## 🧭 Reisinformatie: the travel-info page
+
+A second page at **[amsterdammetro.nl/reisinfo](https://amsterdammetro.nl/reisinfo)**, loaded only when you open it, so the map stays lean:
+
+- 🕐 **Vertrekstaat**: departures per station, grouped by direction. It shows delays, cancelled runs, stops left and arrival at the terminus, with a 15–120 minute window and a walking-time filter
+- 🔢 **Platform numbers** from the timetable: on the direction card, or per departure when a direction uses several platforms. The big interchanges (CS, Zuid, Sloterdijk…) have none in the official data, so none are shown there
+- 🗺️ **Reisplanner**: direct and one-transfer journeys. The departure station also appears on the board
+- 🚦 **Lijnen and Netwerkstatus**: line diagrams with the trains running right now, plus punctuality per line
+- ⭐ **Favourites, recent stations and shareable links** (`/reisinfo?station=Noord&van=Noord&naar=Gein`), kept only in your browser
+- 🕰️ **A Dutch station clock** in Amsterdam time, and a **light/dark toggle** in the header
+- 🔎 **Smart search**: "arena", "52", "cs naar zuid" or "dichtbij" for the nearest station
+- ⌨️ **Keyboard shortcuts** (`/`, `F`, `P`, `?`, `Esc`). Letter keys can be switched off for speech-input users (WCAG 2.1.4)
+- 📱 **Built for phones** with tabs. Going back to the map lands on the station you were viewing
 
 ## 🧠 How it works
 
@@ -27,6 +41,9 @@ Amsterdam's metro fleet — like London's — publishes **no GPS positions**. So
 1. 📦 **GTFS static** (daily, from [OVapi](https://gtfs.ovapi.nl/nl/)) gives us the metro routes, stations, timetables, and true track shapes
 2. 📡 **GTFS-realtime `tripUpdates.pb`** (polled every ~30s) gives live per-station arrival/departure predictions for every active trip
 3. 🧮 A **position solver** places each train along its track shape between its last departed and next predicted station — smooth, believable, live movement
+4. 📤 Positions are **pushed to the browser over Server-Sent Events** (gzipped per client), so the map updates without polling. The browser pauses the stream in background tabs
+
+Why a train sits where it does, and what that does and doesn't claim: **[docs/position-model.md](docs/position-model.md)**.
 
 ## 🛠️ Stack
 
@@ -36,20 +53,28 @@ Amsterdam's metro fleet — like London's — publishes **no GPS positions**. So
 | Frontend | ⚛️ React + TypeScript + Vite |
 | Map & 3D | 🗺️ MapLibre + deck.gl (`MapboxOverlay`, `PathLayer`, `TripsLayer`) |
 | Data | 🚏 OVapi / openOV (free, fair use) |
-| Tiles | 🌍 OpenFreeMap (dark & light styles) |
+| Tiles | 🌍 OpenFreeMap (Liberty, Bright, Positron, Dark, Fiord) |
+| Tests | 🧪 pytest (synthetic GTFS, no network) · Vitest + Testing Library · GitHub Actions |
 
 ## 🚀 Run it locally
 
 ```bash
-# Backend (Python 3.12+)
+# Backend (Python 3.12+); on Windows use .venv/Scripts/ instead of .venv/bin/
 cd backend
-python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
-.venv/Scripts/python -m uvicorn app.main:app --port 8020
+python -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python -m uvicorn app.main:app --port 8020
 
 # Frontend
 cd frontend
 npm install
 npm run dev   # → http://localhost:5183 (proxies /api to :8020)
+```
+
+**Tests** (also run on every pull request by GitHub Actions):
+
+```bash
+cd backend && .venv/bin/pip install -r requirements-dev.txt && .venv/bin/python -m pytest
+cd frontend && npm test
 ```
 
 **Production preview locally** (optional):
@@ -69,6 +94,8 @@ Production domain: **https://amsterdammetro.nl** (API: **https://api.amsterdamme
 | [docs/render-deploy-plan.md](docs/render-deploy-plan.md) | Render deploy steps |
 | [docs/costs-and-specs.md](docs/costs-and-specs.md) | RAM, bandwidth, pricing |
 | [docs/legal-compliance.md](docs/legal-compliance.md) | Legal / attribution checklist |
+| [docs/position-model.md](docs/position-model.md) | How train positions are derived |
+| [docs/privacy-policy.md](docs/privacy-policy.md) | Privacy policy (also at `/privacy`) |
 
 First backend start downloads the national GTFS zip (~240MB, cached) and extracts the GVB metro subset — a few MB, refreshed daily.
 
