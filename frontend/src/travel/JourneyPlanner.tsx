@@ -22,6 +22,8 @@ export interface JourneyPlannerProps {
   onTo: (s: Station | null) => void;
   onStation: (name: string) => void;
   onNearby: () => void;
+  /** Phones: open the departure board for this station (it sits in another tab there). */
+  onShowDepartures?: (s: Station) => void;
   nowMs: number;
 }
 
@@ -98,11 +100,30 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
       )}
 
       <div className="mt-2.5">
-        {(!from || !to) && (
+        {!from && (
           <p className="text-xs leading-relaxed text-[#5b5446] dark:text-[#a9b0c2]">
             Kies een vertrek- en aankomststation. Tip: typ in de zoekbalk bovenaan direct{" "}
             <em>“noord naar gein”</em>. Ook reizen met één overstap worden gevonden.
           </p>
+        )}
+        {from && !to && (
+          <div className="space-y-1.5 text-xs leading-relaxed text-[#5b5446] dark:text-[#a9b0c2]">
+            <p>
+              Vertrek vanaf <strong className="text-[#1d2433] dark:text-[#ece6d6]">{formatPlaceName(from.name)}</strong>.
+              Kies nu waar je heen wilt.
+            </p>
+            {/* On a desktop the board beside the planner already switched to this
+                station; on a phone it is in another tab, so offer the way there. */}
+            {props.onShowDepartures && (
+              <button
+                type="button"
+                onClick={() => props.onShowDepartures?.(from)}
+                className="flex min-h-9 items-center gap-1 font-semibold text-[#1f3a68] underline-offset-2 hover:underline lg:hidden dark:text-[#c8a951]"
+              >
+                Vertrektijden vanaf {formatPlaceName(from.name)} →
+              </button>
+            )}
+          </div>
         )}
         {from && to && from.name === to.name && (
           <p className="text-xs text-[#7b2132] dark:text-[#f08a9b]">Vertrek- en aankomststation zijn hetzelfde.</p>
