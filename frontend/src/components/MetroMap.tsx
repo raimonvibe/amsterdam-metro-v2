@@ -18,6 +18,7 @@ import { formatPlaceName } from "../format";
 import { angleForBearing, GLOW_ICON_MAPPING, glowSpriteUrl } from "../glow";
 import { MAP_THEME, Theme } from "../theme";
 import { ChurchMarkers } from "./ChurchMarkers";
+import { TrainPopup } from "./TrainPopup";
 import { getWebGLStatus } from "../webgl";
 import { nl } from "../i18n/nl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -365,6 +366,9 @@ export function MetroMap({
   const trailsRef = useRef<Record<string, Trail>>({});
   const lastSampleRef = useRef(0);
   const [mapReady, setMapReady] = useState(false);
+  // Held by id, not object: every 5s poll replaces the train objects, and the
+  // popup has to keep tracking the live one under the pointer.
+  const [hoveredTrainId, setHoveredTrainId] = useState<string | null>(null);
 
   // Style switches fade through a veil in the incoming basemap's colour: veil
   // up, swap style + overlay palette together underneath, veil down once the
@@ -878,8 +882,11 @@ export function MetroMap({
       jointRounded: false,
       parameters: FLAT,
       pickable: true,
-      onHover: (info) =>
-        onTrainHover(((info.object as TrainBodySeg | null)?.train as AnimatedTrain) || null),
+      onHover: (info) => {
+        const train = (info.object as TrainBodySeg | null)?.train ?? null;
+        setHoveredTrainId(train?.id ?? null);
+        onTrainHover(train);
+      },
       onClick: (info) => {
         const seg = info.object as TrainBodySeg | null;
         if (seg?.train) {
@@ -936,6 +943,11 @@ export function MetroMap({
     }),
   ];
 
+  // Pinned to the train, not the pointer: it keeps moving under a still cursor.
+  const hovered = hoveredTrainId ? positioned.find((tr) => tr.id === hoveredTrainId) : undefined;
+  const map = mapRef.current?.getMap();
+  const hoveredScreen = hovered && map ? map.project(hovered.center) : null;
+
   if (webglError) {
     return (
       <div className="flex h-full min-h-0 w-full items-center justify-center bg-gray-950 p-4 text-gray-100 sm:p-8">
@@ -985,6 +997,17 @@ export function MetroMap({
         />
       </Map>
       <ChurchMarkers mapRef={mapRef} mapReady={mapReady} theme={theme} />
+      {hovered && hoveredScreen && (
+        <TrainPopup
+          train={hovered}
+          lineName={lines.find((l) => l.id === hovered.line)?.name}
+          color={lines.find((l) => l.id === hovered.line)?.color ?? "#999999"}
+          x={hoveredScreen.x}
+          y={hoveredScreen.y}
+          containerWidth={map?.getContainer().clientWidth ?? 0}
+          nowMs={nowMs}
+        />
+      )}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 transition-opacity ease-out"

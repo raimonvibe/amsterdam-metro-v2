@@ -35,6 +35,12 @@ export interface Train {
   prev_station?: string;
   next_station?: string;
   next_arrival_ts?: number;
+  /** Departure from prev_station — start of the current segment. */
+  prev_departure_ts?: number;
+  /** Calls still ahead, terminus included. */
+  stops_remaining?: number;
+  /** Arrival at the terminus. */
+  final_arrival_ts?: number;
   realtime: boolean;
 }
 

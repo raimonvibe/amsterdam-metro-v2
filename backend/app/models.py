@@ -40,6 +40,11 @@ class TrainOut(BaseModel):
     prev_station: Optional[str] = None
     next_station: Optional[str] = None
     next_arrival_ts: Optional[int] = None
+    # When the current segment began: departure from prev_station. Paired with
+    # next_arrival_ts it gives the client segment progress without re-solving.
+    prev_departure_ts: Optional[int] = None
+    stops_remaining: int = 0     # calls still ahead, terminus included
+    final_arrival_ts: Optional[int] = None  # arrival at the terminus
     realtime: bool = False
 
 

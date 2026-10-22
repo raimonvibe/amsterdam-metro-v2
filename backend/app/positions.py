@@ -488,7 +488,9 @@ class MetroData:
                     delay_s=delay, status="moving",
                     prev_station=self.stops[stops[i - 1][1]]["name"],
                     next_station=self.stops[stops[i][1]]["name"],
-                    next_arrival_ts=int(arr), realtime=rt_trip is not None,
+                    next_arrival_ts=int(arr), prev_departure_ts=int(p_dep),
+                    stops_remaining=len(stops) - i,
+                    final_arrival_ts=int(times[-1][0]), realtime=rt_trip is not None,
                 )
             if arr <= now <= dep:
                 lon, lat, bearing = shape.point_at(dist)
@@ -500,6 +502,9 @@ class MetroData:
                     prev_station=self.stops[stops[i][1]]["name"],
                     next_station=self.stops[stops[i + 1][1]]["name"] if i + 1 < len(stops) else None,
                     next_arrival_ts=int(times[i + 1][0]) if i + 1 < len(times) else None,
+                    prev_departure_ts=int(dep),
+                    stops_remaining=len(stops) - 1 - i,
+                    final_arrival_ts=int(times[-1][0]),
                     realtime=rt_trip is not None,
                 )
         return None
