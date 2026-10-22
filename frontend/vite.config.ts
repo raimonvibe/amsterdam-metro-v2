@@ -1,8 +1,33 @@
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
+import { ROUTE_PAGES, routeHtml } from "./src/seo/routeHtml";
+
+/** After the build, write dist/reisinfo/index.html and dist/privacy/index.html:
+ *  copies of the entry page whose head already names that page, for crawlers
+ *  that read the HTML before (or without) running the app. */
+function routePages(): Plugin {
+  let outDir = "dist";
+  return {
+    name: "route-pages",
+    apply: "build",
+    configResolved(config) {
+      outDir = config.build.outDir;
+    },
+    closeBundle() {
+      const index = readFileSync(join(outDir, "index.html"), "utf8");
+      for (const page of ROUTE_PAGES) {
+        const dir = join(outDir, page.path);
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(join(dir, "index.html"), routeHtml(index, page));
+      }
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), routePages()],
   server: {
     host: true,
     port: 5183,

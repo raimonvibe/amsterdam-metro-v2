@@ -173,6 +173,16 @@ curl https://api.amsterdammetro.nl/api/status
 
 Render static sites do **not** read a `_redirects` file (that is a Netlify convention). Add the rule in the dashboard: **Manage → Redirects/Rewrites** → Source `/*`, Destination `/index.html`, action **Rewrite**. Without it, opening `/privacy` or `/reisinfo` directly (shared link, refresh, search engines) returns 404. Real files (`/assets/…`, `/sitemap.xml`, `/robots.txt`) are still served as-is.
 
+The build also writes `reisinfo/index.html` and `privacy/index.html`, copies of the entry page whose title, description, canonical and social tags already name that page (see `frontend/src/seo/routeHtml.ts`), so crawlers that read the HTML before running JavaScript don't see the homepage there. Add two rewrites **above** the `/*` rule, because rules run top to bottom:
+
+| Source | Destination | Action |
+|---|---|---|
+| `/reisinfo` | `/reisinfo/index.html` | Rewrite |
+| `/privacy` | `/privacy/index.html` | Rewrite |
+| `/*` | `/index.html` | Rewrite |
+
+Check after deploy: `curl -s https://amsterdammetro.nl/reisinfo | grep canonical` should print `…/reisinfo`, not `…/`.
+
 ### Verify frontend
 
 Open `https://amsterdammetro.nl` — map loads, sidebar shows live train count, no “Backend not reachable” error.

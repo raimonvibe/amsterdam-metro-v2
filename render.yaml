@@ -32,6 +32,15 @@ services:
       - key: VITE_API_URL
         value: "https://api.amsterdammetro.nl"
     routes:
+      # The build writes reisinfo/index.html and privacy/index.html with
+      # their own title, description and canonical. These two must come
+      # before the catch-all, or crawlers get the homepage's head there.
+      - type: rewrite
+        source: /reisinfo
+        destination: /reisinfo/index.html
+      - type: rewrite
+        source: /privacy
+        destination: /privacy/index.html
       - type: rewrite
         source: /*
         destination: /index.html
