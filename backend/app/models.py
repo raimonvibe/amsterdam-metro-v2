@@ -40,6 +40,9 @@ class TrainOut(BaseModel):
     prev_station: Optional[str] = None
     next_station: Optional[str] = None
     next_arrival_ts: Optional[int] = None
+    # Platform where it stands while dwelling, else where it arrives next.
+    # None where the timetable has none (the big interchanges).
+    platform: Optional[str] = None
     # When the current segment began: departure from prev_station. Paired with
     # next_arrival_ts it gives the client segment progress without re-solving.
     prev_departure_ts: Optional[int] = None

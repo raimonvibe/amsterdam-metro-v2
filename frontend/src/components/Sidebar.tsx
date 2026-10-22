@@ -1,4 +1,4 @@
-import { Clock, PanelLeftClose, TrainFront } from "lucide-react";
+import { ChevronRight, Clock, Landmark, PanelLeftClose, TrainFront } from "lucide-react";
 import { AnimatedTrain, Line, Station, Status } from "../types";
 import { MapStyle } from "../theme";
 import { StyleSwitcher } from "./StyleSwitcher";
@@ -18,6 +18,7 @@ interface SidebarProps {
   mapStyle: MapStyle;
   onMapStyleChange: (style: MapStyle) => void;
   onOpenPrivacy: () => void;
+  onOpenTravel: () => void;
   onClose: () => void;
 }
 
@@ -43,6 +44,7 @@ export function Sidebar({
   mapStyle,
   onMapStyleChange,
   onOpenPrivacy,
+  onOpenTravel,
   onClose,
 }: SidebarProps) {
   const colorOf = (id: string) => lines.find((l) => l.id === id)?.color ?? "#999";
@@ -65,6 +67,25 @@ export function Sidebar({
         </div>
       </div>
       <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">{nl.tagline}</p>
+
+      {/* A real link (crawlable, opens in a new tab on middle-click); a plain
+          click stays in the app. */}
+      <a
+        href="/reisinfo"
+        onClick={(e) => {
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+          e.preventDefault();
+          onOpenTravel();
+        }}
+        className="mb-4 flex min-h-11 items-center gap-2.5 rounded-lg border border-[#c8a951]/60 bg-[#1f3a68] px-3 py-2 text-white shadow-sm transition hover:bg-[#182e54] dark:border-[#c8a951]/40 dark:bg-[#1f3a68]/70 dark:hover:bg-[#1f3a68]"
+      >
+        <Landmark size={18} className="shrink-0 text-[#e2c977]" aria-hidden />
+        <span className="min-w-0 flex-1 leading-tight">
+          <span className="font-academic block text-sm font-semibold">{nl.travelInfo}</span>
+          <span className="block truncate text-[11px] text-blue-100/90">{nl.travelInfoHint}</span>
+        </span>
+        <ChevronRight size={16} className="shrink-0 opacity-80" aria-hidden />
+      </a>
 
       <div className="mb-4">
         <StyleSwitcher value={mapStyle} onChange={onMapStyleChange} />

@@ -7,16 +7,21 @@ import { DepartureBoard } from "./components/DepartureBoard";
 import { FollowChip } from "./components/FollowChip";
 import { fetchLines, fetchShapes, fetchStations } from "./api";
 import { AnimatedTrain, Line, ShapeGeom, Station, Status } from "./types";
-import { MAP_STYLES, useMapStyle } from "./theme";
+import { MAP_STYLES, useMapStyle, useThemeToggle } from "./theme";
 import { streamWhileVisible } from "./stream";
 import { usePrivacyRoute } from "./hooks/usePrivacyRoute";
+import { useTravelRoute } from "./hooks/useTravelRoute";
+import { formatPlaceName } from "./format";
 import { useSidebarOpen } from "./hooks/useSidebarOpen";
+import { ChunkErrorBoundary } from "./components/ChunkErrorBoundary";
 import { nl } from "./i18n/nl";
 
 // Rarely opened; kept out of the initial bundle.
 const PrivacyPolicy = lazy(() =>
   import("./components/PrivacyPolicy").then((m) => ({ default: m.PrivacyPolicy })),
 );
+// The travel-info page is a separate chunk: map visitors never download it.
+const TravelInfoPage = lazy(() => import("./travel/TravelInfoPage"));
 
 // Require a few consecutive empty snapshots before actually clearing the
 // map: metro service does legitimately stop overnight, but a single empty
@@ -29,6 +34,7 @@ const STATIC_RETRY_MAX_MS = 30000;
 export default function App() {
   const [mapStyle, setMapStyle] = useMapStyle();
   const { palette, styleUrl, swatch } = MAP_STYLES[mapStyle];
+  const toggleTheme = useThemeToggle(mapStyle, setMapStyle);
   const [lines, setLines] = useState<Line[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
   const [shapes, setShapes] = useState<Record<string, ShapeGeom>>({});
@@ -41,6 +47,9 @@ export default function App() {
   const [followedTrainId, setFollowedTrainId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { showPrivacy, openPrivacy, closePrivacy } = usePrivacyRoute();
+  const { showTravel, openTravel, closeTravel } = useTravelRoute();
+  // Bumped to ask the map to fly to a station (from "Op kaart").
+  const [focusStation, setFocusStation] = useState<{ station: Station; nonce: number } | null>(null);
   const [sidebarOpen, openSidebar, closeSidebar] = useSidebarOpen();
 
   useEffect(() => {
@@ -136,7 +145,10 @@ export default function App() {
           sidebarOpen ? "opacity-100" : "opacity-0"
         }`}
       />
+      {/* Behind a full-screen page the map and sidebar stay mounted (the page
+          uses their live trains) but must not be reachable by Tab or a screen reader. */}
       <div
+        inert={showTravel}
         className={`fixed inset-y-0 left-0 z-50 w-[min(18rem,calc(100vw-env(safe-area-inset-left)-env(safe-area-inset-right)))] max-w-[min(18rem,100vw)] overflow-hidden transition-transform duration-300 ease-in-out md:static md:z-auto md:max-w-none md:shrink-0 md:overflow-hidden md:transition-[width] md:duration-300 md:ease-in-out ${
           sidebarOpen
             ? "translate-x-0 md:w-72"
@@ -154,10 +166,11 @@ export default function App() {
           mapStyle={mapStyle}
           onMapStyleChange={setMapStyle}
           onOpenPrivacy={openPrivacy}
+          onOpenTravel={() => openTravel()}
           onClose={closeSidebar}
         />
       </div>
-      <main className="relative min-h-0 min-w-0 flex-1">
+      <main inert={showTravel} className="relative min-h-0 min-w-0 flex-1">
         <button
           type="button"
           onClick={openSidebar}
@@ -195,7 +208,9 @@ export default function App() {
             setSelectedStation((cur) => (cur?.name === s.name ? null : s))
           }
           onStopFollow={() => setFollowedTrainId(null)}
+          focusStation={focusStation}
           onMapBackgroundClick={sidebarOpen ? closeSidebar : undefined}
+          paused={showTravel}
         />
         <LiveBadge status={status} />
         {selectedStation && (
@@ -203,6 +218,9 @@ export default function App() {
             station={selectedStation}
             lines={lines}
             onClose={() => setSelectedStation(null)}
+            onMore={() =>
+              openTravel(`?station=${encodeURIComponent(formatPlaceName(selectedStation.name))}`)
+            }
           />
         )}
         {followedTrainId &&
@@ -217,6 +235,34 @@ export default function App() {
             ) : null;
           })()}
       </main>
+      {showTravel && (
+        <ChunkErrorBoundary onClose={closeTravel}>
+          <Suspense
+            fallback={
+              // Same backdrop as the page, so the map never flashes through
+              // while the page's chunk loads.
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#f3eee3] text-sm text-[#5b5446] dark:bg-[#0a0e18] dark:text-[#a9b0c2]">
+                <span className="font-academic animate-pulse text-lg">{nl.travelInfo} laden…</span>
+              </div>
+            }
+          >
+            <TravelInfoPage
+              stations={stations}
+              lines={lines}
+              trains={trains}
+              status={status}
+              theme={palette}
+              onToggleTheme={toggleTheme}
+              onClose={closeTravel}
+              onShowOnMap={(station) => {
+                closeTravel();
+                setSelectedStation(station);
+                setFocusStation({ station, nonce: Date.now() });
+              }}
+            />
+          </Suspense>
+        </ChunkErrorBoundary>
+      )}
       {showPrivacy && (
         <Suspense fallback={null}>
           <PrivacyPolicy onClose={closePrivacy} />

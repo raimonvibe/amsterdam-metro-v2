@@ -10,6 +10,7 @@ interface DepartureBoardProps {
   station: Station;
   lines: Line[];
   onClose: () => void;
+  onMore?: () => void;
 }
 
 function countdown(ts: number, nowMs: number): string {
@@ -18,7 +19,7 @@ function countdown(ts: number, nowMs: number): string {
   return `${Math.round(s / 60)} ${nl.min}`;
 }
 
-export function DepartureBoard({ station, lines, onClose }: DepartureBoardProps) {
+export function DepartureBoard({ station, lines, onClose, onMore }: DepartureBoardProps) {
   const [departures, setDepartures] = useState<Departure[] | null>(null);
   const [nowMs, setNowMs] = useState(Date.now());
 
@@ -103,6 +104,15 @@ export function DepartureBoard({ station, lines, onClose }: DepartureBoardProps)
             </li>
           ))}
         </ul>
+      )}
+      {onMore && (
+        <button
+          type="button"
+          onClick={onMore}
+          className="mt-2 w-full rounded-lg py-1.5 text-xs font-semibold text-[#4363D8] hover:bg-gray-100 dark:text-[#8aa2ff] dark:hover:bg-gray-900"
+        >
+          {nl.allDepartures} →
+        </button>
       )}
     </div>
   );

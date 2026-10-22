@@ -93,6 +93,18 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
                 wij ontvangen deze gegevens niet op onze servers.
               </li>
               <li>
+                <strong>Reisinformatie-instellingen (localStorage):</strong> Op de pagina
+                Reisinformatie bewaart uw browser uw favoriete stations, de laatst bekeken stations
+                (maximaal zes) en uw weergave-instellingen (tijdvenster, vervallen ritten tonen,
+                looptijd). Ook dit blijft in uw browser; wij ontvangen het niet.
+              </li>
+              <li>
+                <strong>Locatie (alleen op uw verzoek):</strong> Kiest u “Dichtstbijzijnde
+                station”, dan vraagt uw browser toestemming voor uw locatie. Het dichtstbijzijnde
+                station wordt in uw browser berekend; uw locatie wordt niet naar onze servers of
+                derden verstuurd en niet opgeslagen.
+              </li>
+              <li>
                 <strong>Technische logs (hosting):</strong> Wanneer u de app laadt of onze API
                 aanroept, kan onze hostingprovider technische gegevens verwerken, zoals uw
                 IP-adres, browsertype, opgevraagde URL en tijdstempel in server- of
@@ -105,7 +117,7 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
               </li>
             </ul>
             <p className="mt-2">
-              Wij verzamelen bewust geen namen, e-mailadressen, precieze locatie, betaalgegevens
+              Wij verzamelen bewust geen namen, e-mailadressen, locatiegegevens, betaalgegevens
               of andere direct identificerende informatie via normaal gebruik van de app.
             </p>
           </section>
@@ -127,6 +139,15 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
                 <strong>Kaartstijl onthouden</strong> (art. 6 lid 1 onder f AVG — gerechtvaardigd
                 belang): een functionele instelling die nodig is om de app in de door u gekozen
                 stijl te tonen; u kunt dit wissen in uw browserinstellingen.
+              </li>
+              <li>
+                <strong>Favorieten, recente stations en weergave-instellingen</strong> (art. 6 lid
+                1 onder f AVG): functionele gemakken op de pagina Reisinformatie; recente stations
+                kunt u op de pagina zelf wissen, alles via uw browserinstellingen.
+              </li>
+              <li>
+                <strong>Dichtstbijzijnde station</strong> (art. 6 lid 1 onder a AVG — toestemming):
+                alleen na uw toestemming in de browser, en alleen lokaal verwerkt.
               </li>
             </ul>
           </section>
@@ -174,8 +195,9 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             </h2>
             <p>
               Deze app plaatst <strong>geen</strong> tracking- of advertentiecookies. De enige
-              opslag aan clientzijde is <strong>localStorage</strong> voor de kaartstijl: een
-              functionele instelling, geen tracking. U kunt dit op elk moment verwijderen via uw
+              opslag aan clientzijde is <strong>localStorage</strong> voor de kaartstijl en, op de
+              pagina Reisinformatie, voor uw favorieten, recente stations en weergave-instellingen:
+              functionele instellingen, geen tracking. U kunt dit op elk moment verwijderen via uw
               browserinstellingen.
             </p>
           </section>
@@ -186,6 +208,13 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
               <li>
                 <strong>localStorage (kaartstijl):</strong> totdat u sitegegevens wist of een
                 andere stijl kiest.
+              </li>
+              <li>
+                <strong>localStorage (reisinformatie):</strong> totdat u een favoriet verwijdert,
+                recente stations wist of sitegegevens wist.
+              </li>
+              <li>
+                <strong>Locatie:</strong> niet bewaard; alleen gebruikt op het moment van de vraag.
               </li>
               <li>
                 <strong>Hostinglogs:</strong> bewaard door Render volgens uw hostingabonnement

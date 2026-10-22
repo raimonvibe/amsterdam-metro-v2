@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fastapi.sse import format_sse_event
 
-from . import gtfs_static, realtime
+from . import gtfs_static, realtime, travel
 from .broadcast import DROPPED, Broadcaster
 from .config import CORS_ORIGINS, GTFS_REFRESH_SECONDS
 from .gtfs_static import TZ
@@ -67,6 +67,7 @@ class StaticData:
     lines: Payload
     stations: Payload
     shapes: Payload
+    network: Payload
     station_names: frozenset
 
 
@@ -82,7 +83,14 @@ class Snapshot:
 
 static: Optional[StaticData] = None
 snapshot: Optional[Snapshot] = None
-_departures_cache: Dict[Tuple[str, int], Tuple[float, Payload]] = {}
+_departures_cache: Dict[tuple, Tuple[float, Payload]] = {}
+_station_info_cache: Dict[str, Tuple[float, Payload]] = {}
+_journey_cache: Dict[tuple, Tuple[float, Payload]] = {}
+STATION_INFO_TTL_SECONDS = 60
+JOURNEY_TTL_SECONDS = 20
+# Journeys are keyed by station pairs (39 x 38 x limits): bounded, but drop
+# the lot now and then instead of letting expired entries accumulate.
+JOURNEY_CACHE_MAX = 2000
 broadcaster = Broadcaster(STREAM_MAX_QUEUED)
 
 
@@ -94,6 +102,7 @@ def _prepare(subset: dict) -> StaticData:
         lines=Payload.of([line.model_dump() for line in m.lines()]),
         stations=Payload.of([s.model_dump() for s in m.stations()]),
         shapes=Payload.of({sid: {"coords": s.coords, "cum": s.cum} for sid, s in m.shapes.items()}),
+        network=Payload.of(travel.network(m)),
         station_names=frozenset(m.station_names()),
     )
 
@@ -119,6 +128,8 @@ async def _refresh_static() -> None:
         return  # same data already served; skip re-deriving everything
     static = await asyncio.to_thread(_prepare, subset)
     _departures_cache.clear()
+    _station_info_cache.clear()
+    _journey_cache.clear()
     logger.info("Static data ready (subset from %s)",
                 datetime.fromtimestamp(subset["generated_ts"], TZ).isoformat(timespec="minutes"))
 
@@ -339,27 +350,82 @@ async def status(request: Request):
     return _snapshot().status.respond(request, "no-store")
 
 
+@app.get("/api/network")
+async def network(request: Request):
+    """Per line and direction: ordered stations and typical run times."""
+    return _static().network.respond(request, STATIC_CACHE_CONTROL)
+
+
 @app.get("/api/departures")
 async def departures(
     request: Request,
     station: str = Query(..., max_length=100),
-    limit: int = Query(8, ge=1, le=20),
+    limit: int = Query(8, ge=1, le=60),
+    minutes: int = Query(45, ge=5, le=180),
+    cancelled: bool = Query(False),
 ):
     """Upcoming departures for a station (by grouped station name)."""
     data = _static()
     if station not in data.station_names:
         return Payload.of([]).respond(request, "no-store")
-    key = (station, limit)
+    key = (station, limit, minutes, cancelled)
     now = time.time()
     hit = _departures_cache.get(key)
     if hit is None or hit[0] < now:
-        # Keyed only by real station names x bounded limits, so the cache is
-        # bounded too (~40 stations x 20) however the endpoint is called.
+        # Keyed only by real station names x bounded params, so the cache is
+        # bounded too however the endpoint is called.
         # Off the event loop: a miss costs tens of ms of CPU, and inline that
         # would stall every open /api/trains/stream connection meanwhile.
         payload = await asyncio.to_thread(
-            lambda: Payload.of(data.metro.departures(station, realtime.state, now=now, limit=limit))
+            lambda: Payload.of(data.metro.departures(
+                station, realtime.state, now=now, limit=limit,
+                horizon_s=minutes * 60, include_cancelled=cancelled,
+            ))
         )
         hit = (now + DEPARTURES_TTL_SECONDS, payload)
         _departures_cache[key] = hit
+    return hit[1].respond(request, "no-store")
+
+
+@app.get("/api/station")
+async def station_info(request: Request, station: str = Query(..., max_length=100)):
+    """First/last train today, frequency and stops ahead, per direction."""
+    data = _static()
+    if station not in data.station_names:
+        raise HTTPException(status_code=404, detail="Unknown station")
+    now = time.time()
+    hit = _station_info_cache.get(station)
+    if hit is None or hit[0] < now:
+        payload = await asyncio.to_thread(
+            lambda: Payload.of(travel.station_info(data.metro, station, realtime.state, now=now))
+        )
+        hit = (now + STATION_INFO_TTL_SECONDS, payload)
+        _station_info_cache[station] = hit
+    return hit[1].respond(request, "no-store")
+
+
+@app.get("/api/journey")
+async def journey(
+    request: Request,
+    origin: str = Query(..., alias="from", max_length=100),
+    dest: str = Query(..., alias="to", max_length=100),
+    limit: int = Query(5, ge=1, le=10),
+):
+    """Direct and one-transfer journeys between two stations, soonest first."""
+    data = _static()
+    if origin not in data.station_names or dest not in data.station_names:
+        raise HTTPException(status_code=404, detail="Unknown station")
+    if origin == dest:
+        raise HTTPException(status_code=422, detail="Origin and destination are the same")
+    key = (origin, dest, limit)
+    now = time.time()
+    hit = _journey_cache.get(key)
+    if hit is None or hit[0] < now:
+        if len(_journey_cache) >= JOURNEY_CACHE_MAX:
+            _journey_cache.clear()
+        payload = await asyncio.to_thread(
+            lambda: Payload.of(travel.journeys(data.metro, realtime.state, origin, dest, now=now, limit=limit))
+        )
+        hit = (now + JOURNEY_TTL_SECONDS, payload)
+        _journey_cache[key] = hit
     return hit[1].respond(request, "no-store")

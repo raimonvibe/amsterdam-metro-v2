@@ -46,8 +46,13 @@ interface MetroMapProps {
   onStationHover: (station: Station | null) => void;
   onTrainClick: (train: AnimatedTrain) => void;
   onStationClick: (station: Station) => void;
+  /** Fly to this station whenever the object changes (nonce makes repeats count). */
+  focusStation?: { station: Station; nonce: number } | null;
   onStopFollow: () => void;
   onMapBackgroundClick?: () => void;
+  /** Covered by a full-screen page: stop the animation clock, which would
+   *  otherwise re-render the map ~30 times a second for nobody. */
+  paused?: boolean;
 }
 
 /** Style-switch veil: quick cover, gentler reveal; reveal anyway if tiles stall. */
@@ -343,8 +348,10 @@ export function MetroMap({
   onStationHover,
   onTrainClick,
   onStationClick,
+  focusStation,
   onStopFollow,
   onMapBackgroundClick,
+  paused = false,
 }: MetroMapProps) {
   const mapRef = useRef<MapRef>(null);
   const deckPickRef = useRef(false);
@@ -452,6 +459,7 @@ export function MetroMap({
 
   // ~30fps animation clock for dead-reckoned train movement
   useEffect(() => {
+    if (paused) return;
     let raf = 0;
     let last = 0;
     const loop = (now: number) => {
@@ -463,7 +471,7 @@ export function MetroMap({
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [paused]);
   void tick;
 
   // 3D buildings on top of the vector tiles the style already loads
@@ -503,6 +511,13 @@ export function MetroMap({
       },
     });
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!map || !mapReady || !focusStation) return;
+    const { longitude, latitude } = focusStation.station;
+    map.flyTo({ center: [longitude, latitude], zoom: Math.max(map.getZoom(), 15.2), pitch: 50, duration: 1800, essential: true });
+  }, [focusStation, mapReady]);
 
   const handleLoad = useCallback(() => {
     const map = mapRef.current?.getMap();

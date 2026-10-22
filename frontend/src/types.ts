@@ -35,6 +35,9 @@ export interface Train {
   prev_station?: string;
   next_station?: string;
   next_arrival_ts?: number;
+  /** Platform where it stands while dwelling, else where it arrives next;
+   *  null/absent where the timetable has none. */
+  platform?: string | null;
   /** Departure from prev_station — start of the current segment. */
   prev_departure_ts?: number;
   /** Calls still ahead, terminus included. */

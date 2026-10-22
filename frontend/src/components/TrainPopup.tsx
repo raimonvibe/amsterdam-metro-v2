@@ -154,10 +154,14 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
 
       <div className="mb-1 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
         <span className="text-gray-500 dark:text-gray-400">{train.status === "dwelling" ? nl.atStation : nl.from}</span>
-        <span className="min-w-0 break-words font-medium">{formatPlaceName(train.prev_station ?? "–")}</span>
+        <span className="min-w-0 break-words font-medium">
+          {formatPlaceName(train.prev_station ?? "–")}
+          {train.status === "dwelling" && <PlatformTag platform={train.platform} />}
+        </span>
         <span className="text-gray-500 dark:text-gray-400">{nl.to}</span>
         <span className="min-w-0 break-words font-medium">
           {train.next_station ? formatPlaceName(train.next_station) : nl.terminus}
+          {train.status === "moving" && train.next_station && <PlatformTag platform={train.platform} />}
         </span>
       </div>
       {/* Carried over from the sidebar card this popup replaced. */}
@@ -220,5 +224,16 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
         </div>
       )}
     </div>
+  );
+}
+
+/** "· perron 2" after a station; nothing where the timetable has no platform. */
+function PlatformTag({ platform }: { platform?: string | null }) {
+  if (!platform) return null;
+  return (
+    <span className="whitespace-nowrap font-normal text-gray-500 dark:text-gray-400">
+      {" "}
+      · {nl.platform} {platform}
+    </span>
   );
 }

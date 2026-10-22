@@ -286,6 +286,11 @@ def build_subset(zip_path: Path) -> dict:
                     "lat": float(row["stop_lat"]),
                     "lon": float(row["stop_lon"]),
                 }
+                # Optional, so subsets cached before it existed stay valid (no
+                # SUBSET_VERSION bump). The feed leaves it out at the big
+                # interchanges (CS, Zuid, Sloterdijk...).
+                if row.get("platform_code"):
+                    stops[row["stop_id"]]["platform"] = row["platform_code"]
 
         # Drop geometry stand-ins that are not needed, or that leave the
         # configured corridor (keeps 50/51 full termini, not foreign branches).

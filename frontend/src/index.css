@@ -145,3 +145,31 @@ a {
     opacity: 1;
   }
 }
+
+/* Travel-info page: a classical, collegiate look — serif headings, small
+   caps, ruled lines — in the site's own colours. System serif fonts only:
+   no web-font request leaves the visitor's browser. */
+.font-academic {
+  font-family: "Iowan Old Style", "Palatino Linotype", "URW Palladio L", Palatino, "Book Antiqua",
+    "Hoefler Text", Georgia, "Noto Serif", "DejaVu Serif", serif;
+}
+
+.smallcaps {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.08em;
+}
+
+.rule-double {
+  border-bottom: 3px double rgb(196 184 160);
+}
+
+.dark .rule-double {
+  border-bottom-color: rgb(78 72 58);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .travel-page * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
