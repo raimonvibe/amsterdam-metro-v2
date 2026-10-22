@@ -361,15 +361,21 @@ class MetroData:
     def departures(
         self, station_name: str, rt: RealtimeState,
         now: Optional[float] = None, limit: int = 8,
+        horizon_s: int = 45 * 60, include_cancelled: bool = False,
     ) -> List[dict]:
-        """Upcoming departures at a station (all platforms), soonest first."""
+        """Upcoming departures at a station (all platforms), soonest first.
+
+        Cancelled runs are left out unless include_cancelled; then they are
+        listed at their scheduled time with "cancelled": True, so a board can
+        show them struck through instead of silently missing.
+        """
         now = now or time.time()
         target_stops = {
             sid for sid, st in self.stops.items() if st["name"] == station_name
         }
         if not target_stops:
             return []
-        horizon = now + 45 * 60
+        horizon = now + horizon_s
         out: List[dict] = []
         # RT overrides carry absolute times, so the same trip can produce
         # identical entries for each of its service dates — dedupe on the run.
@@ -379,12 +385,17 @@ class MetroData:
             rt_trip = rt.trip_updates.get(trip_id)
             rt_stops = rt_trip["stops"] if rt_trip else {}
             for date in self.service_dates.get(t["service_id"], []):
-                if rt.is_cancelled(trip_id, date) or not self._may_run(t, date, now, horizon):
+                if not self._may_run(t, date, now, horizon):
                     continue
-                times = self._effective_times(t, date, rt_trip)
+                cancelled = rt.is_cancelled(trip_id, date)
+                if cancelled and not include_cancelled:
+                    continue
+                # A cancelled run has no live times: show it as scheduled.
+                times = self._effective_times(t, date, None if cancelled else rt_trip)
+                base = service_date_epoch(date)
                 for i, (seq, stop_id, *_rest) in enumerate(t["stops"]):
                     if stop_id in target_stops:
-                        if rt_stops.get(seq, {}).get("skipped"):
+                        if rt_stops.get(seq, {}).get("skipped") and not cancelled:
                             continue
                         arr, dep, _dist, delay = times[i]
                         if now - 30 <= dep <= horizon and i < len(t["stops"]) - 1:
@@ -398,7 +409,13 @@ class MetroData:
                                 "headsign": t["headsign"],
                                 "departure_ts": int(dep),
                                 "delay_s": delay,
-                                "realtime": rt_trip is not None,
+                                "realtime": rt_trip is not None and not cancelled,
+                                "scheduled_ts": int(base + t["stops"][i][3]),
+                                "stop_id": stop_id,
+                                "platform": self.stops[stop_id].get("platform"),
+                                "stops_remaining": len(t["stops"]) - 1 - i,
+                                "terminus_ts": int(times[-1][0]),
+                                "cancelled": cancelled,
                             })
         out.sort(key=lambda d: d["departure_ts"])
         return out[:limit]
@@ -488,6 +505,7 @@ class MetroData:
                     delay_s=delay, status="moving",
                     prev_station=self.stops[stops[i - 1][1]]["name"],
                     next_station=self.stops[stops[i][1]]["name"],
+                    platform=self.stops[stops[i][1]].get("platform"),
                     next_arrival_ts=int(arr), prev_departure_ts=int(p_dep),
                     stops_remaining=len(stops) - i,
                     final_arrival_ts=int(times[-1][0]), realtime=rt_trip is not None,
@@ -501,6 +519,7 @@ class MetroData:
                     delay_s=delay, status="dwelling",
                     prev_station=self.stops[stops[i][1]]["name"],
                     next_station=self.stops[stops[i + 1][1]]["name"] if i + 1 < len(stops) else None,
+                    platform=self.stops[stops[i][1]].get("platform"),
                     next_arrival_ts=int(times[i + 1][0]) if i + 1 < len(times) else None,
                     prev_departure_ts=int(dep),
                     stops_remaining=len(stops) - 1 - i,

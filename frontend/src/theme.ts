@@ -48,7 +48,14 @@ const STORAGE_KEY = "metro-live:map-style";
 
 export function useMapStyle(): [MapStyle, (s: MapStyle) => void] {
   const [style, setStyle] = useState<MapStyle>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    // Storage access throws when site data is blocked; that must not take
+    // the whole app down with it.
+    let saved: string | null = null;
+    try {
+      saved = localStorage.getItem(STORAGE_KEY);
+    } catch {
+      /* default style */
+    }
     return saved && saved in MAP_STYLES ? (saved as MapStyle) : "liberty";
   });
 
@@ -57,10 +64,31 @@ export function useMapStyle(): [MapStyle, (s: MapStyle) => void] {
     document.documentElement.classList.toggle("dark", dark);
     // Mobile browser chrome: match the page background (white / gray-950).
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#030712" : "#ffffff");
-    localStorage.setItem(STORAGE_KEY, style);
+    try {
+      localStorage.setItem(STORAGE_KEY, style);
+    } catch {
+      /* the choice just doesn't persist */
+    }
   }, [style]);
 
   return [style, setStyle];
+}
+
+/**
+ * A plain light/dark switch for pages without the style picker (/reisinfo).
+ * It swaps to the style last used on the other palette, so going dark from
+ * Bright and back lands on Bright again, not on a default.
+ */
+export function useThemeToggle(style: MapStyle, setStyle: (s: MapStyle) => void): () => void {
+  const [lastOf, setLastOf] = useState<Record<Theme, MapStyle>>(() => ({
+    light: MAP_STYLES[style].palette === "light" ? style : "liberty",
+    dark: MAP_STYLES[style].palette === "dark" ? style : "dark",
+  }));
+  const palette = MAP_STYLES[style].palette;
+  useEffect(() => {
+    setLastOf((cur) => (cur[palette] === style ? cur : { ...cur, [palette]: style }));
+  }, [style, palette]);
+  return () => setStyle(lastOf[palette === "dark" ? "light" : "dark"]);
 }
 
 /**

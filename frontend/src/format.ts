@@ -7,6 +7,12 @@ export function delayLabel(s: number): string {
   return s > 0 ? `+${m || 1} min` : `-${m || 1} min`;
 }
 
+/** Station name for headings: city prefix off, but not abbreviated
+ *  ("Centraal Station", where lists say "CS"). */
+export function fullPlaceName(name: string): string {
+  return name.replace(/^Amsterdam, /, "");
+}
+
 /** Strip city prefix and shorten common station names for display. */
 export function formatPlaceName(name: string): string {
   const stripped = name.replace(/^Amsterdam, /, "");

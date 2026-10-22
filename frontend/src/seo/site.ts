@@ -7,6 +7,9 @@ export const SEO = {
   privacyTitle: "Privacybeleid — Metro Amsterdam Live",
   privacyDescription:
     "Privacybeleid van Metro Amsterdam Live: welke gegevens worden verwerkt, cookies, externe diensten en uw rechten.",
+  travelTitle: "Reisinformatie — vertrektijden, reisplanner & lijnen | Metro Amsterdam Live",
+  travelDescription:
+    "Live vertrektijden per metrostation in Amsterdam, een reisplanner met overstappen, lijnoverzichten met rijdende metro's en de stiptheid van M50–M54.",
   canonicalBase: "https://amsterdammetro.nl",
 } as const;
 
