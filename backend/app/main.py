@@ -32,8 +32,13 @@ logger = logging.getLogger(__name__)
 # all of them get this one shared snapshot: server cost no longer grows with
 # the number of viewers. Clients dead-reckon between polls, so 1s is plenty.
 SNAPSHOT_SECONDS = 1.0
-# Retry cadence while the first static load keeps failing (OVapi down at boot).
+# Retry backoff while the first static load keeps failing (OVapi down or
+# throttling at boot): 1 min, doubling up to 30 min. A fixed 1-minute retry
+# against a 429 only keeps the throttling going.
 STATIC_RETRY_SECONDS = 60
+STATIC_RETRY_MAX_SECONDS = 1800
+# Upper bound on honouring a Retry-After: past this, try anyway.
+STATIC_RETRY_AFTER_MAX_SECONDS = 3600
 DEPARTURES_TTL_SECONDS = 10
 # Static data changes at most once per GTFS refresh; ETags make repeats cheap.
 STATIC_CACHE_CONTROL = "public, max-age=300"
@@ -122,12 +127,25 @@ async def keep_static_fresh() -> None:
     """Load at boot, then re-check hourly so a long-lived process picks up new
     service dates. Runs in the background: the server answers (healthz 503)
     while the first load is still in progress."""
+    retry = STATIC_RETRY_SECONDS
     while True:
+        retry_after = None
         try:
             await _refresh_static()
+        except gtfs_static.StaticDownloadError as e:
+            # Expected and self-explanatory (e.g. HTTP 429): no traceback.
+            logger.warning("GTFS static download failed: %s", e)
+            retry_after = e.retry_after
         except Exception:
             logger.exception("GTFS static refresh failed")
-        await asyncio.sleep(GTFS_REFRESH_SECONDS if static else STATIC_RETRY_SECONDS)
+        if static:
+            retry = STATIC_RETRY_SECONDS
+            await asyncio.sleep(GTFS_REFRESH_SECONDS)
+            continue
+        wait = max(retry, min(retry_after or 0, STATIC_RETRY_AFTER_MAX_SECONDS))
+        retry = min(retry * 2, STATIC_RETRY_MAX_SECONDS)
+        logger.info("Retrying the GTFS static load in %ds", wait)
+        await asyncio.sleep(wait)
 
 
 def _solve_snapshot(data: StaticData, seq: int) -> Snapshot:
