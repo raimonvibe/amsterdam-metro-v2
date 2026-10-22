@@ -1,4 +1,5 @@
-import { formatPlaceName } from "../format";
+import { useRef } from "react";
+import { delayLabel, formatPlaceName } from "../format";
 import { nl } from "../i18n/nl";
 import { AnimatedTrain } from "../types";
 
@@ -17,6 +18,13 @@ const CARD_W = 264;
 const EDGE_PAD = 8;
 /** Clear of the glow sprite so the card never covers the train it describes. */
 const ANCHOR_GAP = 26;
+/**
+ * Slack before the card flips back above the train. Without it a train running
+ * along the flip line toggles the card above/below on alternate frames.
+ */
+const FLIP_HYSTERESIS = 40;
+/** Card height before the first measurement — the usual size of the card. */
+const CARD_H_GUESS = 230;
 
 // The timetable is Amsterdam time; a visitor abroad still reads the platform clock.
 const HM = new Intl.DateTimeFormat("nl-NL", {
@@ -107,13 +115,23 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
     return m === 0 ? nl.now : `${m} ${nl.min}`;
   };
   const left = Math.min(Math.max(x - CARD_W / 2, EDGE_PAD), containerWidth - CARD_W - EDGE_PAD);
-  // Flip below the train when there is no room above it.
-  const below = y < 190;
+
+  // Flip below the train when the card no longer fits above it, and only flip
+  // back once it fits with room to spare. Height comes from the last frame.
+  const cardRef = useRef<HTMLDivElement>(null);
+  const belowRef = useRef(false);
+  const needed = (cardRef.current?.offsetHeight ?? CARD_H_GUESS) + ANCHOR_GAP + EDGE_PAD;
+  if (!belowRef.current && y < needed) belowRef.current = true;
+  else if (belowRef.current && y > needed + FLIP_HYSTERESIS) belowRef.current = false;
+  const below = belowRef.current;
 
   return (
     <div
+      ref={cardRef}
       role="tooltip"
-      className="pointer-events-none absolute z-30 rounded-xl border border-gray-200 bg-white/95 p-3 text-xs text-gray-900 shadow-xl backdrop-blur dark:border-gray-700 dark:bg-gray-950/90 dark:text-gray-100"
+      // Opaque, no backdrop blur: the map under it redraws ~30x a second, and
+      // re-blurring that every frame is real GPU work on low-end devices.
+      className="pointer-events-none absolute z-30 rounded-xl border border-gray-200 bg-white p-3 text-xs text-gray-900 shadow-xl dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
       style={{
         width: CARD_W,
         left,
@@ -145,6 +163,21 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
         <span className="min-w-0 break-words font-medium">
           {train.next_station ? formatPlaceName(train.next_station) : nl.terminus}
         </span>
+      </div>
+      {/* Carried over from the sidebar card this popup replaced. */}
+      <div className="mb-2 text-[11px]">
+        <span
+          className={
+            train.delay_s > 60
+              ? "text-amber-600 dark:text-amber-400"
+              : "text-emerald-600 dark:text-emerald-400"
+          }
+        >
+          {delayLabel(train.delay_s)}
+        </span>
+        {!train.realtime && (
+          <span className="text-gray-400 dark:text-gray-500"> · {nl.scheduledNoRt}</span>
+        )}
       </div>
 
       <div className="mb-2.5">

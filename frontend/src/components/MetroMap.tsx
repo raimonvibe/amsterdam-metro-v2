@@ -43,7 +43,6 @@ interface MetroMapProps {
   /** Basemap background of the incoming style: the colour a style switch fades through. */
   backdropColor: string;
   followedTrainId: string | null;
-  onTrainHover: (train: AnimatedTrain | null) => void;
   onStationHover: (station: Station | null) => void;
   onTrainClick: (train: AnimatedTrain) => void;
   onStationClick: (station: Station) => void;
@@ -55,6 +54,33 @@ interface MetroMapProps {
 const VEIL_IN_MS = 150;
 const VEIL_OUT_MS = 350;
 const VEIL_MAX_WAIT_MS = 1500;
+
+/**
+ * The train popup closes once its train is this far from a still pointer.
+ * deck.gl only re-picks on pointer moves, so without this a train that drives
+ * out from under a resting cursor keeps its popup open indefinitely.
+ */
+const POPUP_LEAVE_PX = 40;
+
+/** Phones and tablets: no hover, so the followed train gets the popup instead. */
+const NO_HOVER =
+  typeof window !== "undefined" && window.matchMedia("(hover: none)").matches;
+
+/** Distance in px from (px, py) to the polyline `pts`. */
+function distToPolyline(px: number, py: number, pts: { x: number; y: number }[]): number {
+  if (pts.length === 1) return Math.hypot(px - pts[0].x, py - pts[0].y);
+  let best = Infinity;
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1];
+    const b = pts[i];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 ? Math.min(Math.max(((px - a.x) * dx + (py - a.y) * dy) / len2, 0), 1) : 0;
+    best = Math.min(best, Math.hypot(px - (a.x + dx * t), py - (a.y + dy * t)));
+  }
+  return best;
+}
 
 /** Amsterdam metro trainsets are ~90-116m; 100m reads well at city zoom. */
 const TRAIN_LENGTH_M = 100;
@@ -304,7 +330,6 @@ export function MetroMap({
   styleUrl: targetStyleUrl,
   backdropColor,
   followedTrainId,
-  onTrainHover,
   onStationHover,
   onTrainClick,
   onStationClick,
@@ -367,8 +392,15 @@ export function MetroMap({
   const lastSampleRef = useRef(0);
   const [mapReady, setMapReady] = useState(false);
   // Held by id, not object: every 5s poll replaces the train objects, and the
-  // popup has to keep tracking the live one under the pointer.
-  const [hoveredTrainId, setHoveredTrainId] = useState<string | null>(null);
+  // popup has to keep tracking the live one under the pointer. `source` says
+  // which layer set it, so a leave event from one layer cannot clear a hover
+  // another layer just set; x/y is the pointer, for the leave check.
+  const [hover, setHover] = useState<{
+    id: string;
+    source: "train" | "station";
+    x: number;
+    y: number;
+  } | null>(null);
 
   // Style switches fade through a veil in the incoming basemap's colour: veil
   // up, swap style + overlay palette together underneath, veil down once the
@@ -704,6 +736,31 @@ export function MetroMap({
   });
 
   const haloParams = t.additiveGlow ? ADDITIVE : FLAT;
+  const map = mapRef.current?.getMap();
+
+  // A train at a platform sits under the station's hit target, which wins the
+  // pick. Hovering the station brings up that train's popup; a click still
+  // opens the departure board. Both directions can be in at once, so take the
+  // one nearest the pointer.
+  const hoverStation = (info: { object?: unknown; x: number; y: number }) => {
+    const station = (info.object as Station | undefined) ?? null;
+    onStationHover(station);
+    const here = station && map
+      ? positioned.filter((tr) => tr.status === "dwelling" && tr.prev_station === station.name)
+      : [];
+    let best: PositionedTrain | null = null;
+    let bestD = Infinity;
+    for (const tr of here) {
+      const p = map!.project(tr.center);
+      const d = Math.hypot(p.x - info.x, p.y - info.y);
+      if (d < bestD) {
+        bestD = d;
+        best = tr;
+      }
+    }
+    if (best) setHover({ id: best.id, source: "station", x: info.x, y: info.y });
+    else setHover((h) => (h?.source === "station" ? null : h));
+  };
 
   // Rides the same ~30fps clock as the dead-reckoned movement: `positioned` is
   // a fresh array every frame, so deck.gl re-runs the colour accessor anyway
@@ -852,7 +909,7 @@ export function MetroMap({
             parameters: FLAT,
             // Labels are an easy tap target at street zoom.
             pickable: true,
-            onHover: (info) => onStationHover((info.object as Station) || null),
+            onHover: hoverStation,
             onClick: (info) => {
               if (info.object) {
                 deckPickRef.current = true;
@@ -883,9 +940,9 @@ export function MetroMap({
       parameters: FLAT,
       pickable: true,
       onHover: (info) => {
-        const train = (info.object as TrainBodySeg | null)?.train ?? null;
-        setHoveredTrainId(train?.id ?? null);
-        onTrainHover(train);
+        const train = (info.object as TrainBodySeg | null)?.train;
+        if (train) setHover({ id: train.id, source: "train", x: info.x, y: info.y });
+        else setHover((h) => (h?.source === "train" ? null : h));
       },
       onClick: (info) => {
         const seg = info.object as TrainBodySeg | null;
@@ -932,7 +989,7 @@ export function MetroMap({
       stroked: false,
       parameters: FLAT,
       pickable: true,
-      onHover: (info) => onStationHover((info.object as Station) || null),
+      onHover: hoverStation,
       onClick: (info) => {
         if (info.object) {
           deckPickRef.current = true;
@@ -943,10 +1000,22 @@ export function MetroMap({
     }),
   ];
 
-  // Pinned to the train, not the pointer: it keeps moving under a still cursor.
-  const hovered = hoveredTrainId ? positioned.find((tr) => tr.id === hoveredTrainId) : undefined;
-  const map = mapRef.current?.getMap();
-  const hoveredScreen = hovered && map ? map.project(hovered.center) : null;
+  // Pinned to the train, not the pointer: it keeps moving under a still cursor,
+  // until it has moved POPUP_LEAVE_PX clear of it.
+  const hoveredTrain = hover ? positioned.find((tr) => tr.id === hover.id) : undefined;
+  const hoverLeft =
+    !!hover &&
+    (!hoveredTrain ||
+      !map ||
+      distToPolyline(hover.x, hover.y, hoveredTrain.path.map((p) => map.project(p))) >
+        POPUP_LEAVE_PX);
+  useEffect(() => {
+    if (hoverLeft) setHover(null);
+  }, [hoverLeft]);
+  const popupTrain =
+    (!hoverLeft && hoveredTrain) ||
+    (NO_HOVER && followedTrainId ? positioned.find((tr) => tr.id === followedTrainId) : undefined);
+  const popupScreen = popupTrain && map ? map.project(popupTrain.center) : null;
 
   if (webglError) {
     return (
@@ -997,13 +1066,14 @@ export function MetroMap({
         />
       </Map>
       <ChurchMarkers mapRef={mapRef} mapReady={mapReady} theme={theme} />
-      {hovered && hoveredScreen && (
+      {popupTrain && popupScreen && (
         <TrainPopup
-          train={hovered}
-          lineName={lines.find((l) => l.id === hovered.line)?.name}
-          color={lines.find((l) => l.id === hovered.line)?.color ?? "#999999"}
-          x={hoveredScreen.x}
-          y={hoveredScreen.y}
+          key={popupTrain.id}
+          train={popupTrain}
+          lineName={lines.find((l) => l.id === popupTrain.line)?.name}
+          color={lines.find((l) => l.id === popupTrain.line)?.color ?? "#999999"}
+          x={popupScreen.x}
+          y={popupScreen.y}
           containerWidth={map?.getContainer().clientWidth ?? 0}
           nowMs={nowMs}
         />
