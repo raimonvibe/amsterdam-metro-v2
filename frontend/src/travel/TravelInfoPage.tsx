@@ -467,6 +467,13 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
                 document.getElementById("vertrekstaat")?.scrollIntoView({ block: "start" });
               }}
               onRoute={onRoute}
+              onShowLine={() => {
+                // Phones only (the button is hidden on wide screens), where the
+                // tab shows just this section: the top of the page is its start,
+                // and scrolling to the section would tuck it under the header.
+                setTab("lijnen");
+                pageRef.current?.scrollTo({ top: 0 });
+              }}
               nowMs={nowMs}
             />
           </div>

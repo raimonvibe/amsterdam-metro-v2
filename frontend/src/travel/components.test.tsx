@@ -449,6 +449,21 @@ describe("JourneyPlanner", () => {
     expect(routeKeyOf(journey(3, 30, 0).legs)).not.toBe(routeKeyOf(journey(3, 30, 1).legs));
   });
 
+  it("follows the option the visitor picks", async () => {
+    const onRoute = vi.fn();
+    renderPlanner([journey(3, 30, 1), journey(8, 25, 0)], onRoute);
+    await screen.findAllByText(/Overstappen op/);
+    expect(onRoute).toHaveBeenLastCalledWith([expect.objectContaining({ trip_id: "a3" }), expect.objectContaining({ trip_id: "b3" })]);
+    const second = screen.getByRole("button", { name: "12:08 → 12:33" });
+    await userEvent.click(second);
+    expect(second).toHaveAttribute("aria-pressed", "true");
+    expect(onRoute).toHaveBeenLastCalledWith([expect.objectContaining({ trip_id: "a8" })]);
+    // Picking it again re-applies it, for a line opened in between.
+    const calls = onRoute.mock.calls.length;
+    await userEvent.click(second);
+    expect(onRoute.mock.calls.length).toBe(calls + 1);
+  });
+
   it("swaps origin and destination", async () => {
     const props = renderPlanner([]);
     await userEvent.click(screen.getByRole("button", { name: "Van en naar omwisselen" }));
