@@ -29,6 +29,8 @@ export interface JourneyPlannerProps {
   /** The legs of the next journey, for the board and the line diagram to
    *  follow; null when there is none. Called only when that route changes. */
   onRoute?: (legs: JourneyLeg[] | null) => void;
+  /** Phones: open the line overview for the picked option (another tab there). */
+  onShowLine?: () => void;
   nowMs: number;
 }
 
@@ -46,13 +48,23 @@ export function routeKeyOf(legs: JourneyLeg[] | null): string {
   return legs ? legs.map((l) => `${l.line}|${l.headsign}|${l.from}|${l.to}`).join(">") : "";
 }
 
+/** Which option a pick means; stays the same across refreshes of the list. */
+export function journeyId(j: Journey): string {
+  return `${j.legs[0]?.trip_id}@${j.departure_ts}`;
+}
+
 export function JourneyPlanner(props: JourneyPlannerProps) {
   const { colorOf, from, to, nowMs } = props;
   const [journeys, setJourneys] = useState<Journey[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(null);
+  // Counts picks, so picking again re-applies the route even if its shape
+  // did not change (the visitor may have opened another line since).
+  const [picks, setPicks] = useState(0);
 
   useEffect(() => {
     setJourneys(null);
+    setPicked(null);
     setError(null);
     if (!from || !to || from.name === to.name) return;
     let stop = false;
@@ -78,17 +90,25 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
   const upcoming = useMemo(() => (journeys ?? []).filter((j) => j.departure_ts > nowMs / 1000 - 30), [journeys, nowMs]);
   const fastest = fastestIndex(upcoming);
 
+  // The picked option, or the next one; a picked train that has left falls
+  // back to the next.
+  const chosen = upcoming.find((j) => journeyId(j) === picked) ?? upcoming[0] ?? null;
+  const pick = (j: Journey) => {
+    setPicked(journeyId(j));
+    setPicks((n) => n + 1);
+  };
+
   // Report the route by its shape (lines and stations), not its trips: the
   // next train leaving must not count as a new route, or it would undo a line
   // the visitor picked since.
-  const next = upcoming[0]?.legs ?? null;
+  const next = chosen?.legs ?? null;
   const routeKey = routeKeyOf(next);
   const { onRoute } = props;
   const nextRef = useRef(next);
   nextRef.current = next;
   useEffect(() => {
     onRoute?.(nextRef.current);
-  }, [routeKey, onRoute]);
+  }, [routeKey, picks, onRoute]);
 
   return (
     <Section n={3} id="reisplanner" title="Reisplanner">
@@ -159,12 +179,29 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
           </p>
         )}
         <ol className="space-y-2">
-          {upcoming.map((j, i) => (
-            <li key={`${j.departure_ts}-${j.arrival_ts}-${j.transfers}`} className="rounded-md border border-[#e3dac7] p-2 dark:border-[#232b3e]">
+          {upcoming.map((j, i) => {
+            const isChosen = upcoming.length > 1 && j === chosen;
+            return (
+            <li
+              key={`${j.departure_ts}-${j.arrival_ts}-${j.transfers}`}
+              // The whole card picks the option; the station names inside keep
+              // their own action. The time below is the keyboard way in.
+              onClick={(e) => {
+                if (!(e.target as HTMLElement).closest("button")) pick(j);
+              }}
+              className={`cursor-pointer rounded-md border p-2 transition ${
+                isChosen ? "border-[#c8a951] ring-2 ring-[#c8a951]" : "border-[#e3dac7] hover:border-[#c8a951] dark:border-[#232b3e]"
+              }`}
+            >
               <div className="flex items-baseline justify-between gap-2">
-                <span className="font-academic text-lg font-semibold tabular-nums">
+                <button
+                  type="button"
+                  onClick={() => pick(j)}
+                  aria-pressed={isChosen}
+                  className="font-academic text-left text-lg font-semibold tabular-nums"
+                >
                   <Num>{clock(j.departure_ts)}</Num> → <Num>{clock(j.arrival_ts)}</Num>
-                </span>
+                </button>
                 <span className="text-xs font-semibold tabular-nums text-[#7b2132] dark:text-[#f08a9b]">
                   <Num>{countdown(j.departure_ts, nowMs)}</Num>
                 </span>
@@ -205,8 +242,18 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                   </li>
                 ))}
               </ol>
+              {j === chosen && props.onShowLine && (
+                <button
+                  type="button"
+                  onClick={props.onShowLine}
+                  className="mt-1.5 flex min-h-9 items-center text-xs font-semibold text-[#1f3a68] underline-offset-2 hover:underline lg:hidden dark:text-[#c8a951]"
+                >
+                  Bekijk op het lijnoverzicht →
+                </button>
+              )}
             </li>
-          ))}
+            );
+          })}
         </ol>
       </div>
     </Section>
