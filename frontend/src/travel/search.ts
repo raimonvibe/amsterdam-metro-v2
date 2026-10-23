@@ -61,8 +61,26 @@ const LINE_WORDS: Record<string, string[]> = {
 const NEARBY_WORDS = new Set(["dichtbij", "in de buurt", "bij mij", "hier", "locatie", "mijn locatie", "nearby"]);
 
 /** Lowercase, accents off, "Burg." spelled out, punctuation to spaces. */
+/** First code point ("0") of each run of ten decimal digits outside ASCII:
+ *  Arabic-Indic, Persian, Devanagari, Bengali and the other Indic scripts,
+ *  Thai, Lao, Tibetan, Myanmar, Khmer, Mongolian and full-width. */
+const DIGIT_ZEROS = [
+  0x0660, 0x06f0, 0x07c0, 0x0966, 0x09e6, 0x0a66, 0x0ae6, 0x0b66, 0x0be6, 0x0c66, 0x0ce6, 0x0d66, 0x0de6,
+  0x0e50, 0x0ed0, 0x0f20, 0x1040, 0x1090, 0x17e0, 0x1810, 0xff10,
+];
+
+/** "৫২" (Bengali) or "٥٢" (Arabic) -> "52", so a phone keyboard in another
+ *  script can still ask for a line. */
+export function asciiDigits(s: string): string {
+  return s.replace(/\p{Nd}/gu, (d) => {
+    const cp = d.codePointAt(0)!;
+    const zero = DIGIT_ZEROS.find((z) => cp >= z && cp <= z + 9);
+    return zero === undefined ? d : String(cp - zero);
+  });
+}
+
 export function normalize(s: string): string {
-  return s
+  return asciiDigits(s)
     .toLowerCase()
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
@@ -144,6 +162,14 @@ function index(stations: Station[]): Indexed[] {
     indexCache.set(stations, idx);
   }
   return idx;
+}
+
+/** Every station A–Z, for picking one without typing: a keyboard in another
+ *  script (Bengali, Arabic, Chinese…) cannot type the Dutch names. */
+export function allStations(stations: Station[]): Extract<SearchResult, { kind: "station" }>[] {
+  return [...stations]
+    .sort((a, b) => formatPlaceName(a.name).localeCompare(formatPlaceName(b.name), "nl"))
+    .map((station) => ({ kind: "station", station, score: 0 }));
 }
 
 /** Stations ranked for a query; ties go to busier (more lines) stations. */
