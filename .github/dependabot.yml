@@ -1,5 +1,5 @@
 # Manual scan trigger: 2026-09-27T01:31:21Z (fresh Dependabot version-update check)
-# Dependabot version updates — runs every Monday.
+# Dependabot version updates — runs every Saturday.
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
@@ -8,19 +8,19 @@ updates:
     directory: /frontend
     schedule:
       interval: weekly
-      day: monday
+      day: saturday
     open-pull-requests-limit: 10
 
   - package-ecosystem: pip
     directory: /backend
     schedule:
       interval: weekly
-      day: monday
+      day: saturday
     open-pull-requests-limit: 10
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
-      day: monday
+      day: saturday
     open-pull-requests-limit: 5
