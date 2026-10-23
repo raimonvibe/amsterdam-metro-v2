@@ -113,6 +113,40 @@ describe("SearchBox", () => {
     expect(name.closest("[translate='no']")).not.toBeNull();
   });
 
+  it("lists every station A–Z before anything is typed", async () => {
+    // A keyboard in another script cannot type the Dutch names.
+    const { input, onStation } = setup("station");
+    await userEvent.click(input);
+    const options = screen.getAllByRole("option");
+    expect(options).toHaveLength(STATIONS.length);
+    expect(screen.getByText("Alle stations")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("option", { name: /Gein/ }));
+    expect(onStation).toHaveBeenCalledWith(byName("Amsterdam, Gein"));
+  });
+
+  it("opens the full list from the arrow button", async () => {
+    setup("station");
+    await userEvent.click(screen.getByRole("button", { name: "Alle stations tonen" }));
+    expect(screen.getAllByRole("option")).toHaveLength(STATIONS.length);
+  });
+
+  it("falls back to the full list for text in another script, but Enter picks nothing", async () => {
+    const { input, onStation } = setup("station");
+    await userEvent.type(input, "আমস্টেল");
+    expect(screen.getByText(/Geen station gevonden/)).toBeInTheDocument();
+    expect(screen.getAllByRole("option")).toHaveLength(STATIONS.length);
+    await userEvent.keyboard("{Enter}");
+    expect(onStation).not.toHaveBeenCalled();
+    await userEvent.keyboard("{ArrowDown}{Enter}");
+    expect(onStation).toHaveBeenCalledTimes(1);
+  });
+
+  it("reads digits in other scripts: Bengali ৫২ is line 52", async () => {
+    const { input, onLine } = setup();
+    await userEvent.type(input, "৫২{Enter}");
+    expect(onLine).toHaveBeenCalledWith("52");
+  });
+
   it("in station mode offers stations only", async () => {
     const { input, onRoute } = setup("station");
     await userEvent.type(input, "noord naar gein{Enter}");
