@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDownUp, Clock3, Repeat } from "lucide-react";
 import { fetchJourneys } from "../api";
-import { delayLabel, formatPlaceName } from "../format";
+import { delayLabel } from "../format";
+import { Place } from "../components/Place";
 import { pollWhileVisible } from "../poll";
 import { Station } from "../types";
 import { SearchBox } from "./SearchBox";
@@ -95,7 +96,7 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
           onClick={() => props.onFrom(props.current)}
           className="mt-1.5 text-xs font-semibold text-[#1f3a68] underline-offset-2 hover:underline dark:text-[#c8a951]"
         >
-          Vertrek vanaf {formatPlaceName(props.current.name)}
+          Vertrek vanaf <Place name={props.current.name} />
         </button>
       )}
 
@@ -109,7 +110,7 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
         {from && !to && (
           <div className="space-y-1.5 text-xs leading-relaxed text-[#5b5446] dark:text-[#a9b0c2]">
             <p>
-              Vertrek vanaf <strong className="text-[#1d2433] dark:text-[#ece6d6]">{formatPlaceName(from.name)}</strong>.
+              Vertrek vanaf <strong className="text-[#1d2433] dark:text-[#ece6d6]"><Place name={from.name} /></strong>.
               Kies nu waar je heen wilt.
             </p>
             {/* On a desktop the board beside the planner already switched to this
@@ -120,7 +121,7 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                 onClick={() => props.onShowDepartures?.(from)}
                 className="flex min-h-9 items-center gap-1 font-semibold text-[#1f3a68] underline-offset-2 hover:underline lg:hidden dark:text-[#c8a951]"
               >
-                Vertrektijden vanaf {formatPlaceName(from.name)} →
+                Vertrektijden vanaf <Place name={from.name} /> →
               </button>
             )}
           </div>
@@ -162,20 +163,20 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                   <li key={leg.trip_id + k} className="text-xs">
                     {k > 0 && (
                       <div className="mb-1 italic text-[#7a7262] dark:text-[#8b93a7]">
-                        Overstappen op {formatPlaceName(leg.from)} · {duration(leg.departure_ts - j.legs[k - 1].arrival_ts)} wachten
+                        Overstappen op <Place name={leg.from} /> · {duration(leg.departure_ts - j.legs[k - 1].arrival_ts)} wachten
                       </div>
                     )}
                     <div className="flex min-w-0 items-center gap-1.5">
                       <LineBadge id={leg.line} color={colorOf(leg.line)} small />
                       <span className="min-w-0 truncate">
                         <button type="button" onClick={() => props.onStation(leg.from)} className="font-semibold hover:underline">
-                          {formatPlaceName(leg.from)}
+                          <Place name={leg.from} />
                         </button>{" "}
-                        {clock(leg.departure_ts)} → {formatPlaceName(leg.to)} {clock(leg.arrival_ts)}
+                        {clock(leg.departure_ts)} → <Place name={leg.to} /> {clock(leg.arrival_ts)}
                       </span>
                     </div>
                     <div className="pl-8 text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
-                      richting {formatPlaceName(leg.headsign)} · {leg.stops} {leg.stops === 1 ? "halte" : "haltes"}
+                      richting <Place name={leg.headsign} /> · {leg.stops} {leg.stops === 1 ? "halte" : "haltes"}
                       {leg.realtime ? ` · ${delayLabel(leg.delay_s)}` : " · dienstregeling"}
                     </div>
                   </li>

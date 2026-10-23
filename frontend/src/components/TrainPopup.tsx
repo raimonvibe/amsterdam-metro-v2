@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { X } from "lucide-react";
-import { delayLabel, formatPlaceName } from "../format";
+import { delayLabel } from "../format";
+import { Place } from "./Place";
 import { nl } from "../i18n/nl";
 import { AnimatedTrain } from "../types";
 
@@ -162,7 +163,7 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
           {train.line}
         </span>
         <div className="min-w-0">
-          <div className="break-words text-sm font-semibold leading-snug">→ {formatPlaceName(train.headsign ?? "")}</div>
+          <div className="break-words text-sm font-semibold leading-snug">→ <Place name={train.headsign ?? ""} /></div>
           {lineName && (
             <div className="break-words text-[11px] leading-snug text-gray-500 dark:text-gray-400">
               {nl.line} {train.line} · {lineName}
@@ -174,12 +175,12 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
       <div className="mb-1 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
         <span className="text-gray-500 dark:text-gray-400">{train.status === "dwelling" ? nl.atStation : nl.from}</span>
         <span className="min-w-0 break-words font-medium">
-          {formatPlaceName(train.prev_station ?? "–")}
+          <Place name={train.prev_station ?? "–"} />
           {train.status === "dwelling" && <PlatformTag platform={train.platform} />}
         </span>
         <span className="text-gray-500 dark:text-gray-400">{nl.to}</span>
         <span className="min-w-0 break-words font-medium">
-          {train.next_station ? formatPlaceName(train.next_station) : nl.terminus}
+          {train.next_station ? <Place name={train.next_station} /> : nl.terminus}
           {train.status === "moving" && train.next_station && <PlatformTag platform={train.platform} />}
         </span>
       </div>
@@ -228,7 +229,7 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
           <ArrivalClock nowMs={nowMs} arrivalMs={finalMs} color={color} />
           <div className="min-w-0">
             <div className="break-words text-[11px] leading-snug text-gray-500 dark:text-gray-400">
-              {nl.arrivesAt} {formatPlaceName(train.headsign ?? train.next_station ?? "")}
+              {nl.arrivesAt} <Place name={train.headsign ?? train.next_station ?? ""} />
             </div>
             <div className="text-lg font-bold tabular-nums leading-tight">
               {hhmm(finalMs)}{" "}
@@ -236,7 +237,7 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
             </div>
             {nextMs && train.next_station && nextMs !== finalMs && (
               <div className="break-words text-[11px] leading-snug text-gray-500 dark:text-gray-400">
-                {formatPlaceName(train.next_station)} {hhmm(nextMs)} · {minsUntil(nextMs)}
+                <Place name={train.next_station} /> {hhmm(nextMs)} · {minsUntil(nextMs)}
               </div>
             )}
           </div>

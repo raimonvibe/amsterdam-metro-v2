@@ -3,7 +3,7 @@ import { AnimatedTrain, Line, Station, Status } from "../types";
 import { MapStyle } from "../theme";
 import { StyleSwitcher } from "./StyleSwitcher";
 import { nl } from "../i18n/nl";
-import { formatPlaceName } from "../format";
+import { Place } from "./Place";
 import { SocialIcons } from "./SocialIcons";
 import { Credits } from "./Credits";
 
@@ -108,7 +108,7 @@ export function Sidebar({
             >
               <LineBadge id={line.id} color={line.color} />
               <span className="min-w-0 flex-1 truncate text-gray-800 dark:text-gray-200">
-                {formatPlaceName(line.name)}
+                <Place name={line.name} />
               </span>
               <span className="w-5 shrink-0 text-right text-xs tabular-nums text-gray-500 dark:text-gray-400">
                 {count}
@@ -172,7 +172,7 @@ export function Sidebar({
       {hoveredStation && (
         <div className="mb-3 rounded-lg border border-gray-300 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-900">
           <div className="font-semibold">
-            {formatPlaceName(hoveredStation.name)}
+            <Place name={hoveredStation.name} />
           </div>
           <div className="mt-1 flex gap-1">
             {hoveredStation.lines.map((l) => (

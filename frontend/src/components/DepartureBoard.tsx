@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import { fetchDepartures } from "../api";
 import { pollWhileVisible } from "../poll";
 import { nl } from "../i18n/nl";
-import { formatPlaceName } from "../format";
+import { Place } from "./Place";
 import { Departure, Line, Station } from "../types";
 
 interface DepartureBoardProps {
@@ -51,7 +51,7 @@ export function DepartureBoard({ station, lines, onClose, onMore }: DepartureBoa
     <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 max-h-[min(50vh,24rem)] overflow-y-auto overscroll-contain rounded-xl border border-gray-200 bg-white/95 p-3 text-gray-900 shadow-lg backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 dark:text-gray-100 sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-4 sm:max-h-[min(70vh,28rem)] sm:w-72">
       <div className="mb-2 flex items-start justify-between gap-2">
         <h2 className="min-w-0 text-sm font-bold leading-snug">
-          {formatPlaceName(station.name)}
+          <Place name={station.name} />
         </h2>
         <button
           type="button"
@@ -88,7 +88,7 @@ export function DepartureBoard({ station, lines, onClose, onMore }: DepartureBoa
                   {d.line}
                 </span>
                 <span className="truncate text-gray-800 dark:text-gray-200">
-                  {formatPlaceName(d.headsign)}
+                  <Place name={d.headsign} />
                 </span>
               </span>
               <span className="ml-2 shrink-0 text-right">

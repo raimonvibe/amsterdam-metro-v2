@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Footprints, Link2, MapPin, Radio, Route, Star } from "lucide-react";
 import { fetchBoard, fetchStationInfo } from "../api";
-import { delayLabel, formatPlaceName, fullPlaceName } from "../format";
+import { delayLabel } from "../format";
+import { Place } from "../components/Place";
 import { pollWhileVisible } from "../poll";
 import { AnimatedTrain, Station } from "../types";
 import { TravelPrefs } from "./storage";
@@ -144,7 +145,7 @@ export function StationBoard(props: StationBoardProps) {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="font-academic text-2xl font-semibold leading-tight text-[#1d2433] dark:text-[#f3eee2]">
-            {fullPlaceName(station.name)}
+            <Place name={station.name} full />
           </h3>
           <div className="mt-1 flex flex-wrap items-center gap-1">
             {station.lines.map((l) => (
@@ -178,7 +179,7 @@ export function StationBoard(props: StationBoardProps) {
             <li key={`${d.line}-${d.headsign}`} className="flex min-w-0 items-center gap-1.5 rounded bg-[#f6f1e4] px-2 py-1 dark:bg-[#151c2e]">
               <LineBadge id={d.line} color={colorOf(d.line)} small />
               <span className="min-w-0 truncate">
-                <span className="font-semibold">→ {formatPlaceName(d.headsign)}</span>
+                <span className="font-semibold">→ <Place name={d.headsign} /></span>
                 {headwayLabel(d.headway_min) && <> · {headwayLabel(d.headway_min)}</>}
                 {d.first_ts && d.last_ts && (
                   <span className="text-[#7a7262] dark:text-[#8b93a7]">
@@ -278,7 +279,7 @@ export function StationBoard(props: StationBoardProps) {
               <article key={g.headsign} className="rounded-md border border-[#e3dac7] dark:border-[#232b3e]">
                 <header className="flex items-center justify-between gap-2 rounded-t-md bg-[#1f3a68] px-2.5 py-1.5 text-white dark:bg-[#0d1322]">
                   <h4 className="font-academic min-w-0 truncate text-sm font-semibold">
-                    Richting {formatPlaceName(g.headsign)}
+                    Richting <Place name={g.headsign} />
                   </h4>
                   <span className="flex shrink-0 items-center gap-1.5">
                     {g.platforms.length === 1 && (
@@ -326,11 +327,11 @@ export function StationBoard(props: StationBoardProps) {
               <li key={t.id} className="flex min-w-0 items-center gap-1.5 text-xs">
                 <LineBadge id={t.line} color={colorOf(t.line)} small />
                 <span className="min-w-0 flex-1 truncate">
-                  → {formatPlaceName(t.headsign ?? "")}
+                  → <Place name={t.headsign ?? ""} />
                   {t.prev_station && (
                     <button type="button" onClick={() => props.onStation(t.prev_station!)} className="text-[#7a7262] hover:underline dark:text-[#8b93a7]">
                       {" "}
-                      · {t.status === "dwelling" ? "staat op" : "nu na"} {formatPlaceName(t.prev_station)}
+                      · {t.status === "dwelling" ? "staat op" : "nu na"} <Place name={t.prev_station} />
                     </button>
                   )}
                 </span>

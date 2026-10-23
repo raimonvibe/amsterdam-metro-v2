@@ -1,6 +1,7 @@
 import { KeyboardEvent, Ref, useId, useMemo, useState } from "react";
 import { ArrowRight, LocateFixed, Search, TrainTrack } from "lucide-react";
 import { formatPlaceName } from "../format";
+import { Place } from "../components/Place";
 import { Station } from "../types";
 import { SearchResult, search, searchStations } from "./search";
 import { LineBadge, useNarrowScreen } from "./ui";
@@ -111,6 +112,7 @@ export function SearchBox({
           aria-activedescendant={showList && results[active] ? `${id}-opt-${active}` : undefined}
           autoComplete="off"
           spellCheck={false}
+          translate={value ? "no" : undefined}
           placeholder={value ? formatPlaceName(value) : shownPlaceholder}
           value={query}
           onChange={(e) => {
@@ -192,7 +194,7 @@ function ResultRow({ result: r, colorOf }: { result: SearchResult; colorOf: (l: 
       <>
         <ArrowRight size={15} className="shrink-0 text-[#1f3a68] dark:text-[#c8a951]" aria-hidden />
         <span className="min-w-0 truncate">
-          Reis van <strong>{formatPlaceName(r.from.name)}</strong> naar <strong>{formatPlaceName(r.to.name)}</strong>
+          Reis van <strong><Place name={r.from.name} /></strong> naar <strong><Place name={r.to.name} /></strong>
         </span>
       </>
     );
@@ -209,7 +211,7 @@ function ResultRow({ result: r, colorOf }: { result: SearchResult; colorOf: (l: 
   return (
     <>
       <span className="min-w-0 flex-1 truncate">
-        {formatPlaceName(r.station.name)}
+        <Place name={r.station.name} />
         {r.via && <span className="ml-1.5 text-[11px] italic text-[#8a8170] dark:text-[#8b93a7]">({r.via})</span>}
       </span>
       <span className="flex shrink-0 gap-0.5">

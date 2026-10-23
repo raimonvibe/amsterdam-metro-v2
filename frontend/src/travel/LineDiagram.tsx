@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { formatPlaceName } from "../format";
+import { Place } from "../components/Place";
 import { AnimatedTrain, Station } from "../types";
 import { cumulativeMinutes, placeTrains } from "./diagram";
 import { NetworkLine } from "./types";
@@ -63,7 +64,7 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
         <>
           <p className="mb-2 text-xs text-[#4a4436] dark:text-[#b9bfcc]">
             <span className="font-academic text-sm font-semibold text-[#1d2433] dark:text-[#ece6d6]">
-              Metro {line.id} · {formatPlaceName(line.name)}
+              Metro {line.id} · <Place name={line.name} />
             </span>{" "}
             · {placed.length} {placed.length === 1 ? "metro" : "metro's"} onderweg · ritduur ~{minutes[minutes.length - 1]} min
           </p>
@@ -71,10 +72,10 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
             <span />
             <span className="smallcaps">station · reistijd</span>
             {/* Phones: just the arrows; the chips below carry the direction too. */}
-            <span className="smallcaps truncate text-center" title={formatPlaceName(dirA.headsign)}>
-              ↓<span className="sr-only sm:not-sr-only"> {formatPlaceName(dirA.headsign)}</span>
+            <span translate="no" className="smallcaps truncate text-center" title={formatPlaceName(dirA.headsign)}>
+              ↓<span className="sr-only sm:not-sr-only"> <Place name={dirA.headsign} /></span>
             </span>
-            <span className="smallcaps truncate text-center" title={dirB ? formatPlaceName(dirB.headsign) : ""}>
+            <span translate="no" className="smallcaps truncate text-center" title={dirB ? formatPlaceName(dirB.headsign) : ""}>
               ↑<span className="sr-only sm:not-sr-only"> {dirB ? formatPlaceName(dirB.headsign) : ""}</span>
             </span>
           </div>
@@ -107,10 +108,10 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
                       >
                         {/* Phones drop the town ("Diemen, …") that outer stations carry;
                             on a line it adds nothing and it costs the room the name needs. */}
-                        <span className="sm:hidden" aria-hidden>
+                        <span translate="no" className="sm:hidden" aria-hidden>
                           {formatPlaceName(name).replace(/^[^,]+, /, "")}
                         </span>
-                        <span className="sr-only sm:not-sr-only">{formatPlaceName(name)}</span>
+                        <span className="sr-only sm:not-sr-only"><Place name={name} /></span>
                       </button>
                       <span className="flex min-w-0 items-center gap-1 sm:contents">
                         {others.map((l) => (

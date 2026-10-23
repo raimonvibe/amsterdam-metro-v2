@@ -105,6 +105,14 @@ describe("SearchBox", () => {
     expect(input).toHaveValue("");
   });
 
+  it("keeps station names out of browser translation", async () => {
+    // Translated to English, "Gein" showed up as "Joke".
+    const { input } = setup("station");
+    await userEvent.type(input, "gein");
+    const name = within(screen.getByRole("option", { name: /Gein/ })).getByText("Gein");
+    expect(name.closest("[translate='no']")).not.toBeNull();
+  });
+
   it("in station mode offers stations only", async () => {
     const { input, onRoute } = setup("station");
     await userEvent.type(input, "noord naar gein{Enter}");
@@ -234,7 +242,8 @@ describe("StationBoard", () => {
       realtime: true,
     } as AnimatedTrain;
     renderBoard({ trains: [t] });
-    const row = (await screen.findByText(/nu na Rokin/)).closest("li")!;
+    const row = (await screen.findByText(/nu na/)).closest("li")!;
+    expect(row.textContent).toContain("nu na Rokin");
     expect(within(row).getByText("3 min")).toBeInTheDocument();
     expect(within(row).getByText("+2 min")).toBeInTheDocument();
   });
@@ -326,7 +335,9 @@ describe("JourneyPlanner", () => {
     expect(within(first).getByText("eerstvolgende")).toBeInTheDocument();
     expect(within(first).queryByText("snelste")).not.toBeInTheDocument();
     expect(screen.getByText("snelste")).toBeInTheDocument();
-    expect(screen.getAllByText(/Overstappen op CS/)).toHaveLength(2);
+    const transfers = screen.getAllByText(/Overstappen op/);
+    expect(transfers).toHaveLength(2);
+    for (const t of transfers) expect(t.textContent).toContain("Overstappen op CS");
     expect(screen.getAllByText("1 overstap")).toHaveLength(2);
   });
 
