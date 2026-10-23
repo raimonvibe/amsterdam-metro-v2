@@ -238,6 +238,25 @@ describe("StationBoard", () => {
     expect(within(gein).queryByText(/perron/i)).toBeNull();
   });
 
+  it("says when a direction leaves from changing, unnamed tracks", async () => {
+    vi.mocked(api.fetchBoard).mockResolvedValue([
+      dep({ line: "54", headsign: "Gein", stop_id: "east-1", departure_ts: s(2) }),
+      dep({ line: "54", headsign: "Gein", stop_id: "east-2", departure_ts: s(12) }),
+      dep({ headsign: "Zuid", stop_id: "ns-zuid", departure_ts: s(3) }),
+      dep({ headsign: "Zuid", stop_id: "ns-zuid", departure_ts: s(9) }),
+      dep({ line: "53", headsign: "Gaasperplas", platform: "3", stop_id: "a", departure_ts: s(4) }),
+      dep({ line: "53", headsign: "Gaasperplas", platform: "4", stop_id: "b", departure_ts: s(8) }),
+    ]);
+    renderBoard();
+    const gein = (await screen.findByRole("heading", { name: "Richting Gein" })).closest("article")!;
+    expect(within(gein).getByText(/wisselend spoor/)).toBeInTheDocument();
+    // One track, or named platforms: nothing to warn about.
+    const zuid = screen.getByRole("heading", { name: "Richting Zuid" }).closest("article")!;
+    expect(within(zuid).queryByText(/wisselend spoor/)).toBeNull();
+    const gaasperplas = screen.getByRole("heading", { name: "Richting Gaasperplas" }).closest("article")!;
+    expect(within(gaasperplas).queryByText(/wisselend spoor/)).toBeNull();
+  });
+
   it("marks the direction of the planned journey", async () => {
     vi.mocked(api.fetchBoard).mockResolvedValue([
       dep({ headsign: "Zuid", departure_ts: s(2) }),
