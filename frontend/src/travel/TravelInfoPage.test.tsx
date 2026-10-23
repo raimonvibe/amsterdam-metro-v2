@@ -115,6 +115,24 @@ describe("TravelInfoPage", () => {
     expect(linked.onClose).toHaveBeenCalledWith(expect.objectContaining({ name: "Amsterdam, Station Zuid" }));
   });
 
+  it("keeps the planned trip across a visit to the map", async () => {
+    renderPage("/reisinfo?van=CS&naar=Gein");
+    await waitFor(() => expect(api.fetchJourneys).toHaveBeenCalledWith("Amsterdam, Centraal Station", "Amsterdam, Gein", 6));
+    cleanup();
+    vi.mocked(api.fetchJourneys).mockClear();
+
+    // Back from the map, the link names only the station picked there.
+    renderPage("/reisinfo?station=Zuid");
+    await waitFor(() => expect(boardHeading()).toHaveTextContent("Station Zuid"));
+    await waitFor(() => expect(api.fetchJourneys).toHaveBeenCalledWith("Amsterdam, Centraal Station", "Amsterdam, Gein", 6));
+    expect(window.location.search).toContain("van=CS&naar=Gein");
+    cleanup();
+
+    // A link with a trip of its own wins over the kept one.
+    renderPage("/reisinfo?van=Noord&naar=Zuid");
+    await waitFor(() => expect(window.location.search).toContain("van=Noord&naar=Station+Zuid"));
+  });
+
   it("shows the station on the map", async () => {
     const { onShowOnMap } = renderPage("/reisinfo?station=Zuid");
     await waitFor(() => expect(boardHeading()).toHaveTextContent("Station Zuid"));
