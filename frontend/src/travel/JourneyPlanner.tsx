@@ -187,9 +187,11 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                         Overstappen op <Place name={leg.from} /> · <Num>{duration(leg.departure_ts - j.legs[k - 1].arrival_ts)}</Num> wachten
                       </div>
                     )}
-                    <div className="flex min-w-0 items-center gap-1.5">
+                    {/* Wraps rather than truncates: on a phone "Diemen, Station
+                        Diemen Zuid" would otherwise lose the part that matters. */}
+                    <div className="flex min-w-0 items-start gap-1.5">
                       <LineBadge id={leg.line} color={colorOf(leg.line)} small />
-                      <span className="min-w-0 truncate">
+                      <span className="min-w-0">
                         <button type="button" onClick={() => props.onStation(leg.from)} className="font-semibold hover:underline">
                           <Place name={leg.from} />
                         </button>{" "}
