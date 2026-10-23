@@ -17,6 +17,7 @@ import { clockWithSeconds } from "./time";
 import { NetworkLine } from "./types";
 import { Crest, Section } from "./ui";
 import { readParams, resolveStation, writeParams } from "./url";
+import { Num } from "../components/Num";
 
 export interface TravelInfoPageProps {
   stations: Station[];
@@ -307,7 +308,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
           <div className="ml-auto flex shrink-0 items-center gap-2">
             <StationClock nowMs={nowMs} className="h-9 w-9 shrink-0 sm:h-11 sm:w-11" />
             <div className="hidden text-right leading-tight sm:block">
-              <div className="font-academic text-lg font-semibold tabular-nums">{clockWithSeconds(nowMs)}</div>
+              <div className="font-academic text-lg font-semibold tabular-nums"><Num>{clockWithSeconds(nowMs)}</Num></div>
               <div className="flex items-center justify-end gap-1 text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
                 <span className={`h-1.5 w-1.5 rounded-full ${status?.is_live ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`} aria-hidden />
                 {status?.is_live ? "live gegevens" : "dienstregeling"} · Amsterdamse tijd
@@ -484,8 +485,8 @@ function Legend() {
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#b8ae99]" /> volgens dienstregeling (geen live signaal)
         </li>
         <li>
-          <span className="font-semibold text-amber-700 dark:text-amber-400">+2 min</span> vertraging ·{" "}
-          <span className="text-[#9a9384] line-through">12:03</span> geplande tijd
+          <span className="font-semibold text-amber-700 dark:text-amber-400"><Num>+2 min</Num></span> vertraging ·{" "}
+          <span className="text-[#9a9384] line-through"><Num>12:03</Num></span> geplande tijd
         </li>
         <li>
           <span className="font-semibold text-[#b42335] dark:text-[#f08a9b]">Vervallen</span> rit rijdt niet
