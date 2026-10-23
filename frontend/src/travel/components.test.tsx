@@ -187,7 +187,7 @@ describe("StationBoard", () => {
     const card = zuid.closest("article")!;
     expect(within(card).getByText("12:02")).toBeInTheDocument();
     expect(within(card).getByText("+3 min")).toBeInTheDocument();
-    expect(within(card).getByText("12:06")).toHaveClass("line-through");
+    expect(within(card).getByText("12:06").parentElement).toHaveClass("line-through");
     const gein = screen.getByRole("heading", { name: "Richting Gein" }).closest("article")!;
     expect(within(gein).getByText("Vervallen")).toBeInTheDocument();
     expect(api.fetchBoard).toHaveBeenCalledWith(CS.name, 30, true);

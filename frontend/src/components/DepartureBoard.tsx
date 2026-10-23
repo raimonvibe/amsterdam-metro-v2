@@ -5,6 +5,7 @@ import { pollWhileVisible } from "../poll";
 import { nl } from "../i18n/nl";
 import { Place } from "./Place";
 import { Departure, Line, Station } from "../types";
+import { Num } from "./Num";
 
 interface DepartureBoardProps {
   station: Station;
@@ -93,7 +94,7 @@ export function DepartureBoard({ station, lines, onClose, onMore }: DepartureBoa
               </span>
               <span className="ml-2 shrink-0 text-right">
                 <span className="font-semibold tabular-nums">
-                  {countdown(d.departure_ts, nowMs)}
+                  <Num>{countdown(d.departure_ts, nowMs)}</Num>
                 </span>
                 {d.delay_s > 60 && (
                   <span className="ml-1 text-[10px] text-amber-600 dark:text-amber-400">

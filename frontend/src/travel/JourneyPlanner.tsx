@@ -9,6 +9,7 @@ import { SearchBox } from "./SearchBox";
 import { clock, countdown, duration } from "./time";
 import { Journey } from "./types";
 import { LineBadge, Section, SkeletonRows } from "./ui";
+import { Num } from "../components/Num";
 
 const REFRESH_MS = 30000;
 
@@ -142,15 +143,15 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
             <li key={`${j.departure_ts}-${j.arrival_ts}-${j.transfers}`} className="rounded-md border border-[#e3dac7] p-2 dark:border-[#232b3e]">
               <div className="flex items-baseline justify-between gap-2">
                 <span className="font-academic text-lg font-semibold tabular-nums">
-                  {clock(j.departure_ts)} → {clock(j.arrival_ts)}
+                  <Num>{clock(j.departure_ts)}</Num> → <Num>{clock(j.arrival_ts)}</Num>
                 </span>
                 <span className="text-xs font-semibold tabular-nums text-[#7b2132] dark:text-[#f08a9b]">
-                  {countdown(j.departure_ts, nowMs)}
+                  <Num>{countdown(j.departure_ts, nowMs)}</Num>
                 </span>
               </div>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[#5b5446] dark:text-[#a9b0c2]">
                 <span className="flex items-center gap-1">
-                  <Clock3 size={11} aria-hidden /> {duration(j.duration_s)}
+                  <Clock3 size={11} aria-hidden /> <Num>{duration(j.duration_s)}</Num>
                 </span>
                 <span className="flex items-center gap-1">
                   <Repeat size={11} aria-hidden /> {j.transfers === 0 ? "direct" : `${j.transfers} overstap`}
@@ -163,7 +164,7 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                   <li key={leg.trip_id + k} className="text-xs">
                     {k > 0 && (
                       <div className="mb-1 italic text-[#7a7262] dark:text-[#8b93a7]">
-                        Overstappen op <Place name={leg.from} /> · {duration(leg.departure_ts - j.legs[k - 1].arrival_ts)} wachten
+                        Overstappen op <Place name={leg.from} /> · <Num>{duration(leg.departure_ts - j.legs[k - 1].arrival_ts)}</Num> wachten
                       </div>
                     )}
                     <div className="flex min-w-0 items-center gap-1.5">
@@ -172,12 +173,12 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                         <button type="button" onClick={() => props.onStation(leg.from)} className="font-semibold hover:underline">
                           <Place name={leg.from} />
                         </button>{" "}
-                        {clock(leg.departure_ts)} → <Place name={leg.to} /> {clock(leg.arrival_ts)}
+                        <Num>{clock(leg.departure_ts)}</Num> → <Place name={leg.to} /> <Num>{clock(leg.arrival_ts)}</Num>
                       </span>
                     </div>
                     <div className="pl-8 text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
                       richting <Place name={leg.headsign} /> · {leg.stops} {leg.stops === 1 ? "halte" : "haltes"}
-                      {leg.realtime ? ` · ${delayLabel(leg.delay_s)}` : " · dienstregeling"}
+                      {leg.realtime ? <> · <Num>{delayLabel(leg.delay_s)}</Num></> : " · dienstregeling"}
                     </div>
                   </li>
                 ))}
