@@ -135,17 +135,27 @@ export function SkeletonRows({ rows = 4 }: { rows?: number }) {
   );
 }
 
-/** Below Tailwind's sm breakpoint (40rem); follows rotation and resizing. */
-export function useNarrowScreen(): boolean {
-  const query = "(max-width: 39.99rem)";
+/** Whether a CSS media query matches, kept up to date. */
+export function useMedia(query: string): boolean {
   const supported = typeof window !== "undefined" && typeof window.matchMedia === "function";
-  const [narrow, setNarrow] = useState(() => supported && window.matchMedia(query).matches);
+  const [matches, setMatches] = useState(() => supported && window.matchMedia(query).matches);
   useEffect(() => {
     if (!supported) return;
     const mq = window.matchMedia(query);
-    const update = () => setNarrow(mq.matches);
+    const update = () => setMatches(mq.matches);
+    update();
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
-  }, [supported]);
-  return narrow;
+  }, [supported, query]);
+  return matches;
+}
+
+/** Below Tailwind's sm breakpoint (40rem); follows rotation and resizing. */
+export function useNarrowScreen(): boolean {
+  return useMedia("(max-width: 39.99rem)");
+}
+
+/** A finger, not a mouse, is the main pointer: phones and tablets. */
+export function useTouchScreen(): boolean {
+  return useMedia("(pointer: coarse)");
 }
