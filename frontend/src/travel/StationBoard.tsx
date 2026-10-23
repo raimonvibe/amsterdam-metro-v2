@@ -284,16 +284,18 @@ export function StationBoard(props: StationBoardProps) {
                 key={g.headsign}
                 className={`rounded-md border ${mine ? "border-[#c8a951] ring-2 ring-[#c8a951]" : "border-[#e3dac7] dark:border-[#232b3e]"}`}
               >
-                <header className="flex items-center justify-between gap-2 rounded-t-md bg-[#1f3a68] px-2.5 py-1.5 text-white dark:bg-[#0d1322]">
+                {/* A strip of its own, not a tag in the header: on a phone the
+                    header has no room left for it beside the direction. */}
+                {mine && (
+                  <p className="smallcaps rounded-t-[5px] bg-[#c8a951] px-2.5 text-[11px] font-semibold leading-[18px] text-[#1d2433]">
+                    jouw reis
+                  </p>
+                )}
+                <header className={`flex items-center justify-between gap-2 bg-[#1f3a68] px-2.5 py-1.5 text-white dark:bg-[#0d1322] ${mine ? "" : "rounded-t-md"}`}>
                   <h4 className="font-academic min-w-0 truncate text-sm font-semibold">
                     Richting <Place name={g.headsign} />
                   </h4>
                   <span className="flex shrink-0 items-center gap-1.5">
-                    {mine && (
-                      <span className="smallcaps rounded border border-[#c8a951] px-1.5 text-[11px] font-semibold leading-[16px] text-[#c8a951]">
-                        jouw reis
-                      </span>
-                    )}
                     {g.platforms.length === 1 && (
                       <span className="rounded bg-[#c8a951] px-1.5 text-[11px] font-semibold leading-[18px] text-[#1d2433]">
                         Perron {g.platforms[0]}
