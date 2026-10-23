@@ -7,7 +7,7 @@ import { pollWhileVisible } from "../poll";
 import { AnimatedTrain, Station } from "../types";
 import { TravelPrefs } from "./storage";
 import { catchable, clock, countdown, headwayLabel, urgency } from "./time";
-import { BoardDeparture, StationInfo } from "./types";
+import { BoardDeparture, JourneyLeg, StationInfo } from "./types";
 import { LineBadge, Section, Segmented, SkeletonRows } from "./ui";
 import { Num } from "../components/Num";
 
@@ -28,6 +28,8 @@ export interface StationBoardProps {
   onShowOnMap: () => void;
   onPlanFrom: () => void;
   onStation: (name: string) => void;
+  /** The planned journey's leg from this station: its direction is marked. */
+  routeLeg?: JourneyLeg | null;
 }
 
 interface Group {
@@ -275,14 +277,23 @@ export function StationBoard(props: StationBoardProps) {
         <div className="grid gap-2.5 @xl:grid-cols-2">
           {groups.map((g) => {
             const open = expanded[g.headsign];
+            const mine = props.routeLeg != null && g.headsign === props.routeLeg.headsign && g.lines.includes(props.routeLeg.line);
             const rows = open ? g.deps : g.deps.slice(0, ROWS_PER_DIRECTION);
             return (
-              <article key={g.headsign} className="rounded-md border border-[#e3dac7] dark:border-[#232b3e]">
+              <article
+                key={g.headsign}
+                className={`rounded-md border ${mine ? "border-[#c8a951] ring-2 ring-[#c8a951]" : "border-[#e3dac7] dark:border-[#232b3e]"}`}
+              >
                 <header className="flex items-center justify-between gap-2 rounded-t-md bg-[#1f3a68] px-2.5 py-1.5 text-white dark:bg-[#0d1322]">
                   <h4 className="font-academic min-w-0 truncate text-sm font-semibold">
                     Richting <Place name={g.headsign} />
                   </h4>
                   <span className="flex shrink-0 items-center gap-1.5">
+                    {mine && (
+                      <span className="smallcaps rounded border border-[#c8a951] px-1.5 text-[11px] font-semibold leading-[16px] text-[#c8a951]">
+                        jouw reis
+                      </span>
+                    )}
                     {g.platforms.length === 1 && (
                       <span className="rounded bg-[#c8a951] px-1.5 text-[11px] font-semibold leading-[18px] text-[#1d2433]">
                         Perron {g.platforms[0]}

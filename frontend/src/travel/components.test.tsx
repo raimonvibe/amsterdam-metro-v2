@@ -3,7 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { STATIONS } from "../test/fixtures";
 import { AnimatedTrain } from "../types";
-import { JourneyPlanner, fastestIndex } from "./JourneyPlanner";
+import { JourneyPlanner, fastestIndex, routeKeyOf } from "./JourneyPlanner";
+import { routeStretches } from "./LineDiagram";
 import { SearchBox } from "./SearchBox";
 import { StationBoard, groupByDirection } from "./StationBoard";
 import { StationClock, handAngles } from "./StationClock";
@@ -237,6 +238,20 @@ describe("StationBoard", () => {
     expect(within(gein).queryByText(/perron/i)).toBeNull();
   });
 
+  it("marks the direction of the planned journey", async () => {
+    vi.mocked(api.fetchBoard).mockResolvedValue([
+      dep({ headsign: "Zuid", departure_ts: s(2) }),
+      dep({ line: "54", headsign: "Gein", departure_ts: s(4) }),
+    ]);
+    renderBoard({
+      routeLeg: { trip_id: "t", line: "54", headsign: "Gein", from: CS.name, to: "Amsterdam, Gein", departure_ts: s(4), arrival_ts: s(30), stops: 14, delay_s: 0, realtime: true },
+    });
+    const gein = (await screen.findByRole("heading", { name: "Richting Gein" })).closest("article")!;
+    expect(within(gein).getByText("jouw reis")).toBeInTheDocument();
+    const zuid = screen.getByRole("heading", { name: "Richting Zuid" }).closest("article")!;
+    expect(within(zuid).queryByText("jouw reis")).toBeNull();
+  });
+
   it("groups departures per direction with times, delays and cancellations", async () => {
     vi.mocked(api.fetchBoard).mockResolvedValue([
       dep({ headsign: "Zuid", departure_ts: s(2), scheduled_ts: s(2) }),
@@ -346,9 +361,10 @@ describe("JourneyPlanner", () => {
     ],
   });
 
-  function renderPlanner(js: Journey[]) {
+  function renderPlanner(js: Journey[], onRoute = vi.fn()) {
     vi.mocked(api.fetchJourneys).mockResolvedValue(js);
     const props = {
+      onRoute,
       stations: STATIONS,
       lineIds: LINES,
       colorOf,
@@ -402,6 +418,18 @@ describe("JourneyPlanner", () => {
     expect(screen.getAllByText("1 overstap")).toHaveLength(2);
   });
 
+  it("reports the next journey's legs once per route, not per trip", async () => {
+    const onRoute = vi.fn();
+    renderPlanner([journey(3, 30, 1), journey(8, 25, 1)], onRoute);
+    await screen.findAllByText(/Overstappen op/);
+    const reported = onRoute.mock.calls.map(([legs]) => legs).filter(Boolean);
+    expect(reported).toHaveLength(1);
+    expect(reported[0].map((l: { line: string }) => l.line)).toEqual(["52", "54"]);
+    // The next departure on the same lines keeps the same key.
+    expect(routeKeyOf(journey(3, 30, 1).legs)).toBe(routeKeyOf(journey(8, 25, 1).legs));
+    expect(routeKeyOf(journey(3, 30, 0).legs)).not.toBe(routeKeyOf(journey(3, 30, 1).legs));
+  });
+
   it("swaps origin and destination", async () => {
     const props = renderPlanner([]);
     await userEvent.click(screen.getByRole("button", { name: "Van en naar omwisselen" }));
@@ -444,5 +472,22 @@ describe("StationClock", () => {
   it("is announced as an image with the time", () => {
     render(<StationClock nowMs={NOW} />);
     expect(screen.getByRole("img", { name: "Klok, 12:00 Amsterdamse tijd" })).toBeInTheDocument();
+  });
+});
+
+describe("routeStretches", () => {
+  const order = ["A", "B", "C", "D", "E"];
+  const leg = (line: string, from: string, to: string) => ({
+    trip_id: "t", line, headsign: "x", from, to, departure_ts: 0, arrival_ts: 0, stops: 1, delay_s: 0, realtime: false,
+  });
+
+  it("takes only the legs on the shown line, in either direction", () => {
+    expect(routeStretches(order, [leg("52", "B", "D"), leg("54", "D", "E")], "52")).toEqual([[1, 3]]);
+    expect(routeStretches(order, [leg("52", "D", "A")], "52")).toEqual([[3, 0]]);
+    expect(routeStretches(order, [leg("52", "B", "D")], "54")).toEqual([]);
+  });
+
+  it("skips a leg whose stations are not on the drawn line", () => {
+    expect(routeStretches(order, [leg("52", "B", "Z")], "52")).toEqual([]);
   });
 });
