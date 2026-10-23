@@ -156,7 +156,7 @@ describe("SearchBox", () => {
 
 describe("SearchBox placeholder", () => {
   it("uses the short placeholder on phone-width screens", () => {
-    const mm = vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    const mm = vi.fn((q: string) => ({ matches: q.includes("max-width"), addEventListener: vi.fn(), removeEventListener: vi.fn() }));
     vi.stubGlobal("matchMedia", mm);
     render(<SearchBox label="Zoek" placeholder="Zoek station, lijn of reis" shortPlaceholder="Station of reis" stations={STATIONS} lineIds={LINES} colorOf={colorOf} onStation={vi.fn()} />);
     expect(screen.getByRole("combobox", { name: "Zoek" })).toHaveAttribute("placeholder", "Station of reis");
@@ -167,6 +167,33 @@ describe("SearchBox placeholder", () => {
     vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
     render(<SearchBox label="Zoek" placeholder="Zoek station, lijn of reis" shortPlaceholder="Station of reis" stations={STATIONS} lineIds={LINES} colorOf={colorOf} onStation={vi.fn()} />);
     expect(screen.getByRole("combobox", { name: "Zoek" })).toHaveAttribute("placeholder", "Zoek station, lijn of reis");
+    vi.unstubAllGlobals();
+  });
+});
+
+describe("SearchBox on touch screens", () => {
+  // The dropdown sat behind the phone keyboard and ran off the screen.
+  it("opens a full-screen list to tap, without a keyboard", async () => {
+    vi.stubGlobal("matchMedia", vi.fn((q: string) => ({ matches: q.includes("coarse"), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+    const onStation = vi.fn();
+    render(<SearchBox label="Van station" placeholder="Vertrekstation" stations={STATIONS} lineIds={LINES} colorOf={colorOf} mode="station" onStation={onStation} />);
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Van station" }));
+    const sheet = screen.getByRole("dialog", { name: "Van station" });
+    expect(within(sheet).getAllByRole("option")).toHaveLength(STATIONS.length);
+    expect(within(sheet).getByRole("combobox")).not.toHaveFocus();
+    await userEvent.click(within(sheet).getByRole("option", { name: /Gein/ }));
+    expect(onStation).toHaveBeenCalledWith(byName("Amsterdam, Gein"));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it("closes with the close button", async () => {
+    vi.stubGlobal("matchMedia", vi.fn((q: string) => ({ matches: q.includes("coarse"), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+    render(<SearchBox label="Naar station" placeholder="Aankomststation" stations={STATIONS} lineIds={LINES} colorOf={colorOf} mode="station" onStation={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", { name: "Naar station" }));
+    await userEvent.click(screen.getByRole("button", { name: "Sluiten" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     vi.unstubAllGlobals();
   });
 });
