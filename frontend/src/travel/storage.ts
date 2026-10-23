@@ -1,10 +1,12 @@
 /** Favourites, recent stations and page preferences, kept only in this
- *  browser's localStorage (never sent to the server). Every access is
- *  guarded: storage can be unavailable (private mode, blocked site data). */
+ *  browser's localStorage, and the planned trip in sessionStorage (never sent
+ *  to the server). Every access is guarded: storage can be unavailable
+ *  (private mode, blocked site data). */
 
 const FAVOURITES = "metro-live:favourites";
 const RECENT = "metro-live:recent";
 const PREFS = "metro-live:travel-prefs";
+const TRIP = "metro-live:trip";
 export const RECENT_MAX = 6;
 
 function read<T>(key: string, fallback: T): T {
@@ -79,4 +81,31 @@ export function loadPrefs(): TravelPrefs {
 
 export function savePrefs(p: TravelPrefs): void {
   write(PREFS, p);
+}
+
+export interface KeptTrip {
+  from: string | null;
+  to: string | null;
+  tab: string | null;
+}
+
+const str = (v: unknown) => (typeof v === "string" ? v : null);
+
+/** The trip planned in this tab, so a visit to the map does not lose it.
+ *  Session only: a new visit starts with an empty planner. */
+export function loadTrip(): KeptTrip {
+  try {
+    const t = JSON.parse(sessionStorage.getItem(TRIP) ?? "{}") as Partial<KeptTrip>;
+    return { from: str(t.from), to: str(t.to), tab: str(t.tab) };
+  } catch {
+    return { from: null, to: null, tab: null };
+  }
+}
+
+export function saveTrip(t: KeptTrip): void {
+  try {
+    sessionStorage.setItem(TRIP, JSON.stringify(t));
+  } catch {
+    /* storage unavailable: the trip is lost on the way to the map, as before */
+  }
 }

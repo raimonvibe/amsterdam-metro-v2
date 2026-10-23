@@ -12,7 +12,7 @@ import { StationBoard } from "./StationBoard";
 import { StationClock } from "./StationClock";
 import { StationIndex } from "./StationIndex";
 import { nearestStations } from "./search";
-import { clearRecent, loadFavourites, loadPrefs, loadRecent, pushRecent, savePrefs, toggleFavourite, TravelPrefs } from "./storage";
+import { clearRecent, loadFavourites, loadPrefs, loadRecent, loadTrip, pushRecent, savePrefs, saveTrip, toggleFavourite, TravelPrefs } from "./storage";
 import { clockWithSeconds } from "./time";
 import { JourneyLeg, NetworkLine } from "./types";
 import { Crest, Section } from "./ui";
@@ -45,6 +45,9 @@ const DEFAULT_STATION = "Amsterdam, Centraal Station";
 
 export default function TravelInfoPage({ stations, lines, trains, status, theme, onToggleTheme, onClose, onShowOnMap }: TravelInfoPageProps) {
   const initial = useMemo(() => readParams(window.location.search), []);
+  // Back from the map the link names at most a station: pick up the trip
+  // planned before, unless the link names one of its own.
+  const kept = useMemo(() => (initial.from || initial.to ? null : loadTrip()), [initial]);
   const [stationName, setStationName] = useState<string | null>(null);
   // Whether the board's station is the visitor's choice (a link that named
   // it, or a pick here) rather than the fallback filled in on arrival.
@@ -52,7 +55,9 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
   const [fromName, setFromName] = useState<string | null>(null);
   const [toName, setToName] = useState<string | null>(null);
   const [lineId, setLineId] = useState<string>(initial.line ?? "52");
-  const [tab, setTab] = useState<Tab>(initial.from && initial.to ? "plannen" : "vertrekken");
+  const [tab, setTab] = useState<Tab>(() =>
+    initial.from && initial.to ? "plannen" : TABS.find((t) => t.id === kept?.tab)?.id ?? "vertrekken",
+  );
   const [prefs, setPrefsState] = useState<TravelPrefs>(loadPrefs);
   const [favourites, setFavourites] = useState<string[]>(loadFavourites);
   const [recent, setRecent] = useState<string[]>(loadRecent);
@@ -84,11 +89,11 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
       byName.get(DEFAULT_STATION) ??
       stations[0];
     setStationName(s?.name ?? null);
-    setFromName(resolveStation(initial.from, stations)?.name ?? null);
-    setToName(resolveStation(initial.to, stations)?.name ?? null);
+    setFromName(resolveStation(initial.from ?? kept?.from ?? null, stations)?.name ?? null);
+    setToName(resolveStation(initial.to ?? kept?.to ?? null, stations)?.name ?? null);
     if (!initial.line && s?.lines[0]) setLineId(s.lines.includes("52") ? "52" : s.lines[0]);
     setReady(true);
-  }, [stations, initial, byName, ready]);
+  }, [stations, initial, kept, byName, ready]);
 
   // Keep the address bar shareable without adding history entries.
   useEffect(() => {
@@ -96,6 +101,10 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
     const qs = writeParams({ station, from, to, line: lineId });
     window.history.replaceState(window.history.state, "", `/reisinfo${qs}`);
   }, [ready, station, from, to, lineId]);
+
+  useEffect(() => {
+    if (ready) saveTrip({ from: fromName, to: toName, tab });
+  }, [ready, fromName, toName, tab]);
 
   useEffect(() => {
     document.title = station
