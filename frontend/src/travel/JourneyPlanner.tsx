@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDownUp, Clock3, Repeat } from "lucide-react";
 import { fetchJourneys } from "../api";
 import { delayLabel } from "../format";
@@ -7,7 +7,7 @@ import { pollWhileVisible } from "../poll";
 import { Station } from "../types";
 import { SearchBox } from "./SearchBox";
 import { clock, countdown, duration } from "./time";
-import { Journey } from "./types";
+import { Journey, JourneyLeg } from "./types";
 import { LineBadge, Section, SkeletonRows } from "./ui";
 import { Num } from "../components/Num";
 
@@ -26,6 +26,9 @@ export interface JourneyPlannerProps {
   onNearby: () => void;
   /** Phones: open the departure board for this station (it sits in another tab there). */
   onShowDepartures?: (s: Station) => void;
+  /** The legs of the next journey, for the board and the line diagram to
+   *  follow; null when there is none. Called only when that route changes. */
+  onRoute?: (legs: JourneyLeg[] | null) => void;
   nowMs: number;
 }
 
@@ -36,6 +39,11 @@ export function fastestIndex(js: Journey[]): number {
     if (best < 0 || j.duration_s < js[best].duration_s) best = i;
   });
   return best;
+}
+
+/** Same key for the same lines between the same stations, whichever trips. */
+export function routeKeyOf(legs: JourneyLeg[] | null): string {
+  return legs ? legs.map((l) => `${l.line}|${l.headsign}|${l.from}|${l.to}`).join(">") : "";
 }
 
 export function JourneyPlanner(props: JourneyPlannerProps) {
@@ -69,6 +77,18 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
 
   const upcoming = useMemo(() => (journeys ?? []).filter((j) => j.departure_ts > nowMs / 1000 - 30), [journeys, nowMs]);
   const fastest = fastestIndex(upcoming);
+
+  // Report the route by its shape (lines and stations), not its trips: the
+  // next train leaving must not count as a new route, or it would undo a line
+  // the visitor picked since.
+  const next = upcoming[0]?.legs ?? null;
+  const routeKey = routeKeyOf(next);
+  const { onRoute } = props;
+  const nextRef = useRef(next);
+  nextRef.current = next;
+  useEffect(() => {
+    onRoute?.(nextRef.current);
+  }, [routeKey, onRoute]);
 
   return (
     <Section n={3} id="reisplanner" title="Reisplanner">

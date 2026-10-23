@@ -3,7 +3,7 @@ import { formatPlaceName } from "../format";
 import { Place } from "../components/Place";
 import { AnimatedTrain, Station } from "../types";
 import { cumulativeMinutes, placeTrains } from "./diagram";
-import { NetworkLine } from "./types";
+import { JourneyLeg, NetworkLine } from "./types";
 import { LineBadge, Section, SkeletonRows, useNarrowScreen } from "./ui";
 
 /** Row height in px. Phones get two lines per station (name, then badges and
@@ -20,11 +20,13 @@ export interface LineDiagramProps {
   stations: Station[];
   colorOf: (line: string) => string;
   current: Station | null;
+  /** The planned journey; its legs on the shown line are marked on it. */
+  route?: JourneyLeg[] | null;
   onStation: (name: string) => void;
   nowMs: number;
 }
 
-export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf, current, onStation, nowMs }: LineDiagramProps) {
+export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf, current, route, onStation, nowMs }: LineDiagramProps) {
   const rowH = useNarrowScreen() ? ROW_H_NARROW : ROW_H;
   const line = network?.find((l) => l.id === lineId) ?? network?.[0] ?? null;
   const placed = useMemo(() => (line ? placeTrains(line, trains, nowMs) : []), [line, trains, nowMs]);
@@ -35,6 +37,9 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
   const order = dirA?.stations ?? [];
   const minutes = cumulativeMinutes(dirA?.runtimes_s ?? []);
   const height = Math.max(order.length, 1) * rowH;
+  const stretches = useMemo(() => routeStretches(order, route ?? [], line?.id), [order, route, line?.id]);
+  const onRoute = (i: number) => stretches.some(([a, b]) => i >= Math.min(a, b) && i <= Math.max(a, b));
+  const ends = new Set(stretches.flat());
 
   return (
     <Section
@@ -68,6 +73,17 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
             </span>{" "}
             · {placed.length} {placed.length === 1 ? "metro" : "metro's"} onderweg · ritduur ~{minutes[minutes.length - 1]} min
           </p>
+          {stretches.length > 0 && (
+            <p className="mb-2 text-xs font-semibold text-[#7b2132] dark:text-[#c8a951]">
+              Jouw reis:{" "}
+              {stretches.map(([a, b], k) => (
+                <span key={k}>
+                  {k > 0 && ", "}
+                  <Place name={order[a]} /> – <Place name={order[b]} />
+                </span>
+              ))}
+            </p>
+          )}
           <div className="mb-1 grid grid-cols-[1.25rem_minmax(0,1fr)_2.5rem_2.5rem] sm:grid-cols-[1.25rem_minmax(0,1fr)_4.75rem_4.75rem] gap-x-1.5 text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
             <span />
             <span className="smallcaps">station · reistijd</span>
@@ -86,16 +102,26 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
               style={{ top: rowH / 2, height: height - rowH, backgroundColor: line.color }}
               aria-hidden
             />
+            {/* the planned stretch, drawn wider over the track */}
+            {stretches.map(([a, b]) => (
+              <span
+                key={`${a}-${b}`}
+                className="absolute left-[calc(0.625rem-5px)] w-2.5 rounded-full ring-2 ring-[#1d2433]/25 dark:ring-white/30"
+                style={{ top: Math.min(a, b) * rowH + rowH / 2, height: Math.abs(b - a) * rowH, backgroundColor: line.color }}
+                aria-hidden
+              />
+            ))}
             <ol className="contents">
               {order.map((name, i) => {
                 const others = (linesAt.get(name) ?? []).filter((l) => l !== line.id);
                 const here = current?.name === name;
+                const end = ends.has(i);
                 return (
                   <li key={name} className="contents">
                     <span className="relative flex items-center justify-center" style={{ height: rowH }}>
                       <span
-                        className={`relative z-[1] rounded-full border-2 bg-white dark:bg-[#111727] ${here ? "h-3.5 w-3.5" : "h-2.5 w-2.5"}`}
-                        style={{ borderColor: line.color }}
+                        className={`relative z-[1] rounded-full border-2 ${end ? "border-white dark:border-[#111727]" : "bg-white dark:bg-[#111727]"} ${here || end ? "h-3.5 w-3.5" : "h-2.5 w-2.5"}`}
+                        style={end ? { backgroundColor: line.color } : { borderColor: line.color }}
                       />
                     </span>
                     {/* Phones: name on its own line, badges and travel time below it.
@@ -104,7 +130,7 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
                       <button
                         type="button"
                         onClick={() => onStation(name)}
-                        className={`min-w-0 truncate text-left text-xs hover:underline ${here ? "font-bold text-[#7b2132] dark:text-[#c8a951]" : ""}`}
+                        className={`min-w-0 truncate text-left text-xs hover:underline ${here ? "font-bold text-[#7b2132] dark:text-[#c8a951]" : onRoute(i) ? "font-semibold" : ""}`}
                       >
                         {/* Phones drop the town ("Diemen, …") that outer stations carry;
                             on a line it adds nothing and it costs the room the name needs. */}
@@ -145,4 +171,16 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
       )}
     </Section>
   );
+}
+
+/** Rows [boarding, alighting] of the route's legs on this line, in travel order. */
+export function routeStretches(order: string[], legs: JourneyLeg[], lineId: string | undefined): [number, number][] {
+  const out: [number, number][] = [];
+  for (const leg of legs) {
+    if (leg.line !== lineId) continue;
+    const a = order.indexOf(leg.from);
+    const b = order.indexOf(leg.to);
+    if (a >= 0 && b >= 0 && a !== b) out.push([a, b]);
+  }
+  return out;
 }

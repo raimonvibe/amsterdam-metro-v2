@@ -14,7 +14,7 @@ import { StationIndex } from "./StationIndex";
 import { nearestStations } from "./search";
 import { clearRecent, loadFavourites, loadPrefs, loadRecent, pushRecent, savePrefs, toggleFavourite, TravelPrefs } from "./storage";
 import { clockWithSeconds } from "./time";
-import { NetworkLine } from "./types";
+import { JourneyLeg, NetworkLine } from "./types";
 import { Crest, Section } from "./ui";
 import { readParams, resolveStation, writeParams } from "./url";
 import { Num } from "../components/Num";
@@ -57,6 +57,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
   const [favourites, setFavourites] = useState<string[]>(loadFavourites);
   const [recent, setRecent] = useState<string[]>(loadRecent);
   const [network, setNetwork] = useState<NetworkLine[] | null>(null);
+  const [routeLegs, setRouteLegs] = useState<JourneyLeg[] | null>(null);
   const [nowMs, setNowMs] = useState(Date.now());
   const [toast, setToast] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
@@ -184,6 +185,15 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
     setFromName(s?.name ?? null);
     if (s) showStation(s.name);
   };
+
+  // A newly planned route shows its first line in the diagram. Only when the
+  // route changes, so a line the visitor picks afterwards stays.
+  const onRoute = useCallback((legs: JourneyLeg[] | null) => {
+    setRouteLegs(legs);
+    if (legs?.[0]) setLineId(legs[0].line);
+  }, []);
+  // The leg that leaves from the board's station, if the route has one there.
+  const boardLeg = station ? routeLegs?.find((l) => l.from === station.name) ?? null : null;
 
   const setPrefs = (p: TravelPrefs) => {
     setPrefsState(p);
@@ -406,6 +416,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
                   document.getElementById("reisplanner")?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
                 onStation={selectStation}
+                routeLeg={boardLeg}
               />
             ) : (
               <Section n={2} title="Vertrekstaat">
@@ -422,6 +433,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
               stations={stations}
               colorOf={colorOf}
               current={station}
+              route={routeLegs}
               onStation={selectStation}
               nowMs={nowMs}
             />
@@ -445,6 +457,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
                 selectStation(s.name);
                 document.getElementById("vertrekstaat")?.scrollIntoView({ block: "start" });
               }}
+              onRoute={onRoute}
               nowMs={nowMs}
             />
           </div>
