@@ -38,21 +38,31 @@ interface Group {
   deps: BoardDeparture[];
   /** Distinct known platforms, sorted. One → shown on the card, several → per row. */
   platforms: string[];
+  /** No platform names, yet trains leave from more than one track (a
+   *  terminus such as CS): which one is only known from the station's signs. */
+  alternates: boolean;
 }
 
 /** Departures grouped per direction (end station), in a fixed order (line,
  *  then direction) so cards never swap places when the board refreshes. */
 export function groupByDirection(deps: BoardDeparture[]): Group[] {
   const groups = new Map<string, Group>();
+  const tracks = new Map<string, Set<string>>();
   for (const d of deps) {
-    const g = groups.get(d.headsign) ?? { headsign: d.headsign, lines: [], deps: [], platforms: [] };
+    const g = groups.get(d.headsign) ?? { headsign: d.headsign, lines: [], deps: [], platforms: [], alternates: false };
+    tracks.set(d.headsign, (tracks.get(d.headsign) ?? new Set()).add(d.stop_id));
     if (!g.lines.includes(d.line)) g.lines.push(d.line);
     if (d.platform && !g.platforms.includes(d.platform)) g.platforms.push(d.platform);
     g.deps.push(d);
     groups.set(d.headsign, g);
   }
   return [...groups.values()]
-    .map((g) => ({ ...g, lines: g.lines.sort(), platforms: g.platforms.sort((a, b) => a.localeCompare(b, "nl", { numeric: true })) }))
+    .map((g) => ({
+      ...g,
+      lines: g.lines.sort(),
+      platforms: g.platforms.sort((a, b) => a.localeCompare(b, "nl", { numeric: true })),
+      alternates: g.platforms.length === 0 && tracks.get(g.headsign)!.size > 1,
+    }))
     .sort((a, b) => a.lines[0].localeCompare(b.lines[0]) || a.headsign.localeCompare(b.headsign, "nl"));
 }
 
@@ -308,6 +318,11 @@ export function StationBoard(props: StationBoardProps) {
                     </span>
                   </span>
                 </header>
+                {g.alternates && (
+                  <p className="border-b border-[#efe8d8] px-2.5 py-1 text-[11px] text-[#5b5446] dark:border-[#1c2436] dark:text-[#a9b0c2]">
+                    Vertrekt van wisselend spoor — kijk op het bord op het station.
+                  </p>
+                )}
                 <ol className="divide-y divide-[#efe8d8] dark:divide-[#1c2436]">
                   {rows.map((d) => (
                     <DepartureRow key={`${d.trip_id}-${d.departure_ts}`} d={d} nowMs={nowMs} walkMin={prefs.walkMin} colorOf={colorOf} showLine={g.lines.length > 1} showPlatform={g.platforms.length > 1} />
