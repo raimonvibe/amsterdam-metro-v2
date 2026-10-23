@@ -9,6 +9,7 @@ import { TravelPrefs } from "./storage";
 import { catchable, clock, countdown, headwayLabel, urgency } from "./time";
 import { BoardDeparture, StationInfo } from "./types";
 import { LineBadge, Section, Segmented, SkeletonRows } from "./ui";
+import { Num } from "../components/Num";
 
 const ROWS_PER_DIRECTION = 5;
 const BOARD_REFRESH_MS = 20000;
@@ -136,7 +137,7 @@ export function StationBoard(props: StationBoardProps) {
       aside={
         updated && (
           <span className="text-[11px] tabular-nums text-[#7a7262] dark:text-[#8b93a7]" aria-live="off">
-            {error ? "verbinding hapert · " : ""}bijgewerkt {clock(updated / 1000)}
+            {error ? "verbinding hapert · " : ""}bijgewerkt <Num>{clock(updated / 1000)}</Num>
           </span>
         )
       }
@@ -184,7 +185,7 @@ export function StationBoard(props: StationBoardProps) {
                 {d.first_ts && d.last_ts && (
                   <span className="text-[#7a7262] dark:text-[#8b93a7]">
                     {" "}
-                    · {clock(d.first_ts)}–{clock(d.last_ts)}
+                    · <Num>{clock(d.first_ts)}</Num>–<Num>{clock(d.last_ts)}</Num>
                   </span>
                 )}
               </span>
@@ -335,9 +336,9 @@ export function StationBoard(props: StationBoardProps) {
                     </button>
                   )}
                 </span>
-                <span className="shrink-0 font-semibold tabular-nums">{countdown(t.next_arrival_ts!, nowMs)}</span>
+                <span className="shrink-0 font-semibold tabular-nums"><Num>{countdown(t.next_arrival_ts!, nowMs)}</Num></span>
                 {Math.abs(t.delay_s) >= 60 && (
-                  <span className="shrink-0 text-[10px] text-amber-700 dark:text-amber-400">{delayLabel(t.delay_s)}</span>
+                  <span className="shrink-0 text-[10px] text-amber-700 dark:text-amber-400"><Num>{delayLabel(t.delay_s)}</Num></span>
                 )}
               </li>
             ))}
@@ -405,8 +406,8 @@ function DepartureRow({
       }`}
     >
       <span className="flex flex-col leading-tight tabular-nums">
-        <span className={`font-semibold ${d.cancelled ? "line-through" : ""}`}>{clock(d.departure_ts)}</span>
-        {late && !d.cancelled && <span className="text-[10px] text-[#9a9384] line-through">{clock(d.scheduled_ts)}</span>}
+        <span className={`font-semibold ${d.cancelled ? "line-through" : ""}`}><Num>{clock(d.departure_ts)}</Num></span>
+        {late && !d.cancelled && <span className="text-[10px] text-[#9a9384] line-through"><Num>{clock(d.scheduled_ts)}</Num></span>}
       </span>
       <span className="flex min-w-0 items-center gap-1.5 overflow-hidden text-xs text-[#4a4436] dark:text-[#b9bfcc]">
         {showLine && <LineBadge id={d.line} color={colorOf(d.line)} small />}
@@ -424,16 +425,16 @@ function DepartureRow({
               title={d.realtime ? "Live gevolgd" : "Volgens dienstregeling"}
               aria-label={d.realtime ? "live" : "dienstregeling"}
             />
-            <span className={`min-w-0 truncate ${late ? "font-semibold text-amber-700 dark:text-amber-400" : ""}`}>{d.realtime ? delayLabel(d.delay_s) : "dienstregeling"}</span>
+            <span className={`min-w-0 truncate ${late ? "font-semibold text-amber-700 dark:text-amber-400" : ""}`}>{d.realtime ? <Num>{delayLabel(d.delay_s)}</Num> : "dienstregeling"}</span>
             {/* Shrinks long before the status label does, so narrow cards drop the detail first. */}
             <span className="hidden min-w-0 shrink-[100] truncate text-[#7a7262] sm:inline dark:text-[#8b93a7]">
-              · {d.stops_remaining} {d.stops_remaining === 1 ? "halte" : "haltes"} · aank. {clock(d.terminus_ts)}
+              · {d.stops_remaining} {d.stops_remaining === 1 ? "halte" : "haltes"} · aank. <Num>{clock(d.terminus_ts)}</Num>
             </span>
           </>
         )}
       </span>
       <span className={`text-right font-semibold tabular-nums ${d.cancelled ? "text-[#9a9384]" : URGENCY_CLASS[u]}`}>
-        {d.cancelled ? "—" : reachable ? countdown(d.departure_ts, nowMs) : "niet haalbaar"}
+        <Num>{d.cancelled ? "—" : reachable ? countdown(d.departure_ts, nowMs) : "niet haalbaar"}</Num>
       </span>
     </li>
   );

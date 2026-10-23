@@ -4,6 +4,7 @@ import { delayLabel } from "../format";
 import { Place } from "./Place";
 import { nl } from "../i18n/nl";
 import { AnimatedTrain } from "../types";
+import { Num } from "./Num";
 
 interface TrainPopupProps {
   train: AnimatedTrain;
@@ -193,7 +194,7 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
               : "text-emerald-600 dark:text-emerald-400"
           }
         >
-          {delayLabel(train.delay_s)}
+          <Num>{delayLabel(train.delay_s)}</Num>
         </span>
         {!train.realtime && (
           <span className="text-gray-400 dark:text-gray-500"> · {nl.scheduledNoRt}</span>
@@ -232,12 +233,12 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
               {nl.arrivesAt} <Place name={train.headsign ?? train.next_station ?? ""} />
             </div>
             <div className="text-lg font-bold tabular-nums leading-tight">
-              {hhmm(finalMs)}{" "}
-              <span className="text-[11px] font-normal text-gray-500 dark:text-gray-400">{minsUntil(finalMs)}</span>
+              <Num>{hhmm(finalMs)}</Num>{" "}
+              <span className="text-[11px] font-normal text-gray-500 dark:text-gray-400"><Num>{minsUntil(finalMs)}</Num></span>
             </div>
             {nextMs && train.next_station && nextMs !== finalMs && (
               <div className="break-words text-[11px] leading-snug text-gray-500 dark:text-gray-400">
-                <Place name={train.next_station} /> {hhmm(nextMs)} · {minsUntil(nextMs)}
+                <Place name={train.next_station} /> <Num>{hhmm(nextMs)}</Num> · <Num>{minsUntil(nextMs)}</Num>
               </div>
             )}
           </div>
