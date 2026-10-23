@@ -40,9 +40,9 @@ export function NetworkStatus({ lines, trains, status, onLine }: NetworkStatusPr
             return (
               <tr key={h.line} className="border-t border-[#efe8d8] dark:border-[#1c2436]">
                 <td className="py-1">
-                  <button type="button" onClick={() => onLine(h.line)} className="flex min-w-0 items-center gap-1.5 hover:underline" title={line ? formatPlaceName(line.name) : undefined}>
+                  <button type="button" onClick={() => onLine(h.line)} className="flex min-w-0 items-center gap-1.5 hover:underline" translate="no" title={line ? formatPlaceName(line.name) : undefined}>
                     <LineBadge id={h.line} color={line?.color ?? "#999"} small />
-                    <span className="hidden truncate xl:inline">{line ? formatPlaceName(line.name).split(" - ")[1] ?? "" : ""}</span>
+                    <span translate="no" className="hidden truncate xl:inline">{line ? formatPlaceName(line.name).split(" - ")[1] ?? "" : ""}</span>
                   </button>
                 </td>
                 <td className="py-1 text-right tabular-nums">{h.trains}</td>

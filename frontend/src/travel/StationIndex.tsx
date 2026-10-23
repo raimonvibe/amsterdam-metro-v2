@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { History, LocateFixed, Star, X } from "lucide-react";
 import { formatPlaceName } from "../format";
+import { Place } from "../components/Place";
 import { Station } from "../types";
 import { LineBadge, Section } from "./ui";
 
@@ -44,7 +45,7 @@ export function StationIndex(p: StationIndexProps) {
           }`}
         >
           {icon}
-          <span className="min-w-0 flex-1 truncate">{formatPlaceName(name)}</span>
+          <span className="min-w-0 flex-1 truncate"><Place name={name} /></span>
           <span className="flex shrink-0 gap-0.5">
             {s.lines.map((l) => (
               <LineBadge key={l} id={l} color={p.colorOf(l)} small />

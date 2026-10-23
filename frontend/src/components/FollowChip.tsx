@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { formatPlaceName } from "../format";
+import { Place } from "./Place";
 import { nl } from "../i18n/nl";
 import { AnimatedTrain, Line } from "../types";
 
@@ -20,7 +20,7 @@ export function FollowChip({ train, lines, onStop }: FollowChipProps) {
         {train.line}
       </span>
       <span className="truncate">
-        {nl.following} → {formatPlaceName(train.headsign ?? "")}
+        {nl.following} → <Place name={train.headsign ?? ""} />
       </span>
       <button
         type="button"

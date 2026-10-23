@@ -38,13 +38,13 @@ describe("TrainPopup platform", () => {
   it("shows the platform it is heading to while moving", () => {
     show(train({ platform: "1" }));
     // The "To" row comes first; the arrival line further down names the stop again.
-    expect(screen.getAllByText(/Spaklerweg/)[0].textContent).toContain("perron 1");
-    expect(screen.getByText(/Wibautstraat/).textContent).not.toContain("perron");
+    expect(screen.getAllByText(/Spaklerweg/)[0].parentElement!.textContent).toContain("perron 1");
+    expect(screen.getByText(/Wibautstraat/).parentElement!.textContent).not.toContain("perron");
   });
 
   it("shows the platform it stands at while dwelling", () => {
     show(train({ status: "dwelling", prev_station: "Amsterdam, Spaklerweg", next_station: "Amsterdam, Van der Madeweg", platform: "2" }));
-    expect(screen.getByText(/^Spaklerweg/).textContent).toContain("perron 2");
+    expect(screen.getByText(/^Spaklerweg/).parentElement!.textContent).toContain("perron 2");
   });
 
   it("says nothing where the timetable has no platform", () => {
