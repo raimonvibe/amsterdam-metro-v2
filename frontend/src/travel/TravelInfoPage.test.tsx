@@ -143,7 +143,7 @@ describe("TravelInfoPage", () => {
   it("draws the line overview from the network", async () => {
     renderPage("/reisinfo?lijn=52");
     expect(await screen.findByText(/Metro 52 ·/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("tab", { name: "Lijn 53" }));
+    await userEvent.click(within(screen.getByRole("group", { name: "Kies een lijn" })).getByRole("button", { name: "Lijn 53" }));
     expect(screen.getByText(/Metro 53 ·/)).toBeInTheDocument();
   });
 });

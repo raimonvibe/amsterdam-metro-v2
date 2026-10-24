@@ -74,7 +74,7 @@ export function StyleSwitcher({ value, onChange }: StyleSwitcherProps) {
               className={color}
               aria-hidden
             />
-            <span className="max-w-full truncate text-[10px] font-semibold leading-tight">{labelOf(label)}</span>
+            <span className="max-w-full truncate text-[11px] font-semibold leading-tight">{labelOf(label)}</span>
           </button>
         );
       })}

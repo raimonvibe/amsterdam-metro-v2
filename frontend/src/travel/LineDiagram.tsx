@@ -6,6 +6,7 @@ import { cumulativeMinutes, placeTrains } from "./diagram";
 import { JourneyLeg, NetworkLine } from "./types";
 import { LineBadge, Section, SkeletonRows, useNarrowScreen } from "./ui";
 import { useTravelT } from "./strings";
+import { onColor } from "../contrast";
 
 /** Row height in px. Phones get two lines per station (name, then badges and
  *  travel time) so even "Station Bijlmer ArenA" fits; trains and the track are
@@ -49,15 +50,14 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
       id="lijnoverzicht"
       title={txt.lineOverview}
       aside={
-        <div className="flex gap-1" role="tablist" aria-label={txt.chooseLine}>
+        <div className="flex gap-1" role="group" aria-label={txt.chooseLine}>
           {(network ?? []).map((l) => (
             <button
               key={l.id}
               type="button"
-              role="tab"
-              aria-selected={l.id === line?.id}
+              aria-pressed={l.id === line?.id}
               onClick={() => onLine(l.id)}
-              className={`rounded transition ${l.id === line?.id ? "ring-2 ring-[#1f3a68] ring-offset-1 dark:ring-[#c8a951] dark:ring-offset-[#111727]" : "opacity-60 hover:opacity-100"}`}
+              className={`flex min-h-6 items-center rounded transition ${l.id === line?.id ? "ring-2 ring-[#1f3a68] ring-offset-1 dark:ring-[#c8a951] dark:ring-offset-[#111727]" : "opacity-60 hover:opacity-100"}`}
             >
               <LineBadge id={l.id} color={l.color} />
             </button>
@@ -86,7 +86,7 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
               ))}
             </p>
           )}
-          <div className="mb-1 grid grid-cols-[1.25rem_minmax(0,1fr)_2.5rem_2.5rem] sm:grid-cols-[1.25rem_minmax(0,1fr)_4.75rem_4.75rem] gap-x-1.5 text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
+          <div className="mb-1 grid grid-cols-[1.25rem_minmax(0,1fr)_2.5rem_2.5rem] sm:grid-cols-[1.25rem_minmax(0,1fr)_4.75rem_4.75rem] gap-x-1.5 text-[11px] text-[#6b6455] dark:text-[#8b93a7]">
             <span />
             <span className="smallcaps">{txt.stationTravelTime}</span>
             {/* Phones: just the arrows; the chips below carry the direction too. */}
@@ -145,7 +145,7 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
                         {others.map((l) => (
                           <LineBadge key={l} id={l} color={colorOf(l)} small />
                         ))}
-                        <span className="ml-auto shrink-0 text-[10px] tabular-nums text-[#9a9384]">{minutes[i] ? `+${minutes[i]}′` : ""}</span>
+                        <span className="ml-auto shrink-0 text-[11px] tabular-nums text-[#6b6455] dark:text-[#8b93a7]">{minutes[i] ? `+${minutes[i]}′` : ""}</span>
                       </span>
                     </span>
                     <span style={{ height: rowH }} />
@@ -158,10 +158,10 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
               <span
                 key={train.id}
                 // Phones: narrower chip columns, so station names keep their room.
-                className={`absolute z-[2] flex h-4 w-[2.25rem] -translate-y-1/2 items-center justify-center gap-0.5 rounded-full text-[9px] font-bold text-gray-950 shadow-sm transition-[top] duration-1000 ease-linear sm:w-[4.5rem] ${
+                className={`absolute z-[2] flex h-4 w-[2.25rem] -translate-y-1/2 items-center justify-center gap-0.5 rounded-full text-[11px] font-bold shadow-sm transition-[top] duration-1000 ease-linear sm:w-[4.5rem] ${
                   forward ? "right-[calc(2.5rem+0.375rem+0.125rem)] sm:right-[calc(4.75rem+0.375rem+0.125rem)]" : "right-0.5"
                 }`}
-                style={{ top: pos * rowH + rowH / 2, backgroundColor: line.color }}
+                style={{ top: pos * rowH + rowH / 2, backgroundColor: line.color, color: onColor(line.color) }}
                 title={`${train.status === "dwelling" ? txt.standsAt : txt.runsPast} ${formatPlaceName(train.prev_station ?? "")}`}
               >
                 {forward ? "↓" : "↑"}{" "}

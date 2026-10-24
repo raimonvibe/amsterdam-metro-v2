@@ -2,11 +2,13 @@ import { useState } from "react";
 import { ChevronRight, Clock, Landmark, PanelLeftClose, TrainFront, TriangleAlert } from "lucide-react";
 import { AnimatedTrain, Line, ServiceAlert, Station, Status } from "../types";
 import { AlertList } from "./AlertList";
+import { onColor } from "../contrast";
 import { MapStyle } from "../theme";
 import { StyleSwitcher } from "./StyleSwitcher";
 import { locale, useLang, useT } from "../i18n";
 import { LanguageToggle } from "./LanguageToggle";
 import { Place } from "./Place";
+import { formatPlaceName } from "../format";
 import { SocialIcons } from "./SocialIcons";
 import { Credits } from "./Credits";
 
@@ -24,13 +26,16 @@ interface SidebarProps {
   onOpenTravel: () => void;
   onClose: () => void;
   alerts?: ServiceAlert[];
+  stations?: Station[];
+  /** Opens the station's departures, as a tap on the map would. */
+  onPickStation?: (station: Station) => void;
 }
 
 function LineBadge({ id, color }: { id: string; color: string }) {
   return (
     <span
-      className="flex h-5 w-7 shrink-0 items-center justify-center rounded text-[11px] font-bold text-gray-950"
-      style={{ backgroundColor: color }}
+      className="flex h-5 w-7 shrink-0 items-center justify-center rounded text-[11px] font-bold"
+      style={{ backgroundColor: color, color: onColor(color) }}
     >
       {id}
     </span>
@@ -51,6 +56,8 @@ export function Sidebar({
   onOpenTravel,
   onClose,
   alerts = [],
+  stations = [],
+  onPickStation,
 }: SidebarProps) {
   const txt = useT();
   const lang = useLang();
@@ -97,6 +104,33 @@ export function Sidebar({
         </span>
         <ChevronRight size={16} className="shrink-0 opacity-80" aria-hidden />
       </a>
+
+      {/* The way to a station without pointing at the map: a native select
+          works with any keyboard and screen reader, on every device. */}
+      {stations.length > 0 && (
+        <label className="mb-4 block">
+          <span className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-300">{txt.pickStation}</span>
+          <select
+            value=""
+            onChange={(e) => {
+              const s = stations.find((x) => x.name === e.target.value);
+              if (s) onPickStation?.(s);
+            }}
+            className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2.5 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 sm:min-h-9"
+          >
+            <option value="" disabled>
+              {txt.pickStationPrompt}
+            </option>
+            {[...stations]
+              .sort((a, b) => formatPlaceName(a.name).localeCompare(formatPlaceName(b.name), "nl"))
+              .map((s) => (
+                <option key={s.name} value={s.name}>
+                  {formatPlaceName(s.name)} ({s.lines.join(", ")})
+                </option>
+              ))}
+          </select>
+        </label>
+      )}
 
       <div className="mb-4">
         <StyleSwitcher value={mapStyle} onChange={onMapStyleChange} />

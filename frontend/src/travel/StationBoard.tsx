@@ -155,7 +155,7 @@ export function StationBoard(props: StationBoardProps) {
       title={txt.board}
       aside={
         updated && (
-          <span className="text-[11px] tabular-nums text-[#7a7262] dark:text-[#8b93a7]" aria-live="off">
+          <span className="text-[11px] tabular-nums text-[#6b6455] dark:text-[#8b93a7]" aria-live="off">
             {error ? txt.connectionTrouble : ""}{txt.updated} <Num>{clock(updated / 1000)}</Num>
           </span>
         )
@@ -173,7 +173,7 @@ export function StationBoard(props: StationBoardProps) {
               <LineBadge key={l} id={l} color={colorOf(l)} />
             ))}
             {station.name.includes(",") && !station.name.startsWith("Amsterdam,") && (
-              <span className="ml-1 text-xs text-[#7a7262] dark:text-[#8b93a7]">{station.name.split(",")[0]}</span>
+              <span className="ml-1 text-xs text-[#6b6455] dark:text-[#8b93a7]">{station.name.split(",")[0]}</span>
             )}
           </div>
         </div>
@@ -203,7 +203,7 @@ export function StationBoard(props: StationBoardProps) {
                 <span className="font-semibold">→ <Place name={d.headsign} /></span>
                 {headwayLabel(d.headway_min) && <> · {headwayLabel(d.headway_min)}</>}
                 {d.first_ts && d.last_ts && (
-                  <span className="text-[#7a7262] dark:text-[#8b93a7]">
+                  <span className="text-[#6b6455] dark:text-[#8b93a7]">
                     {" "}
                     · <Num>{clock(d.first_ts)}</Num>–<Num>{clock(d.last_ts)}</Num>
                   </span>
@@ -232,7 +232,7 @@ export function StationBoard(props: StationBoardProps) {
                   type="button"
                   aria-pressed={lineFilter.includes(l)}
                   onClick={() => toggleLine(l)}
-                  className={`rounded transition ${on ? "" : "opacity-35 grayscale"}`}
+                  className={`flex min-h-6 items-center rounded transition ${on ? "" : "opacity-35 grayscale"}`}
                   title={txt.onlyLine(l)}
                 >
                   <LineBadge id={l} color={colorOf(l)} />
@@ -357,7 +357,7 @@ export function StationBoard(props: StationBoardProps) {
           <Radio size={13} aria-hidden /> {txt.incoming}
         </h4>
         {incoming.length === 0 ? (
-          <p className="text-xs text-[#7a7262] dark:text-[#8b93a7]">{txt.noIncoming}</p>
+          <p className="text-xs text-[#6b6455] dark:text-[#8b93a7]">{txt.noIncoming}</p>
         ) : (
           <ul className="grid gap-1 sm:grid-cols-2">
             {incoming.map((t) => (
@@ -366,7 +366,7 @@ export function StationBoard(props: StationBoardProps) {
                 <span className="min-w-0 flex-1 truncate">
                   → <Place name={t.headsign ?? ""} />
                   {t.prev_station && (
-                    <button type="button" onClick={() => props.onStation(t.prev_station!)} className="text-[#7a7262] hover:underline dark:text-[#8b93a7]">
+                    <button type="button" onClick={() => props.onStation(t.prev_station!)} className="text-[#6b6455] hover:underline dark:text-[#8b93a7]">
                       {" "}
                       · {t.status === "dwelling" ? txt.standingAt : txt.justPast} <Place name={t.prev_station} />
                     </button>
@@ -374,7 +374,7 @@ export function StationBoard(props: StationBoardProps) {
                 </span>
                 <span className="shrink-0 font-semibold tabular-nums"><Num>{countdown(t.next_arrival_ts!, nowMs)}</Num></span>
                 {Math.abs(t.delay_s) >= 60 && (
-                  <span className="shrink-0 text-[10px] text-amber-700 dark:text-amber-400"><Num>{delayLabel(t.delay_s)}</Num></span>
+                  <span className="shrink-0 text-[11px] text-amber-700 dark:text-amber-400"><Num>{delayLabel(t.delay_s)}</Num></span>
                 )}
               </li>
             ))}
@@ -410,7 +410,7 @@ function ActionButton({
 }
 
 const URGENCY_CLASS = {
-  gone: "text-[#9a9384] line-through",
+  gone: "text-[#6b6455] dark:text-[#8b93a7] line-through",
   now: "text-[#7b2132] dark:text-[#f08a9b]",
   soon: "text-amber-700 dark:text-amber-400",
   later: "text-[#1d2433] dark:text-[#ece6d6]",
@@ -444,12 +444,12 @@ function DepartureRow({
     >
       <span className="flex flex-col leading-tight tabular-nums">
         <span className={`font-semibold ${d.cancelled ? "line-through" : ""}`}><Num>{clock(d.departure_ts)}</Num></span>
-        {late && !d.cancelled && <span className="text-[10px] text-[#9a9384] line-through"><Num>{clock(d.scheduled_ts)}</Num></span>}
+        {late && !d.cancelled && <span className="text-[11px] text-[#6b6455] dark:text-[#8b93a7] line-through"><Num>{clock(d.scheduled_ts)}</Num></span>}
       </span>
       <span className="flex min-w-0 items-center gap-1.5 overflow-hidden text-xs text-[#4a4436] dark:text-[#b9bfcc]">
         {showLine && <LineBadge id={d.line} color={colorOf(d.line)} small />}
         {showPlatform && d.platform && (
-          <span className="shrink-0 rounded bg-[#efe8d8] px-1 text-[10px] font-semibold text-[#1d2433] dark:bg-[#1c2436] dark:text-[#e3ddcf]">
+          <span className="shrink-0 rounded bg-[#efe8d8] px-1 text-[11px] font-semibold text-[#1d2433] dark:bg-[#1c2436] dark:text-[#e3ddcf]">
             {txt.platform} {d.platform}
           </span>
         )}
@@ -460,17 +460,18 @@ function DepartureRow({
             <span
               className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${d.realtime ? "animate-pulse bg-emerald-500" : "bg-[#b8ae99] dark:bg-[#4b5468]"}`}
               title={d.realtime ? txt.liveTracked : txt.bySchedule}
+              role="img"
               aria-label={d.realtime ? txt.liveShort : txt.scheduleShort}
             />
             <span className={`min-w-0 truncate ${late ? "font-semibold text-amber-700 dark:text-amber-400" : ""}`}>{d.realtime ? <Num>{delayLabel(d.delay_s)}</Num> : txt.scheduleShort}</span>
             {/* Shrinks long before the status label does, so narrow cards drop the detail first. */}
-            <span className="hidden min-w-0 shrink-[100] truncate text-[#7a7262] sm:inline dark:text-[#8b93a7]">
+            <span className="hidden min-w-0 shrink-[100] truncate text-[#6b6455] sm:inline dark:text-[#8b93a7]">
               · {txt.stops(d.stops_remaining)} · {txt.arrShort} <Num>{clock(d.terminus_ts)}</Num>
             </span>
           </>
         )}
       </span>
-      <span className={`text-right font-semibold tabular-nums ${d.cancelled ? "text-[#9a9384]" : URGENCY_CLASS[u]}`}>
+      <span className={`text-right font-semibold tabular-nums ${d.cancelled ? "text-[#6b6455] dark:text-[#8b93a7]" : URGENCY_CLASS[u]}`}>
         <Num>{d.cancelled ? "—" : reachable ? countdown(d.departure_ts, nowMs) : txt.notReachable}</Num>
       </span>
     </li>

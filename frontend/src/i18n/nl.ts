@@ -80,4 +80,10 @@ export const nl = {
   chunkFailed: "Deze pagina kon niet worden geladen.",
   chunkFailedHint: "Waarschijnlijk is de site net bijgewerkt of is de verbinding weggevallen.",
   reload: "Opnieuw laden",
+  mapLabel: "Interactieve kaart met live metro's. Pijltjestoetsen schuiven, plus en min zoomen. Kies een station in het menu voor de vertrektijden.",
+  pickStation: "Station kiezen",
+  pickStationPrompt: "Kies een station…",
+  textVersion: "Tekstversie: vertrektijden en lijnen",
+  followTrain: (line: string, to: string) => `Volg metro ${line} naar ${to} op de kaart`,
+  alertAnnounce: (lines: string, text: string) => `Melding ${lines}: ${text}`,
 } as const;

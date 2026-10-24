@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { PanelLeftOpen } from "lucide-react";
 import { useAlerts } from "./hooks/useAlerts";
+import { AlertAnnouncer } from "./components/AlertList";
 import { strings, useT } from "./i18n";
 import { MetroMap, NO_HOVER } from "./components/MetroMap";
 import { Sidebar } from "./components/Sidebar";
@@ -46,6 +47,8 @@ export default function App() {
   const [hoveredStation, setHoveredStation] = useState<Station | null>(null);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [followedTrainId, setFollowedTrainId] = useState<string | null>(null);
+  // Followed from a list (the station card) rather than the map itself.
+  const [followedFromList, setFollowedFromList] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { showPrivacy, openPrivacy, closePrivacy } = usePrivacyRoute();
   const { showTravel, openTravel, closeTravel } = useTravelRoute();
@@ -164,6 +167,21 @@ export default function App() {
 
   return (
     <div className="flex h-dvh min-h-0 overflow-hidden bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+      {/* First Tab stop: the text version of what the map shows. Hidden until
+          focused, so the map looks the same for everyone else. */}
+      <nav aria-label={txt.textVersion} className="contents">
+      <a
+        href="/reisinfo"
+        inert={showTravel}
+        onClick={(e) => {
+          e.preventDefault();
+          openTravelForSelection();
+        }}
+        className="sr-only z-[70] rounded-lg bg-[#1f3a68] px-4 py-2.5 text-sm font-semibold text-white shadow-lg focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
+      >
+        {txt.textVersion}
+      </a>
+      </nav>
       <div
         aria-hidden={!sidebarOpen}
         className={`pointer-events-none fixed inset-0 z-40 bg-black/45 backdrop-blur-[1px] transition-opacity duration-300 ease-in-out md:hidden ${
@@ -171,9 +189,10 @@ export default function App() {
         }`}
       />
       {/* Behind a full-screen page the map and sidebar stay mounted (the page
-          uses their live trains) but must not be reachable by Tab or a screen reader. */}
+          uses their live trains) but must not be reachable by Tab or a screen reader.
+          Neither may a closed sidebar: it is off-screen, and focus would vanish into it. */}
       <div
-        inert={showTravel}
+        inert={showTravel || !sidebarOpen}
         className={`fixed inset-y-0 left-0 z-50 w-[min(18rem,calc(100vw-env(safe-area-inset-left)-env(safe-area-inset-right)))] max-w-[min(18rem,100vw)] overflow-hidden transition-transform duration-300 ease-in-out md:static md:z-auto md:max-w-none md:shrink-0 md:overflow-hidden md:transition-[width] md:duration-300 md:ease-in-out ${
           sidebarOpen
             ? "translate-x-0 md:w-72"
@@ -194,6 +213,13 @@ export default function App() {
           onOpenTravel={openTravelForSelection}
           onClose={closeSidebar}
           alerts={alerts}
+          stations={stations}
+          onPickStation={(s) => {
+            setSelectedStation(s);
+            flyToStation(s);
+            // Phones: the drawer covers the map and the departure card.
+            if (window.matchMedia("(max-width: 47.99rem)").matches) closeSidebar();
+          }}
         />
       </div>
       <main inert={showTravel} className="relative min-h-0 min-w-0 flex-1">
@@ -229,7 +255,11 @@ export default function App() {
           backdropColor={swatch[0]}
           followedTrainId={followedTrainId}
           onStationHover={setHoveredStation}
-          onTrainClick={(t) => setFollowedTrainId(t.id)}
+          onTrainClick={(t) => {
+            setFollowedFromList(false);
+            setFollowedTrainId(t.id);
+          }}
+          showFollowedCard={followedFromList}
           onStationClick={(s) => {
             // Picking a station is a new choice: stop following, or the
             // follow-cam carries the map away from the station just opened.
@@ -244,11 +274,18 @@ export default function App() {
           paused={showTravel}
         />
         <LiveBadge status={status} />
+        <AlertAnnouncer alerts={alerts} />
         {selectedStation && (
           <DepartureBoard
             station={selectedStation}
             lines={lines}
             alerts={alerts}
+            followable={new Set(trains.map((t) => t.id))}
+            onFollow={(id) => {
+              setFollowedFromList(true);
+              setFollowedTrainId(id);
+              setSelectedStation(null);
+            }}
             onClose={() => setSelectedStation(null)}
             onMore={openTravelForSelection}
           />

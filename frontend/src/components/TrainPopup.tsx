@@ -5,6 +5,7 @@ import { Place } from "./Place";
 import { locale, strings, useLang, useT } from "../i18n";
 import { AnimatedTrain } from "../types";
 import { Num } from "./Num";
+import { onColor } from "../contrast";
 
 interface TrainPopupProps {
   train: AnimatedTrain;
@@ -166,8 +167,8 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
       )}
       <div className={`mb-2 flex items-center gap-2 ${onClose ? "pr-8" : ""}`}>
         <span
-          className="flex h-5 w-7 shrink-0 items-center justify-center rounded text-[11px] font-bold text-gray-950"
-          style={{ backgroundColor: color }}
+          className="flex h-5 w-7 shrink-0 items-center justify-center rounded text-[11px] font-bold"
+          style={{ backgroundColor: color, color: onColor(color) }}
         >
           {train.line}
         </span>

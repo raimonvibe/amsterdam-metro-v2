@@ -16,6 +16,21 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* One keyboard focus ring everywhere (WCAG 2.4.7). The white gap between
+   element and ring keeps it visible on the blue and gold buttons too; dark
+   mode swaps in the gold. :where() keeps it overridable by any component
+   that draws its own ring (the search fields). Keyboard only: no ring on click. */
+:where(a, button, input, select, textarea, summary, canvas, [tabindex]):focus-visible {
+  outline: 3px solid #1f3a68;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+.dark :where(a, button, input, select, textarea, summary, canvas, [tabindex]):focus-visible {
+  outline-color: #e2c977;
+  box-shadow: 0 0 0 2px #0a0e18;
+}
+
 .church-marker {
   pointer-events: none;
   user-select: none;
@@ -56,6 +71,9 @@ a {
 }
 
 .social-icons .icon {
+  /* The whole cell is the target (WCAG 2.5.8: 24x24 px at least), not just the glyph. */
+  width: 100%;
+  min-height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;

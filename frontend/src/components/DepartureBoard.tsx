@@ -4,9 +4,11 @@ import { fetchDepartures } from "../api";
 import { pollWhileVisible } from "../poll";
 import { strings, useT } from "../i18n";
 import { Place } from "./Place";
+import { formatPlaceName } from "../format";
 import { Departure, Line, ServiceAlert, Station } from "../types";
 import { AlertList, alertsFor } from "./AlertList";
 import { Num } from "./Num";
+import { onColor } from "../contrast";
 
 interface DepartureBoardProps {
   station: Station;
@@ -15,6 +17,9 @@ interface DepartureBoardProps {
   alerts?: ServiceAlert[];
   onClose: () => void;
   onMore?: () => void;
+  /** Trips on the map right now: those rows can be picked to follow the train. */
+  followable?: Set<string>;
+  onFollow?: (tripId: string) => void;
 }
 
 function countdown(ts: number, nowMs: number): string {
@@ -23,7 +28,7 @@ function countdown(ts: number, nowMs: number): string {
   return `${Math.round(s / 60)} ${strings().min}`;
 }
 
-export function DepartureBoard({ station, lines, alerts = [], onClose, onMore }: DepartureBoardProps) {
+export function DepartureBoard({ station, lines, alerts = [], onClose, onMore, followable, onFollow }: DepartureBoardProps) {
   const txt = useT();
   const [departures, setDepartures] = useState<Departure[] | null>(null);
   const [nowMs, setNowMs] = useState(Date.now());
@@ -81,15 +86,29 @@ export function DepartureBoard({ station, lines, alerts = [], onClose, onMore }:
       )}
       {departures && departures.length > 0 && (
         <ul className="space-y-1">
-          {departures.map((d, i) => (
-            <li
-              key={`${d.trip_id}-${d.departure_ts}-${i}`}
-              className="flex items-center justify-between rounded-lg px-2 py-1 text-sm odd:bg-gray-100 dark:odd:bg-gray-900"
-            >
+          {departures.map((d, i) => {
+            // A train already on the map can be followed from here: the way
+            // to it for keyboards and screen readers, which cannot point at it.
+            const canFollow = Boolean(onFollow && followable?.has(d.trip_id));
+            const Row = canFollow ? "button" : "div";
+            return (
+            <li key={`${d.trip_id}-${d.departure_ts}-${i}`} className="rounded-lg odd:bg-gray-100 dark:odd:bg-gray-900">
+              <Row
+                {...(canFollow
+                  ? {
+                      type: "button" as const,
+                      onClick: () => onFollow?.(d.trip_id),
+                      "aria-label": `${txt.followTrain(d.line, formatPlaceName(d.headsign))}, ${countdown(d.departure_ts, nowMs)}`,
+                    }
+                  : {})}
+                className={`flex min-h-8 w-full items-center justify-between rounded-lg px-2 py-1 text-left text-sm ${
+                  canFollow ? "hover:bg-gray-200 dark:hover:bg-gray-800" : ""
+                }`}
+              >
               <span className="flex min-w-0 items-center gap-2">
                 <span
-                  className="flex h-5 w-7 shrink-0 items-center justify-center rounded text-[11px] font-bold text-gray-950"
-                  style={{ backgroundColor: colorOf(d.line) }}
+                  className="flex h-5 w-7 shrink-0 items-center justify-center rounded text-[11px] font-bold"
+                  style={{ backgroundColor: colorOf(d.line), color: onColor(colorOf(d.line)) }}
                 >
                   {d.line}
                 </span>
@@ -102,13 +121,15 @@ export function DepartureBoard({ station, lines, alerts = [], onClose, onMore }:
                   <Num>{countdown(d.departure_ts, nowMs)}</Num>
                 </span>
                 {d.delay_s > 60 && (
-                  <span className="ml-1 text-[10px] text-amber-600 dark:text-amber-400">
+                  <span className="ml-1 text-[11px] text-amber-600 dark:text-amber-400">
                     +{Math.round(d.delay_s / 60)}m
                   </span>
                 )}
               </span>
+              </Row>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
       {onMore && (

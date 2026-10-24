@@ -82,4 +82,10 @@ export const en: Dict = {
   chunkFailed: "This page could not be loaded.",
   chunkFailedHint: "The site was probably just updated, or the connection dropped.",
   reload: "Reload",
+  mapLabel: "Interactive map with live trains. Arrow keys pan, plus and minus zoom. Pick a station in the menu for its departures.",
+  pickStation: "Pick a station",
+  pickStationPrompt: "Choose a station…",
+  textVersion: "Text version: departures and lines",
+  followTrain: (line: string, to: string) => `Follow metro ${line} to ${to} on the map`,
+  alertAnnounce: (lines: string, text: string) => `Message ${lines}: ${text}`,
 };

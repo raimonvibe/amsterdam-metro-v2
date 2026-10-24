@@ -74,7 +74,7 @@ export function StationIndex(p: StationIndexProps) {
         <Star size={12} aria-hidden /> {txt.favourites}
       </h3>
       {p.favourites.length === 0 ? (
-        <p className="mt-1 text-[11px] leading-snug text-[#7a7262] dark:text-[#8b93a7]">
+        <p className="mt-1 text-[11px] leading-snug text-[#6b6455] dark:text-[#8b93a7]">
           {txt.favouritesHint}
         </p>
       ) : (
@@ -88,7 +88,7 @@ export function StationIndex(p: StationIndexProps) {
             <button
               type="button"
               onClick={p.onClearRecent}
-              className="ml-auto rounded p-0.5 text-[#9a9384] hover:text-[#1d2433] dark:hover:text-[#ece6d6]"
+              className="ml-auto flex min-h-6 min-w-6 items-center justify-center rounded text-[#6b6455] dark:text-[#8b93a7] hover:text-[#1d2433] dark:hover:text-[#ece6d6]"
               aria-label={txt.clearRecent}
               title={txt.clear}
             >
@@ -105,12 +105,12 @@ export function StationIndex(p: StationIndexProps) {
           type="button"
           onClick={() => setLine(null)}
           aria-pressed={line === null}
-          className={`h-5 rounded px-1.5 text-[10px] font-semibold ${line === null ? "bg-[#1f3a68] text-white dark:bg-[#c8a951] dark:text-[#111727]" : "bg-[#f1ebdd] dark:bg-[#1a2134]"}`}
+          className={`h-6 rounded px-1.5 text-[11px] font-semibold ${line === null ? "bg-[#1f3a68] text-white dark:bg-[#c8a951] dark:text-[#111727]" : "bg-[#f1ebdd] dark:bg-[#1a2134]"}`}
         >
           {txt.all}
         </button>
         {p.lineIds.map((l) => (
-          <button key={l} type="button" onClick={() => setLine(line === l ? null : l)} aria-pressed={line === l} className={line && line !== l ? "opacity-40" : ""}>
+          <button key={l} type="button" onClick={() => setLine(line === l ? null : l)} aria-pressed={line === l} className={`flex min-h-6 items-center ${line && line !== l ? "opacity-40" : ""}`}>
             <LineBadge id={l} color={p.colorOf(l)} />
           </button>
         ))}

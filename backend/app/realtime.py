@@ -177,7 +177,10 @@ def _parse_alerts(feed_bytes: bytes, metro: Tuple[frozenset, frozenset]) -> List
     return out
 
 
-EMPTY_FILTER_RETRY_SECONDS = 5
+# Retry pace while the static data loads (~75 s on a cold start). 5 s cost
+# ~45 extra OVapi requests per deploy across the three feeds; 15 s still shows
+# alerts within seconds of the data being ready, at a third of the load.
+EMPTY_FILTER_RETRY_SECONDS = 15
 
 
 def _is_empty(flt: object) -> bool:
