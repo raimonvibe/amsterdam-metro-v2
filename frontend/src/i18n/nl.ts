@@ -90,4 +90,7 @@ export const nl = {
   plannedSr: "volgens dienstregeling, geen live signaal",
   timesLiveNote: "Tijden zijn live, tenzij ‘gepland’.",
   liveDown: "Live gegevens tijdelijk niet beschikbaar: alle tijden volgens dienstregeling.",
+  mapRecovering: "Kaart wordt hersteld…",
+  mapCrashed: "De kaart liep vast.",
+  mapReload: "Kaart opnieuw laden",
 } as const;

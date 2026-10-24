@@ -92,4 +92,7 @@ export const en: Dict = {
   plannedSr: "from the timetable, no live signal",
   timesLiveNote: "Times are live unless marked ‘scheduled’.",
   liveDown: "Live data temporarily unavailable: all times are from the timetable.",
+  mapRecovering: "Restoring the map…",
+  mapCrashed: "The map stopped working.",
+  mapReload: "Reload map",
 };
