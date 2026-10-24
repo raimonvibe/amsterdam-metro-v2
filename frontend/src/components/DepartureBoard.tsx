@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Clock, X } from "lucide-react";
-import { fetchDepartures } from "../api";
+import { fetchDepartures, SlowDown } from "../api";
 import { pollWhileVisible } from "../poll";
 import { strings, useT } from "../i18n";
 import { Place } from "./Place";
@@ -38,16 +38,23 @@ export function DepartureBoard({ station, lines, alerts = [], onClose, onMore, f
   useEffect(() => {
     setDepartures(null);
     let stop = false;
-    const cleanup = pollWhileVisible(async () => {
+    let retry: number | undefined;
+    const load = async () => {
+      window.clearTimeout(retry);
       try {
         const d = await fetchDepartures(station.name);
         if (!stop) setDepartures(d);
-      } catch {
-        /* transient */
+      } catch (e) {
+        // Slow down (shared address): retry when told to, not after a full
+        // poll, so a first load does not sit on "loading" for 15 s.
+        if (!stop && e instanceof SlowDown) retry = window.setTimeout(load, e.retryAfterS * 1000);
+        /* otherwise transient: the next poll tries again */
       }
-    }, 15000);
+    };
+    const cleanup = pollWhileVisible(load, 15000);
     return () => {
       stop = true;
+      window.clearTimeout(retry);
       cleanup();
     };
   }, [station.name]);

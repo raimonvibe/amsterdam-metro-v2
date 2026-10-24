@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Clock, Footprints, Link2, MapPin, Radio, Route, Star } from "lucide-react";
-import { fetchBoard, fetchStationInfo } from "../api";
+import { fetchBoard, fetchStationInfo, SlowDown } from "../api";
 import { delayLabel } from "../format";
 import { Place } from "../components/Place";
 import { pollWhileVisible } from "../poll";
@@ -96,7 +96,9 @@ export function StationBoard(props: StationBoardProps) {
     // Polls can overlap on a slow connection; only the newest may land, or
     // an older answer would overwrite fresher departures.
     let seq = 0;
-    const cleanup = pollWhileVisible(async () => {
+    let retry: number | undefined;
+    const load = async () => {
+      window.clearTimeout(retry);
       const mine = ++seq;
       try {
         const d = await fetchBoard(station.name, prefs.windowMin, prefs.showCancelled);
@@ -104,12 +106,18 @@ export function StationBoard(props: StationBoardProps) {
         setDeps(d);
         setError(false);
         setUpdated(Date.now());
-      } catch {
-        if (!stop && mine === seq) setError(true);
+      } catch (e) {
+        if (stop || mine !== seq) return;
+        // Asked to slow down (a shared address): not a connection problem.
+        // Keep the board as it is and try once more when the server says.
+        if (e instanceof SlowDown) retry = window.setTimeout(load, e.retryAfterS * 1000);
+        else setError(true);
       }
-    }, BOARD_REFRESH_MS);
+    };
+    const cleanup = pollWhileVisible(load, BOARD_REFRESH_MS);
     return () => {
       stop = true;
+      window.clearTimeout(retry);
       cleanup();
     };
   }, [station.name, prefs.windowMin, prefs.showCancelled]);

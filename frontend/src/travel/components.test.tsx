@@ -11,7 +11,9 @@ import { StationClock, handAngles } from "./StationClock";
 import { DEFAULT_PREFS } from "./storage";
 import { BoardDeparture, Journey } from "./types";
 
-vi.mock("../api", () => ({
+vi.mock("../api", async (importOriginal) => ({
+  // The real SlowDown class: components test `instanceof` against it.
+  ...(await importOriginal<typeof import("../api")>()),
   fetchBoard: vi.fn(),
   fetchStationInfo: vi.fn(),
   fetchJourneys: vi.fn(),
@@ -236,6 +238,25 @@ describe("StationBoard", () => {
     expect(within(gaasperplas).getByText("perron 4")).toBeInTheDocument();
     const gein = screen.getByRole("heading", { name: "Richting Gein" }).closest("article")!;
     expect(within(gein).queryByText(/perron/i)).toBeNull();
+  });
+
+  it("treats 'slow down' as quiet: no connection warning, retries when told", async () => {
+    // Many people behind one address (a mobile network) can hit the API's
+    // per-address limit. That is not the visitor's connection failing.
+    vi.mocked(api.fetchBoard)
+      .mockRejectedValueOnce(new api.SlowDown(1))
+      .mockResolvedValue([dep({ headsign: "Zuid", departure_ts: s(4) })]);
+    renderBoard();
+    expect(await screen.findByRole("heading", { name: "Richting Zuid" }, { timeout: 3000 })).toBeInTheDocument();
+    expect(api.fetchBoard).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText(/verbinding hapert/)).toBeNull();
+    expect(screen.queryByText(/niet bereikbaar/)).toBeNull();
+  });
+
+  it("still warns when the connection really fails", async () => {
+    vi.mocked(api.fetchBoard).mockRejectedValue(new Error("network down"));
+    renderBoard();
+    expect(await screen.findByText(/niet bereikbaar/)).toBeInTheDocument();
   });
 
   it("says when a direction leaves from changing, unnamed tracks", async () => {

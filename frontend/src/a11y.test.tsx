@@ -79,3 +79,14 @@ describe("alert announcer", () => {
     expect(region).toHaveTextContent("Melding lijn 52: Rituitval M52.");
   });
 });
+
+describe("api SlowDown", () => {
+  it("turns a 429 into SlowDown with the server's wait, not a plain error", async () => {
+    const { fetchDepartures, SlowDown } = await import("./api");
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("{}", { status: 429, headers: { "Retry-After": "7" } }));
+    const err = await fetchDepartures("Amsterdam, De Pijp").catch((e) => e);
+    expect(err).toBeInstanceOf(SlowDown);
+    expect(err.retryAfterS).toBe(7);
+    vi.restoreAllMocks();
+  });
+});

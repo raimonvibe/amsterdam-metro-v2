@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDownUp, Clock3, Repeat } from "lucide-react";
-import { fetchJourneys } from "../api";
+import { fetchJourneys, SlowDown } from "../api";
 import { delayLabel } from "../format";
 import { Place } from "../components/Place";
 import { pollWhileVisible } from "../poll";
@@ -71,7 +71,9 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
     if (!from || !to || from.name === to.name) return;
     let stop = false;
     let seq = 0; // only the newest of overlapping polls may land
-    const cleanup = pollWhileVisible(async () => {
+    let retry: number | undefined;
+    const load = async () => {
+      window.clearTimeout(retry);
       const mine = ++seq;
       try {
         const js = await fetchJourneys(from.name, to.name, 6);
@@ -79,12 +81,17 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
           setJourneys(js);
           setError(null);
         }
-      } catch {
-        if (!stop && mine === seq) setError(travelStrings().plannerUnavailable);
+      } catch (e) {
+        if (stop || mine !== seq) return;
+        // Slow down (shared address): keep the journeys, retry when told to.
+        if (e instanceof SlowDown) retry = window.setTimeout(load, e.retryAfterS * 1000);
+        else setError(travelStrings().plannerUnavailable);
       }
-    }, REFRESH_MS);
+    };
+    const cleanup = pollWhileVisible(load, REFRESH_MS);
     return () => {
       stop = true;
+      window.clearTimeout(retry);
       cleanup();
     };
   }, [from, to]);
