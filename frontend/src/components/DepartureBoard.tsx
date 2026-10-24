@@ -86,13 +86,15 @@ export function DepartureBoard({ station, lines, alerts = [], onClose, onMore, f
       )}
       {departures && departures.length > 0 && (
         <ul className="space-y-1">
-          {departures.map((d, i) => {
+          {departures.map((d) => {
             // A train already on the map can be followed from here: the way
             // to it for keyboards and screen readers, which cannot point at it.
             const canFollow = Boolean(onFollow && followable?.has(d.trip_id));
             const Row = canFollow ? "button" : "div";
             return (
-            <li key={`${d.trip_id}-${d.departure_ts}-${i}`} className="rounded-lg odd:bg-gray-100 dark:odd:bg-gray-900">
+            // Keyed by the run, not its time: a refresh that shifts a departure
+            // by a minute must not rebuild the row, or keyboard focus on it is lost.
+            <li key={d.trip_id} className="rounded-lg odd:bg-gray-100 dark:odd:bg-gray-900">
               <Row
                 {...(canFollow
                   ? {
