@@ -184,9 +184,36 @@ The build also writes `reisinfo/index.html` and `privacy/index.html`, copies of 
 
 Check after deploy: `curl -s https://amsterdammetro.nl/reisinfo | grep canonical` should print `…/reisinfo`, not `…/`.
 
+### HTTP response headers (dashboard)
+
+Render reads these only from the dashboard (**amsterdam-metro → Settings → HTTP Response Headers**), not from `render.yaml`. Set on 24 Oct 2026 (audit M1, PR #147); `render.yaml` mirrors them and `frontend/src/securityHeaders.test.ts` keeps the two equal. The source of truth for the values is `frontend/src/securityHeaders.ts`.
+
+| Request path | Header | Value |
+|---|---|---|
+| `/assets/*` | `Cache-Control` | `public, max-age=31536000, immutable` |
+| `/*` | `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `/*` | `Content-Security-Policy-Report-Only` | the CSP from `render.yaml` (one line; the single quotes around `'self'`, `'none'` and `'unsafe-inline'` are part of the value) |
+| `/*` | `Strict-Transport-Security` | `max-age=31536000` |
+| `/*` | `X-Frame-Options` | `DENY` |
+| `/*` | `X-Content-Type-Options` | `nosniff` |
+| `/*` | `Permissions-Policy` | `geolocation=(self), camera=(), microphone=(), payment=(), usb=()` |
+| `/*` | `Cross-Origin-Opener-Policy` | `same-origin` |
+
+**Changing a header:** edit `securityHeaders.ts`, update `render.yaml` (the test fails until you do), then type the same value into the dashboard.
+
+**Enforcing the CSP:** it starts as report-only (warns in the console, blocks nothing). When a week of browsing shows no "Content Security Policy" warnings, rename the header to `Content-Security-Policy` in all three places.
+
+The API's security headers are set in code (`backend/app/security.py`) and need nothing in the dashboard.
+
 ### Verify frontend
 
 Open `https://amsterdammetro.nl` — map loads, sidebar shows live train count, no “Backend not reachable” error.
+
+Security headers (all 8 should print):
+
+```bash
+curl -sI https://amsterdammetro.nl/ | grep -iE "content-security|strict-transport|x-frame|x-content-type|referrer|permissions-policy|cross-origin-opener"
+```
 
 ---
 
@@ -244,6 +271,8 @@ Open `https://amsterdammetro.nl` — map loads, sidebar shows live train count, 
 - **Health check:** `GET /healthz` → `{"status":"ok"}`
 - **Live status:** `GET /api/status` → train count, last realtime poll
 - Render logs: Dashboard → service → **Logs**
+- **Per-visitor limits** (audit H2): after each backend deploy the log should contain `Per-visitor limits keyed by: cf-connecting-ip`. If it says `socket peer`, every visitor would share one limit: set `CLIENT_IP_HEADER` to the header Render forwards.
+- **API docs** are off in production (`/docs` → 404). Set `API_DOCS=1` only locally.
 
 ### GTFS cache refresh
 
