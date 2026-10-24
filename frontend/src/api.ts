@@ -1,4 +1,4 @@
-import { Departure, Line, ShapeGeom, Station } from "./types";
+import { Departure, Line, ServiceAlert, ShapeGeom, Station } from "./types";
 import { BoardDeparture, Journey, NetworkLine, StationInfo } from "./travel/types";
 
 /** Empty in local dev → relative /api/... (Vite proxy). Set on Render build. */
@@ -31,3 +31,4 @@ export const fetchStationInfo = (station: string) =>
 export const fetchJourneys = (from: string, to: string, limit = 5) =>
   get<Journey[]>(`/journey?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&limit=${limit}`);
 export const fetchNetwork = () => get<NetworkLine[]>("/network");
+export const fetchAlerts = () => get<ServiceAlert[]>("/alerts");

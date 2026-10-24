@@ -1,15 +1,17 @@
 import { ReactNode, useEffect, useState } from "react";
+import { useTravelT } from "./strings";
 
 /** Shared building blocks of the travel-info page. */
 
 export function LineBadge({ id, color, small = false }: { id: string; color: string; small?: boolean }) {
+  const txt = useTravelT();
   return (
     <span
       className={`inline-flex shrink-0 items-center justify-center rounded font-bold tabular-nums text-gray-950 ${
         small ? "h-4 min-w-6 px-1 text-[10px]" : "h-5 min-w-7 px-1 text-[11px]"
       }`}
       style={{ backgroundColor: color }}
-      aria-label={`Lijn ${id}`}
+      aria-label={txt.lineAria(id)}
     >
       {id}
     </span>
@@ -96,8 +98,9 @@ export function Segmented<T extends string | number>({
 export function Crest({ colors, className = "" }: { colors: string[]; className?: string }) {
   const stripes = colors.length ? colors : ["#3CB44B", "#F58231", "#4363D8", "#E6194B", "#FFE119"];
   const w = 40 / stripes.length;
+  const txt = useTravelT();
   return (
-    <svg viewBox="0 0 48 56" className={className} role="img" aria-label="Wapen van Metro Amsterdam Live">
+    <svg viewBox="0 0 48 56" className={className} role="img" aria-label={txt.crest}>
       <defs>
         <clipPath id="crest-shield">
           <path d="M4 4h40v22c0 14-9 23-20 27C13 49 4 40 4 26z" />

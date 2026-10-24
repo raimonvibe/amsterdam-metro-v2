@@ -1,4 +1,5 @@
 import { Component, ReactNode } from "react";
+import { strings } from "../i18n";
 
 /**
  * Catches a lazily loaded page whose chunk fails to load. After a deploy the
@@ -20,9 +21,9 @@ export class ChunkErrorBoundary extends Component<{ children: ReactNode; onClose
         role="alert"
         className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#f3eee3] p-6 text-center text-sm text-[#1d2433] dark:bg-[#0a0e18] dark:text-[#e3ddcf]"
       >
-        <p className="font-academic text-lg">Deze pagina kon niet worden geladen.</p>
+        <p className="font-academic text-lg">{strings().chunkFailed}</p>
         <p className="max-w-sm text-[#5b5446] dark:text-[#a9b0c2]">
-          Waarschijnlijk is de site net bijgewerkt of is de verbinding weggevallen.
+          {strings().chunkFailedHint}
         </p>
         <div className="flex gap-2">
           <button
@@ -30,7 +31,7 @@ export class ChunkErrorBoundary extends Component<{ children: ReactNode; onClose
             onClick={() => window.location.reload()}
             className="rounded-md bg-[#4363D8] px-3 py-2 font-semibold text-white hover:bg-[#3651b8]"
           >
-            Opnieuw laden
+            {strings().reload}
           </button>
           <button
             type="button"
@@ -40,7 +41,7 @@ export class ChunkErrorBoundary extends Component<{ children: ReactNode; onClose
             }}
             className="rounded-md border border-[#d8cfbd] px-3 py-2 font-semibold dark:border-[#2a3245]"
           >
-            Terug naar de kaart
+            {strings().backToMap}
           </button>
         </div>
       </div>

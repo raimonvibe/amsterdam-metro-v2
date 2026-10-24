@@ -1,12 +1,14 @@
 import { X } from "lucide-react";
 import { PRIVACY_POLICY_VERSION, SITE_OPERATOR } from "../legal/site";
-import { nl } from "../i18n/nl";
+import { useLang, useT } from "../i18n";
 
 interface PrivacyPolicyProps {
   onClose: () => void;
 }
 
 export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
+  const txt = useT();
+  const lang = useLang();
   const o = SITE_OPERATOR;
 
   return (
@@ -21,14 +23,14 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 rounded-full p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-          aria-label={nl.closePrivacy}
+          aria-label={txt.closePrivacy}
         >
           <X size={18} />
         </button>
 
         <header className="mb-6 pr-8">
           <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            {nl.privacyPolicy}
+            {txt.privacyPolicy}
           </p>
           <h1 id="privacy-title" className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
             {o.appName}
@@ -44,6 +46,19 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
               {o.appUrl.replace("https://", "")}
             </a>
           </p>
+          {lang === "en" && (
+            <p lang="en" className="mt-3 rounded-lg bg-gray-100 p-2.5 text-xs leading-relaxed text-gray-700 dark:bg-gray-900 dark:text-gray-200">
+              {txt.privacyDutchOnly}{" "}
+              <a
+                href="https://github.com/raimonvibe/amsterdam-metro-v2/blob/main/docs/privacy-policy.md"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2"
+              >
+                English privacy policy
+              </a>
+            </p>
+          )}
         </header>
 
         <div className="space-y-5 text-[13px]">
@@ -91,6 +106,11 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
                 of Donker) wordt in de localStorage van uw browser bewaard, zodat de app bij een
                 volgend bezoek in dezelfde stijl opent. Het is één instelling, geen identificatie;
                 wij ontvangen deze gegevens niet op onze servers.
+              </li>
+              <li>
+                <strong>Taal (localStorage):</strong> Kiest u Nederlands of Engels, dan bewaart uw
+                browser die keuze, zodat de app de volgende keer in die taal opent. Eén instelling,
+                geen identificatie; wij ontvangen deze niet.
               </li>
               <li>
                 <strong>Reisinformatie-instellingen (localStorage):</strong> Op de pagina
@@ -195,7 +215,7 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             </h2>
             <p>
               Deze app plaatst <strong>geen</strong> tracking- of advertentiecookies. De enige
-              opslag aan clientzijde is <strong>localStorage</strong> voor de kaartstijl en, op de
+              opslag aan clientzijde is <strong>localStorage</strong> voor de kaartstijl, de taal en, op de
               pagina Reisinformatie, voor uw favorieten, recente stations en weergave-instellingen:
               functionele instellingen, geen tracking. U kunt dit op elk moment verwijderen via uw
               browserinstellingen.
@@ -206,8 +226,8 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">7. Bewaartermijnen</h2>
             <ul className="list-disc space-y-2 pl-5">
               <li>
-                <strong>localStorage (kaartstijl):</strong> totdat u sitegegevens wist of een
-                andere stijl kiest.
+                <strong>localStorage (kaartstijl, taal):</strong> totdat u sitegegevens wist of een
+                andere stijl of taal kiest.
               </li>
               <li>
                 <strong>localStorage (reisinformatie):</strong> totdat u een favoriet verwijdert,
@@ -311,7 +331,7 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             onClick={onClose}
             className="rounded-lg bg-gray-900 px-4 py-2 text-xs font-medium text-white hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white"
           >
-            {nl.backToMap}
+            {txt.backToMap}
           </button>
         </footer>
       </article>

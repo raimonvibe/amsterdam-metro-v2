@@ -1,8 +1,8 @@
-import { nl } from "./i18n/nl";
+import { strings } from "./i18n";
 
-/** Delay as a short label: "op tijd", "+3 min" or "-1 min". */
+/** Delay as a short label: "op tijd" / "on time", "+3 min" or "-1 min". */
 export function delayLabel(s: number): string {
-  if (Math.abs(s) < 30) return nl.onTime;
+  if (Math.abs(s) < 30) return strings().onTime;
   const m = Math.round(Math.abs(s) / 60);
   return s > 0 ? `+${m || 1} min` : `-${m || 1} min`;
 }

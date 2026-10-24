@@ -1,36 +1,42 @@
 import { useMemo } from "react";
 import { formatPlaceName } from "../format";
-import { AnimatedTrain, Line, Status } from "../types";
+import { AlertList } from "../components/AlertList";
+import { AnimatedTrain, Line, ServiceAlert, Status } from "../types";
 import { lineHealth, networkSummary } from "./network";
 import { LineBadge, Section } from "./ui";
+import { useTravelT } from "./strings";
 
 export interface NetworkStatusProps {
   lines: Line[];
   trains: AnimatedTrain[];
   status: Status | null;
   onLine: (id: string) => void;
+  alerts?: ServiceAlert[];
 }
 
-export function NetworkStatus({ lines, trains, status, onLine }: NetworkStatusProps) {
+export function NetworkStatus({ lines, trains, status, onLine, alerts = [] }: NetworkStatusProps) {
+  const colorOf = (id: string) => lines.find((l) => l.id === id)?.color ?? "#999";
+  const txt = useTravelT();
   const health = useMemo(() => lineHealth(lines.map((l) => l.id), trains), [lines, trains]);
   const total = trains.length;
   const live = trains.filter((t) => t.realtime).length;
 
   return (
-    <Section n={5} id="netwerkstatus" title="Netwerkstatus">
+    <Section n={5} id="netwerkstatus" title={txt.networkStatus}>
       <p className="font-academic text-sm italic leading-snug text-[#1d2433] dark:text-[#ece6d6]">{networkSummary(health)}</p>
+      <AlertList alerts={alerts} colorOf={colorOf} className="mt-2" />
       <dl className="mt-2 grid grid-cols-3 gap-1.5 text-center">
-        <Stat label="in dienst" value={total} />
-        <Stat label="live gevolgd" value={live} />
-        <Stat label="ritupdates" value={status?.rt_trip_count ?? "—"} />
+        <Stat label={txt.inService} value={total} />
+        <Stat label={txt.liveFollowed} value={live} />
+        <Stat label={txt.tripUpdates} value={status?.rt_trip_count ?? "—"} />
       </dl>
       <table className="mt-2.5 w-full text-xs">
         <thead>
           <tr className="smallcaps text-left text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
-            <th className="pb-1 font-semibold">Lijn</th>
-            <th className="pb-1 text-right font-semibold">Metro's</th>
-            <th className="pb-1 pl-2 font-semibold">Stiptheid</th>
-            <th className="pb-1 text-right font-semibold">Gem.</th>
+            <th className="pb-1 font-semibold">{txt.lineCol}</th>
+            <th className="pb-1 text-right font-semibold">{txt.trainsCol}</th>
+            <th className="pb-1 pl-2 font-semibold">{txt.punctuality}</th>
+            <th className="pb-1 text-right font-semibold">{txt.avgCol}</th>
           </tr>
         </thead>
         <tbody>
@@ -48,7 +54,7 @@ export function NetworkStatus({ lines, trains, status, onLine }: NetworkStatusPr
                 <td className="py-1 text-right tabular-nums">{h.trains}</td>
                 <td className="py-1 pl-2">
                   {pct == null ? (
-                    <span className="text-[#9a9384]">geen live data</span>
+                    <span className="text-[#9a9384]">{txt.noLiveData}</span>
                   ) : (
                     <span className="flex items-center gap-1.5">
                       <span className="h-1.5 flex-1 overflow-hidden rounded bg-[#efe8d8] dark:bg-[#1c2436]" aria-hidden>
@@ -70,7 +76,7 @@ export function NetworkStatus({ lines, trains, status, onLine }: NetworkStatusPr
         </tbody>
       </table>
       <p className="mt-2 text-[10px] leading-snug text-[#7a7262] dark:text-[#8b93a7]">
-        Stiptheid: aandeel live gevolgde metro's binnen een minuut van de dienstregeling.
+        {txt.punctualityNote}
       </p>
     </Section>
   );

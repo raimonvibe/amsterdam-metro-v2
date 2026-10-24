@@ -1,8 +1,11 @@
-import { ChevronRight, Clock, Landmark, PanelLeftClose, TrainFront } from "lucide-react";
-import { AnimatedTrain, Line, Station, Status } from "../types";
+import { useState } from "react";
+import { ChevronRight, Clock, Landmark, PanelLeftClose, TrainFront, TriangleAlert } from "lucide-react";
+import { AnimatedTrain, Line, ServiceAlert, Station, Status } from "../types";
+import { AlertList } from "./AlertList";
 import { MapStyle } from "../theme";
 import { StyleSwitcher } from "./StyleSwitcher";
-import { nl } from "../i18n/nl";
+import { locale, useLang, useT } from "../i18n";
+import { LanguageToggle } from "./LanguageToggle";
 import { Place } from "./Place";
 import { SocialIcons } from "./SocialIcons";
 import { Credits } from "./Credits";
@@ -20,6 +23,7 @@ interface SidebarProps {
   onOpenPrivacy: () => void;
   onOpenTravel: () => void;
   onClose: () => void;
+  alerts?: ServiceAlert[];
 }
 
 function LineBadge({ id, color }: { id: string; color: string }) {
@@ -46,27 +50,33 @@ export function Sidebar({
   onOpenPrivacy,
   onOpenTravel,
   onClose,
+  alerts = [],
 }: SidebarProps) {
+  const txt = useT();
+  const lang = useLang();
+  // The line whose messages are open under its row, if any.
+  const [openAlerts, setOpenAlerts] = useState<string | null>(null);
   const colorOf = (id: string) => lines.find((l) => l.id === id)?.color ?? "#999";
 
   return (
     <aside className="flex h-full w-full min-w-0 flex-col overflow-hidden border-r border-gray-200 bg-white/95 text-gray-900 backdrop-blur dark:border-gray-800 dark:bg-gray-950/90 dark:text-gray-100 md:w-72">
       <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-4 pl-[max(1rem,env(safe-area-inset-left))] pr-4 pt-[max(1rem,env(safe-area-inset-top))]">
       <div className="mb-1 flex items-start justify-between gap-2">
-        <h1 className="min-w-0 text-base font-bold tracking-tight sm:text-lg">{nl.appName}</h1>
+        <h1 className="min-w-0 text-base font-bold tracking-tight sm:text-lg">{txt.appName}</h1>
         <div className="flex shrink-0 items-center gap-1.5">
+          <LanguageToggle className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800" />
           <button
             type="button"
             onClick={onClose}
-            title={nl.sidebarHide}
-            aria-label={nl.sidebarHide}
+            title={txt.sidebarHide}
+            aria-label={txt.sidebarHide}
             className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-gray-200 bg-[#4363D8] text-white shadow-sm transition hover:bg-[#3651b8] dark:border-gray-700 dark:bg-[#4363D8]/35 dark:text-blue-200 dark:hover:bg-[#4363D8]/50"
           >
             <PanelLeftClose size={22} strokeWidth={2.35} />
           </button>
         </div>
       </div>
-      <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">{nl.tagline}</p>
+      <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">{txt.tagline}</p>
 
       {/* A real link (crawlable, opens in a new tab on middle-click); a plain
           click stays in the app. */}
@@ -81,9 +91,9 @@ export function Sidebar({
       >
         <Landmark size={18} className="shrink-0 text-[#e2c977]" aria-hidden />
         <span className="min-w-0 flex-1 leading-tight">
-          <span className="font-academic block text-sm font-semibold">{nl.travelInfo}</span>
+          <span className="font-academic block text-sm font-semibold">{txt.travelInfo}</span>
           {/* Wraps rather than truncates: the sidebar is only 18rem wide. */}
-          <span className="mt-0.5 block text-[11px] leading-snug text-blue-100/90">{nl.travelInfoHint}</span>
+          <span className="mt-0.5 block text-[11px] leading-snug text-blue-100/90">{txt.travelInfoHint}</span>
         </span>
         <ChevronRight size={16} className="shrink-0 opacity-80" aria-hidden />
       </a>
@@ -96,24 +106,46 @@ export function Sidebar({
         {lines.map((line) => {
           const count = trains.filter((t) => t.line === line.id).length;
           const on = visibleLines.includes(line.id);
+          const lineAlerts = alerts.filter((a) => a.lines.includes(line.id));
+          const open = openAlerts === line.id && lineAlerts.length > 0;
           return (
-            <button
-              key={line.id}
-              onClick={() => onToggleLine(line.id)}
-              className={`flex min-h-11 w-full min-w-0 items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition sm:min-h-0 sm:py-1.5 ${
-                on
-                  ? "bg-gray-100 dark:bg-gray-800/80"
-                  : "bg-transparent opacity-45 hover:opacity-75"
-              }`}
-            >
-              <LineBadge id={line.id} color={line.color} />
-              <span className="min-w-0 flex-1 truncate text-gray-800 dark:text-gray-200">
-                <Place name={line.name} />
-              </span>
-              <span className="w-5 shrink-0 text-right text-xs tabular-nums text-gray-500 dark:text-gray-400">
-                {count}
-              </span>
-            </button>
+            <div key={line.id}>
+              {/* Two buttons side by side, not nested: the row toggles the
+                  line, the ⚠ opens its messages. */}
+              <div
+                className={`flex min-w-0 items-center rounded-lg transition ${
+                  on ? "bg-gray-100 dark:bg-gray-800/80" : "bg-transparent"
+                }`}
+              >
+                <button
+                  onClick={() => onToggleLine(line.id)}
+                  className={`flex min-h-11 min-w-0 flex-1 items-center gap-2 py-2 pl-2.5 text-left text-sm transition sm:min-h-0 sm:py-1.5 ${
+                    on ? "" : "opacity-45 hover:opacity-75"
+                  } ${lineAlerts.length ? "" : "pr-2.5"}`}
+                >
+                  <LineBadge id={line.id} color={line.color} />
+                  <span className="min-w-0 flex-1 truncate text-gray-800 dark:text-gray-200">
+                    <Place name={line.name} />
+                  </span>
+                  <span className="w-5 shrink-0 text-right text-xs tabular-nums text-gray-500 dark:text-gray-400">
+                    {count}
+                  </span>
+                </button>
+                {lineAlerts.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setOpenAlerts(open ? null : line.id)}
+                    aria-expanded={open}
+                    aria-label={`${txt.alertsCount(lineAlerts.length)} · ${txt.line} ${line.id}`}
+                    title={txt.alertsCount(lineAlerts.length)}
+                    className="flex min-h-11 min-w-9 shrink-0 items-center justify-center rounded-lg text-amber-600 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-950/60 sm:min-h-8"
+                  >
+                    <TriangleAlert size={15} aria-hidden />
+                  </button>
+                )}
+              </div>
+              {open && <AlertList alerts={lineAlerts} colorOf={colorOf} compact className="mt-1" />}
+            </div>
           );
         })}
       </div>
@@ -129,7 +161,7 @@ export function Sidebar({
               {trains.length}
             </div>
             <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
-              {nl.trainsInService}
+              {txt.trainsInService}
             </div>
           </div>
         </div>
@@ -146,7 +178,7 @@ export function Sidebar({
                 {status.rt_trip_count}
               </div>
               <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                {nl.liveTripUpdates}
+                {txt.liveTripUpdates}
               </div>
             </div>
           </div>
@@ -159,10 +191,10 @@ export function Sidebar({
             />
             <div className="min-w-0 leading-snug">
               <div className="text-base font-bold tabular-nums tracking-tight text-gray-900 dark:text-gray-50">
-                {lastUpdated.toLocaleTimeString("nl-NL")}
+                {lastUpdated.toLocaleTimeString(locale(lang))}
               </div>
               <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                {nl.updatedAt}
+                {txt.updatedAt}
               </div>
             </div>
           </div>
@@ -187,19 +219,19 @@ export function Sidebar({
         className="mt-4 space-y-2 border-t border-gray-200 pt-4 dark:border-gray-800"
       >
         <h2 id="about-title" className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-          {nl.aboutTitle}
+          {txt.aboutTitle}
         </h2>
-        <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300">{nl.aboutIntro}</p>
-        <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300">{nl.aboutData}</p>
+        <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300">{txt.aboutIntro}</p>
+        <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300">{txt.aboutData}</p>
       </section>
 
       <div className="mt-4 space-y-4 border-t border-gray-200 pt-4 dark:border-gray-800">
-        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">{nl.infoToggle}</p>
+        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">{txt.infoToggle}</p>
         <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:hidden">
-          {nl.helpMobile}
+          {txt.helpMobile}
         </p>
         <p className="hidden text-xs leading-relaxed text-gray-500 dark:text-gray-300 md:block">
-          {nl.helpDesktop}
+          {txt.helpDesktop}
         </p>
         <Credits onOpenPrivacy={onOpenPrivacy} />
       </div>

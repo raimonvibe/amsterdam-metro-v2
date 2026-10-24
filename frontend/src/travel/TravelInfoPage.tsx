@@ -3,7 +3,7 @@ import { ArrowLeft, Keyboard, Moon, Sun } from "lucide-react";
 import { fetchNetwork } from "../api";
 import { formatPlaceName, fullPlaceName } from "../format";
 import { Theme } from "../theme";
-import { AnimatedTrain, Line, Station, Status } from "../types";
+import { AnimatedTrain, Line, ServiceAlert, Station, Status } from "../types";
 import { JourneyPlanner } from "./JourneyPlanner";
 import { LineDiagram } from "./LineDiagram";
 import { NetworkStatus } from "./NetworkStatus";
@@ -18,6 +18,8 @@ import { JourneyLeg, NetworkLine } from "./types";
 import { Crest, Section } from "./ui";
 import { readParams, resolveStation, writeParams } from "./url";
 import { Num } from "../components/Num";
+import { LanguageToggle } from "../components/LanguageToggle";
+import { useTravelT } from "./strings";
 
 export interface TravelInfoPageProps {
   stations: Station[];
@@ -31,19 +33,16 @@ export interface TravelInfoPageProps {
    *  around, so the map stays as it was. */
   onClose: (station: Station | null) => void;
   onShowOnMap: (station: Station) => void;
+  /** Metro service messages in force now. */
+  alerts?: ServiceAlert[];
 }
 
 type Tab = "vertrekken" | "plannen" | "lijnen" | "stations" | "status";
-const TABS: { id: Tab; label: string }[] = [
-  { id: "vertrekken", label: "Vertrekken" },
-  { id: "plannen", label: "Plannen" },
-  { id: "lijnen", label: "Lijnen" },
-  { id: "stations", label: "Stations" },
-  { id: "status", label: "Status" },
-];
+const TABS: Tab[] = ["vertrekken", "plannen", "lijnen", "stations", "status"];
 const DEFAULT_STATION = "Amsterdam, Centraal Station";
 
-export default function TravelInfoPage({ stations, lines, trains, status, theme, onToggleTheme, onClose, onShowOnMap }: TravelInfoPageProps) {
+export default function TravelInfoPage({ stations, lines, trains, status, theme, onToggleTheme, onClose, onShowOnMap, alerts = [] }: TravelInfoPageProps) {
+  const txt = useTravelT();
   const initial = useMemo(() => readParams(window.location.search), []);
   // Back from the map the link names at most a station: pick up the trip
   // planned before, unless the link names one of its own.
@@ -56,7 +55,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
   const [toName, setToName] = useState<string | null>(null);
   const [lineId, setLineId] = useState<string>(initial.line ?? "52");
   const [tab, setTab] = useState<Tab>(() =>
-    initial.from && initial.to ? "plannen" : TABS.find((t) => t.id === kept?.tab)?.id ?? "vertrekken",
+    initial.from && initial.to ? "plannen" : TABS.find((t) => t === kept?.tab) ?? "vertrekken",
   );
   const [prefs, setPrefsState] = useState<TravelPrefs>(loadPrefs);
   const [favourites, setFavourites] = useState<string[]>(loadFavourites);
@@ -107,10 +106,8 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
   }, [ready, fromName, toName, tab]);
 
   useEffect(() => {
-    document.title = station
-      ? `${fullPlaceName(station.name)} — vertrektijden | Metro Amsterdam Live`
-      : "Reisinformatie — Metro Amsterdam Live";
-  }, [station]);
+    document.title = station ? txt.docTitleStation(fullPlaceName(station.name)) : txt.docTitle;
+  }, [station, txt]);
 
   // Tick just after each whole second, not every 1000 ms from mount: a free
   // interval drifts against the second boundary and the clocks then skip or
@@ -211,7 +208,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
 
   const locate = (apply: (s: Station) => void) => {
     if (!("geolocation" in navigator)) {
-      setToast("Uw browser kan geen locatie bepalen.");
+      setToast(txt.noGeolocation);
       return;
     }
     setLocating(true);
@@ -222,17 +219,17 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
         if (!near) return;
         apply(near.station);
         const km = near.meters >= 1000 ? `${(near.meters / 1000).toFixed(1)} km` : `${Math.round(near.meters / 10) * 10} m`;
-        setToast(`Dichtstbijzijnde station: ${formatPlaceName(near.station.name)} (${km})`);
+        setToast(txt.nearest(formatPlaceName(near.station.name), km));
       },
       (err) => {
         setLocating(false);
         // Denied also covers a non-HTTPS page and a blocking Permissions-Policy.
         setToast(
           err.code === err.PERMISSION_DENIED
-            ? "Geen toestemming voor uw locatie — sta die toe in de browser of kies zelf een station."
+            ? txt.geoDenied
             : err.code === err.TIMEOUT
-              ? "Uw locatie bepalen duurde te lang — probeer het opnieuw of kies zelf een station."
-              : "Uw locatie is nu niet te bepalen — kies zelf een station.",
+              ? txt.geoTimeout
+              : txt.geoFailed,
         );
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
@@ -253,9 +250,9 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
     // instead of failing silently.
     try {
       await navigator.clipboard.writeText(url);
-      setToast("Link gekopieerd.");
+      setToast(txt.linkCopied);
     } catch {
-      setToast("Kopiëren lukte niet — kopieer de link uit de adresbalk.");
+      setToast(txt.copyFailed);
     }
   };
 
@@ -297,14 +294,14 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
             <Crest colors={lines.map((l) => l.color)} className="h-11 w-9 shrink-0" />
             <div className="min-w-0 leading-tight">
               <p className="smallcaps truncate text-[11px] font-semibold text-[#7b2132] dark:text-[#c8a951]">Metro Amsterdam Live</p>
-              <h1 className="font-academic truncate text-xl font-semibold sm:text-2xl">Reisinformatie</h1>
+              <h1 className="font-academic truncate text-xl font-semibold sm:text-2xl">{txt.pageTitle}</h1>
             </div>
           </div>
           <div className="order-last w-full lg:order-none lg:max-w-xl lg:flex-1">
             <SearchBox
-              label="Zoek een station, lijn of reis"
-              placeholder="Zoek station, lijn of ‘noord naar gein’…"
-              shortPlaceholder="Station, lijn of reis…"
+              label={txt.searchLabel}
+              placeholder={txt.searchPlaceholder}
+              shortPlaceholder={txt.searchShort}
               stations={stations}
               lineIds={lineIds}
               colorOf={colorOf}
@@ -330,52 +327,53 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
               <div className="font-academic text-lg font-semibold tabular-nums"><Num>{clockWithSeconds(nowMs)}</Num></div>
               <div className="flex items-center justify-end gap-1 text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
                 <span className={`h-1.5 w-1.5 rounded-full ${status?.is_live ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`} aria-hidden />
-                {status?.is_live ? "live gegevens" : "dienstregeling"} · Amsterdamse tijd
+                {status?.is_live ? txt.liveData : txt.scheduleData} · {txt.amsterdamTime}
               </div>
             </div>
             {/* Visible on phones too, unlike the shortcuts button: the map's
                 style picker is out of reach from this page. */}
+            <LanguageToggle className="flex h-9 min-w-9 items-center justify-center rounded-md border border-[#d8cfbd] px-1.5 text-xs font-semibold text-[#1f3a68] hover:bg-[#ebe4d4] dark:border-[#2a3245] dark:text-[#c8a951] dark:hover:bg-[#151c2e]" />
             <button
               type="button"
               onClick={onToggleTheme}
-              title={theme === "dark" ? "Lichte weergave" : "Donkere weergave"}
+              title={theme === "dark" ? txt.lightView : txt.darkView}
               className="flex h-9 w-9 items-center justify-center rounded-md border border-[#d8cfbd] text-[#1f3a68] hover:bg-[#ebe4d4] dark:border-[#2a3245] dark:text-[#c8a951] dark:hover:bg-[#151c2e]"
             >
               {theme === "dark" ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
-              <span className="sr-only">{theme === "dark" ? "Lichte weergave" : "Donkere weergave"}</span>
+              <span className="sr-only">{theme === "dark" ? txt.lightView : txt.darkView}</span>
             </button>
             <button
               type="button"
               onClick={() => setHelp((h) => !h)}
               aria-expanded={help}
-              title="Sneltoetsen en uitleg (?)"
+              title={txt.shortcutsTitle}
               className="hidden h-9 w-9 items-center justify-center rounded-md border border-[#d8cfbd] text-[#1f3a68] hover:bg-[#ebe4d4] sm:flex dark:border-[#2a3245] dark:text-[#c8a951] dark:hover:bg-[#151c2e]"
             >
               <Keyboard size={16} />
-              <span className="sr-only">Sneltoetsen</span>
+              <span className="sr-only">{txt.shortcuts}</span>
             </button>
             <button
               type="button"
               onClick={() => onClose(chosen ? station : null)}
               className="flex h-9 items-center gap-1.5 rounded-md bg-[#4363D8] px-3 text-sm font-semibold text-white shadow-sm hover:bg-[#3651b8]"
             >
-              <ArrowLeft size={16} aria-hidden /> Kaart
+              <ArrowLeft size={16} aria-hidden /> {txt.map}
             </button>
           </div>
         </div>
         {/* Mobile section tabs */}
-        <nav className="mx-auto flex max-w-[1680px] gap-1 overflow-x-auto px-3 pb-2 lg:hidden" aria-label="Onderdelen">
+        <nav className="mx-auto flex max-w-[1680px] gap-1 overflow-x-auto px-3 pb-2 lg:hidden" aria-label={txt.sections}>
           {TABS.map((t) => (
             <button
-              key={t.id}
+              key={t}
               type="button"
-              onClick={() => setTab(t.id)}
-              aria-current={tab === t.id ? "page" : undefined}
+              onClick={() => setTab(t)}
+              aria-current={tab === t ? "page" : undefined}
               className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-                tab === t.id ? "bg-[#1f3a68] text-white dark:bg-[#c8a951] dark:text-[#111727]" : "bg-[#e9e2d2] text-[#3b4457] dark:bg-[#151c2e] dark:text-[#c9c3b4]"
+                tab === t ? "bg-[#1f3a68] text-white dark:bg-[#c8a951] dark:text-[#111727]" : "bg-[#e9e2d2] text-[#3b4457] dark:bg-[#151c2e] dark:text-[#c9c3b4]"
               }`}
             >
-              {t.label}
+              {txt.tabs[t]}
             </button>
           ))}
         </nav>
@@ -426,10 +424,11 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
                 }}
                 onStation={selectStation}
                 routeLeg={boardLeg}
+                alerts={alerts}
               />
             ) : (
-              <Section n={2} title="Vertrekstaat">
-                <p className="text-sm">Stations laden…</p>
+              <Section n={2} title={txt.board}>
+                <p className="text-sm">{txt.stationsLoading}</p>
               </Section>
             )}
           </div>
@@ -482,6 +481,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
               lines={lines}
               trains={trains}
               status={status}
+              alerts={alerts}
               onLine={(l) => {
                 setLineId(l);
                 setTab("lijnen");
@@ -504,46 +504,48 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
 }
 
 function Legend() {
+  const txt = useTravelT();
   return (
-    <Section n={6} title="Verklaring">
+    <Section n={6} title={txt.legendTitle}>
       <ul className="space-y-1 text-[11px] leading-snug text-[#4a4436] dark:text-[#b9bfcc]">
         <li className="flex items-center gap-1.5">
-          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> live gevolgd via GTFS-realtime
+          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> {txt.legendLive}
         </li>
         <li className="flex items-center gap-1.5">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#b8ae99]" /> volgens dienstregeling (geen live signaal)
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#b8ae99]" /> {txt.legendSchedule}
         </li>
         <li>
-          <span className="font-semibold text-amber-700 dark:text-amber-400"><Num>+2 min</Num></span> vertraging ·{" "}
-          <span className="text-[#9a9384] line-through"><Num>12:03</Num></span> geplande tijd
+          <span className="font-semibold text-amber-700 dark:text-amber-400"><Num>+2 min</Num></span> {txt.legendDelay} ·{" "}
+          <span className="text-[#9a9384] line-through"><Num>12:03</Num></span> {txt.legendPlanned}
         </li>
         <li>
-          <span className="font-semibold text-[#b42335] dark:text-[#f08a9b]">Vervallen</span> rit rijdt niet
+          <span className="font-semibold text-[#b42335] dark:text-[#f08a9b]">{txt.cancelled}</span> {txt.legendCancelled}
         </li>
-        <li>Alle tijden in Amsterdamse tijd. Gegevens: GVB via OVapi, elke 30 s ververst.</li>
+        <li>{txt.legendTimes}</li>
       </ul>
     </Section>
   );
 }
 
 function HelpPanel(props: { shortcuts: boolean; onShortcuts: (on: boolean) => void; onClose: () => void }) {
+  const txt = useTravelT();
   const keys: [string, string][] = [
-    ["/", "zoeken"],
-    ["F", "station als favoriet"],
-    ["P", "naar de reisplanner"],
-    ["?", "deze uitleg"],
-    ["Esc", "terug naar de kaart"],
+    ["/", txt.keys.search],
+    ["F", txt.keys.favourite],
+    ["P", txt.keys.planner],
+    ["?", txt.keys.help],
+    ["Esc", txt.keys.back],
   ];
   return (
     <div className="mx-auto max-w-[1680px] px-3 pt-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md border border-[#d8cfbd] bg-[#fffdf8] px-3 py-2 text-xs dark:border-[#2a3245] dark:bg-[#111727]">
-        <span className="smallcaps font-semibold text-[#7b2132] dark:text-[#c8a951]">Sneltoetsen</span>
+        <span className="smallcaps font-semibold text-[#7b2132] dark:text-[#c8a951]">{txt.shortcuts}</span>
         {keys.map(([k, v]) => (
           <span key={k}>
             <kbd className="rounded border border-[#cfc4ad] bg-white px-1 font-sans dark:border-[#33405c] dark:bg-[#0d1322]">{k}</kbd> {v}
           </span>
         ))}
-        <span className="text-[#7a7262] dark:text-[#8b93a7]">Zoeken begrijpt ook “arena”, “52”, “cs naar zuid” en “dichtbij”.</span>
+        <span className="text-[#7a7262] dark:text-[#8b93a7]">{txt.searchHint}</span>
         <label className="flex cursor-pointer items-center gap-1.5">
           <input
             type="checkbox"
@@ -551,10 +553,10 @@ function HelpPanel(props: { shortcuts: boolean; onShortcuts: (on: boolean) => vo
             onChange={(e) => props.onShortcuts(e.target.checked)}
             className="accent-[#1f3a68] dark:accent-[#c8a951]"
           />
-          Lettertoetsen gebruiken
+          {txt.letterKeys}
         </label>
         <button type="button" onClick={props.onClose} className="ml-auto font-semibold text-[#1f3a68] hover:underline dark:text-[#c8a951]">
-          Sluiten
+          {txt.close}
         </button>
       </div>
     </div>

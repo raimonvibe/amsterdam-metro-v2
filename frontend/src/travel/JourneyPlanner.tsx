@@ -10,6 +10,7 @@ import { clock, countdown, duration } from "./time";
 import { Journey, JourneyLeg } from "./types";
 import { LineBadge, Section, SkeletonRows } from "./ui";
 import { Num } from "../components/Num";
+import { useTravelT, travelStrings } from "./strings";
 
 const REFRESH_MS = 30000;
 
@@ -55,6 +56,7 @@ export function journeyId(j: Journey): string {
 
 export function JourneyPlanner(props: JourneyPlannerProps) {
   const { colorOf, from, to, nowMs } = props;
+  const txt = useTravelT();
   const [journeys, setJourneys] = useState<Journey[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
@@ -78,7 +80,7 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
           setError(null);
         }
       } catch {
-        if (!stop && mine === seq) setError("Reisadvies is even niet beschikbaar — we proberen het opnieuw.");
+        if (!stop && mine === seq) setError(travelStrings().plannerUnavailable);
       }
     }, REFRESH_MS);
     return () => {
@@ -111,11 +113,11 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
   }, [routeKey, picks, onRoute]);
 
   return (
-    <Section n={3} id="reisplanner" title="Reisplanner">
+    <Section n={3} id="reisplanner" title={txt.planner}>
       <div className="flex items-stretch gap-1.5">
         <div className="min-w-0 flex-1 space-y-1.5">
-          <Picker label="Van" value={from} {...props} onPick={props.onFrom} />
-          <Picker label="Naar" value={to} {...props} onPick={props.onTo} />
+          <Picker which="from" value={from} {...props} onPick={props.onFrom} />
+          <Picker which="to" value={to} {...props} onPick={props.onTo} />
         </div>
         <button
           type="button"
@@ -124,8 +126,8 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
             props.onTo(from);
           }}
           disabled={!from && !to}
-          title="Van en naar omwisselen"
-          aria-label="Van en naar omwisselen"
+          title={txt.swap}
+          aria-label={txt.swap}
           className="flex w-9 shrink-0 items-center justify-center rounded-md border border-[#d8cfbd] text-[#1f3a68] transition hover:bg-[#f1ebdd] disabled:opacity-40 dark:border-[#2a3245] dark:text-[#c8a951] dark:hover:bg-[#1a2134]"
         >
           <ArrowDownUp size={16} />
@@ -137,22 +139,22 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
           onClick={() => props.onFrom(props.current)}
           className="mt-1.5 text-xs font-semibold text-[#1f3a68] underline-offset-2 hover:underline dark:text-[#c8a951]"
         >
-          Vertrek vanaf <Place name={props.current.name} />
+          {txt.departFrom} <Place name={props.current.name} />
         </button>
       )}
 
       <div className="mt-2.5">
         {!from && (
           <p className="text-xs leading-relaxed text-[#5b5446] dark:text-[#a9b0c2]">
-            Kies een vertrek- en aankomststation. Tip: typ in de zoekbalk bovenaan direct{" "}
-            <em>“noord naar gein”</em>. Ook reizen met één overstap worden gevonden.
+            {txt.plannerIntroA}{" "}
+            <em>{txt.plannerIntroExample}</em>{txt.plannerIntroB}
           </p>
         )}
         {from && !to && (
           <div className="space-y-1.5 text-xs leading-relaxed text-[#5b5446] dark:text-[#a9b0c2]">
             <p>
-              Vertrek vanaf <strong className="text-[#1d2433] dark:text-[#ece6d6]"><Place name={from.name} /></strong>.
-              Kies nu waar je heen wilt.
+              {txt.departFrom} <strong className="text-[#1d2433] dark:text-[#ece6d6]"><Place name={from.name} /></strong>.{" "}
+              {txt.chooseDestination}
             </p>
             {/* On a desktop the board beside the planner already switched to this
                 station; on a phone it is in another tab, so offer the way there. */}
@@ -162,20 +164,19 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                 onClick={() => props.onShowDepartures?.(from)}
                 className="flex min-h-9 items-center gap-1 font-semibold text-[#1f3a68] underline-offset-2 hover:underline lg:hidden dark:text-[#c8a951]"
               >
-                Vertrektijden vanaf <Place name={from.name} /> →
+                {txt.departuresFrom} <Place name={from.name} /> →
               </button>
             )}
           </div>
         )}
         {from && to && from.name === to.name && (
-          <p className="text-xs text-[#7b2132] dark:text-[#f08a9b]">Vertrek- en aankomststation zijn hetzelfde.</p>
+          <p className="text-xs text-[#7b2132] dark:text-[#f08a9b]">{txt.sameStation}</p>
         )}
         {from && to && from.name !== to.name && journeys === null && !error && <SkeletonRows rows={3} />}
         {error && <p className="text-xs text-[#7b2132] dark:text-[#f08a9b]">{error}</p>}
         {journeys !== null && upcoming.length === 0 && (
           <p className="text-xs text-[#5b5446] dark:text-[#a9b0c2]">
-            Geen metroverbinding in de komende anderhalf uur. Mogelijk rijdt de metro nu niet (nacht) of is een overstap
-            nodig die meer dan één keer wisselen vraagt.
+            {txt.noConnection}
           </p>
         )}
         <ol className="space-y-2">
@@ -211,17 +212,17 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                   <Clock3 size={11} aria-hidden /> <Num>{duration(j.duration_s)}</Num>
                 </span>
                 <span className="flex items-center gap-1">
-                  <Repeat size={11} aria-hidden /> {j.transfers === 0 ? "direct" : `${j.transfers} overstap`}
+                  <Repeat size={11} aria-hidden /> {j.transfers === 0 ? txt.direct : txt.transfers(j.transfers)}
                 </span>
-                {i === 0 && <Tag>eerstvolgende</Tag>}
-                {i === fastest && upcoming.length > 1 && <Tag>snelste</Tag>}
+                {i === 0 && <Tag>{txt.next}</Tag>}
+                {i === fastest && upcoming.length > 1 && <Tag>{txt.fastest}</Tag>}
               </div>
               <ol className="mt-1.5 space-y-1 border-l-2 border-[#d8cfbd] pl-2 dark:border-[#2a3245]">
                 {j.legs.map((leg, k) => (
                   <li key={leg.trip_id + k} className="text-xs">
                     {k > 0 && (
                       <div className="mb-1 italic text-[#7a7262] dark:text-[#8b93a7]">
-                        Overstappen op <Place name={leg.from} /> · <Num>{duration(leg.departure_ts - j.legs[k - 1].arrival_ts)}</Num> wachten
+                        {txt.changeAt} <Place name={leg.from} /> · <Num>{duration(leg.departure_ts - j.legs[k - 1].arrival_ts)}</Num> {txt.wait}
                       </div>
                     )}
                     {/* Wraps rather than truncates: on a phone "Diemen, Station
@@ -236,8 +237,8 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                       </span>
                     </div>
                     <div className="pl-8 text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
-                      richting <Place name={leg.headsign} /> · {leg.stops} {leg.stops === 1 ? "halte" : "haltes"}
-                      {leg.realtime ? <> · <Num>{delayLabel(leg.delay_s)}</Num></> : " · dienstregeling"}
+                      {txt.towards} <Place name={leg.headsign} /> · {txt.stops(leg.stops)}
+                      {leg.realtime ? <> · <Num>{delayLabel(leg.delay_s)}</Num></> : ` · ${txt.scheduleShort}`}
                     </div>
                   </li>
                 ))}
@@ -248,7 +249,7 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                   onClick={props.onShowLine}
                   className="mt-1.5 flex min-h-9 items-center text-xs font-semibold text-[#1f3a68] underline-offset-2 hover:underline lg:hidden dark:text-[#c8a951]"
                 >
-                  Bekijk op het lijnoverzicht →
+                  {txt.viewOnLine}
                 </button>
               )}
             </li>
@@ -269,14 +270,16 @@ function Tag({ children }: { children: React.ReactNode }) {
 }
 
 function Picker(
-  p: JourneyPlannerProps & { label: string; value: Station | null; onPick: (s: Station | null) => void },
+  p: JourneyPlannerProps & { which: "from" | "to"; value: Station | null; onPick: (s: Station | null) => void },
 ) {
+  const txt = useTravelT();
+  const label = p.which === "from" ? txt.from : txt.to;
   return (
     <div className="flex items-center gap-1.5">
-      <span className="smallcaps w-9 shrink-0 text-xs font-semibold text-[#7b2132] dark:text-[#c8a951]">{p.label}</span>
+      <span className="smallcaps w-9 shrink-0 text-xs font-semibold text-[#7b2132] dark:text-[#c8a951]">{label}</span>
       <SearchBox
-        label={`${p.label} station`}
-        placeholder={p.label === "Van" ? "Vertrekstation" : "Aankomststation"}
+        label={`${label} ${txt.station}`}
+        placeholder={p.which === "from" ? txt.fromStation : txt.toStation}
         stations={p.stations}
         lineIds={p.lineIds}
         colorOf={p.colorOf}
@@ -284,7 +287,7 @@ function Picker(
         compact
         value={p.value?.name}
         onStation={p.onPick}
-        onNearby={p.label === "Van" ? p.onNearby : undefined}
+        onNearby={p.which === "from" ? p.onNearby : undefined}
       />
     </div>
   );

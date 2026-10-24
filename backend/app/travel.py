@@ -244,3 +244,75 @@ def journeys(metro: MetroData, rt: RealtimeState, origin: str, dest: str,
         seen.add(sig)
         kept.append(o)
     return kept[:limit]
+
+
+def _active_period(periods, now: float) -> Optional[Tuple[int, int]]:
+    """The period covering now (0 = open end), or None. No periods = always."""
+    if not periods:
+        return (0, 0)
+    for start, end in periods:
+        if (not start or start <= now) and (not end or now <= end):
+            return (start, end)
+    return None
+
+
+_stations_cache: Dict[int, Dict[str, set]] = {}
+
+
+def _stations_by_line(metro: MetroData) -> Dict[str, set]:
+    """Line id -> names of every station it calls at. Cached per MetroData:
+    a static refresh builds a new one, and the old entry is dropped."""
+    key = id(metro)
+    if key not in _stations_cache:
+        out: Dict[str, set] = defaultdict(set)
+        for t in metro.trips.values():
+            out[t["line"]].update(_names(metro, t))
+        _stations_cache.clear()
+        _stations_cache[key] = dict(out)
+    return _stations_cache[key]
+
+
+def alerts(metro: MetroData, rt: RealtimeState, now: Optional[float] = None) -> List[dict]:
+    """Metro service alerts in force now, mapped to line ids and station
+    names. An alert naming a route but no stop concerns the whole line."""
+    now = now or time.time()
+    route_to_line = metro.subset.get("route_to_line", {})
+    # GVB publishes one message twice, as KV15 and as SIRI-GM, with the same
+    # text (the SIRI copy without its route): keep one, with the lines and
+    # stations of both.
+    by_text: Dict[str, dict] = {}
+    for a in rt.alerts:
+        period = _active_period(a["periods"], now)
+        if period is None:
+            continue
+        lines = sorted({route_to_line[r] for r in a["route_ids"] if r in route_to_line})
+        stations = sorted({metro.stops[s]["name"] for s in a["stop_ids"] if s in metro.stops})
+        key = a["header"].get("nl", "").lower()
+        if key in by_text:
+            seen = by_text[key]
+            seen["lines"] = sorted(set(seen["lines"]) | set(lines))
+            seen["stations"] = sorted(set(seen["stations"]) | set(stations))
+            continue
+        description = a["description"]
+        same = description.get("nl", "").strip() == a["header"].get("nl", "").strip()
+        by_text[key] = {
+            "id": a["id"],
+            "header": a["header"],
+            "description": None if same or not description.get("nl") else description,
+            "lines": lines,
+            "stations": stations,
+            "start_ts": period[0] or None,
+            "end_ts": period[1] or None,
+            "effect": a["effect"],
+        }
+    out = list(by_text.values())
+    # A message naming every station of its lines is about the line as a
+    # whole, however GVB attached it: clients can say so instead of listing 8+.
+    on_line = _stations_by_line(metro)
+    for a in out:
+        a["whole_line"] = bool(a["lines"]) and all(
+            on_line.get(line, set()) <= set(a["stations"]) for line in a["lines"]
+        )
+    # Line-wide first, then by line, so a network-wide failure leads.
+    out.sort(key=lambda x: (bool(x["stations"]), x["lines"], x["id"]))
+    return out

@@ -1,3 +1,5 @@
+import { travelStrings } from "./strings";
+
 /** Time formatting for the travel-info page. Clock times are always shown in
  *  Amsterdam time, so a visitor abroad reads the same times as the station. */
 
@@ -39,21 +41,22 @@ export function amsterdamTime(ms: number): { h: number; m: number; s: number } {
   return { h: get("hour"), m: get("minute"), s: get("second") };
 }
 
-/** "8 min", "1 u 5 min", "2 u". */
+/** "8 min", "1 u 5 min", "2 u" ("1 h 5 min" in English). */
 export function duration(seconds: number): string {
   const total = Math.max(0, Math.round(seconds / 60));
   if (total < 60) return `${total} min`;
   const h = Math.floor(total / 60);
   const m = total % 60;
-  return m ? `${h} u ${m} min` : `${h} u`;
+  const u = travelStrings().hours;
+  return m ? `${h} ${u} ${m} min` : `${h} ${u}`;
 }
 
 /** Countdown to a departure: "nu", "1 min", "12 min", "1 u 5 min", or
  *  "vertrokken" once it is clearly gone. */
 export function countdown(tsSeconds: number, nowMs: number): string {
   const s = tsSeconds - nowMs / 1000;
-  if (s < -30) return "vertrokken";
-  if (s < 30) return "nu";
+  if (s < -30) return travelStrings().departed;
+  if (s < 30) return travelStrings().now;
   if (s < 90) return "1 min";
   return duration(s);
 }
@@ -72,7 +75,7 @@ export function urgency(tsSeconds: number, nowMs: number): Urgency {
 /** "elke ~4 min" / "elke ~12 min" / null when unknown. */
 export function headwayLabel(minutes: number | null | undefined): string | null {
   if (minutes == null || !Number.isFinite(minutes)) return null;
-  return `elke ~${Math.max(1, Math.round(minutes))} min`;
+  return travelStrings().every(Math.max(1, Math.round(minutes)));
 }
 
 /** Can you still make it if it takes `walkMin` minutes to the platform? */

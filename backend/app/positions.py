@@ -26,6 +26,16 @@ MAX_RT_DRIFT_S = 6 * 3600
 # is further than this from now cannot be on the track. Matches MAX_RT_DRIFT_S
 # so no run the full solve could place is ever skipped.
 SOLVE_MARGIN_S = MAX_RT_DRIFT_S
+# A stop report from vehiclePositions.pb counts as a confirmation of where a
+# train is for this long. Sampled 24 Oct 2026: reports reach OVapi 35-60s
+# after the event, and a few were 5-9 minutes old, too stale to steer by.
+CONFIRM_FRESH_S = 120
+# Reports stamped this far ahead of our clock still count (clock skew).
+CONFIRM_SKEW_S = 30
+# "Heading to X" holds a train short of X only while the report is this
+# young. Past that it may well have reached X and left again (a platform stop
+# is ~25s), so an older report no longer caps how far along it is.
+HEADING_HOLD_S = 60
 
 
 def _align_rt_epoch(rt_epoch: float, sched_epoch: float) -> float:
@@ -432,7 +442,7 @@ class MetroData:
             for date in dates:
                 if not self._may_run(t, date, now, now) or rt.is_cancelled(trip_id, date):
                     continue
-                train = self._solve(trip_id, t, date, rt_trip, now)
+                train = self._solve(trip_id, t, date, rt_trip, now, rt.vehicle_stops.get(trip_id))
                 if train:
                     out.append(train)
                     break
@@ -477,8 +487,64 @@ class MetroData:
             times.append((arr, dep, dist, delay))
         return times
 
+    @staticmethod
+    def _estimate(times, now: float) -> Optional[Tuple[str, int, float, float]]:
+        """(status, i, distance, speed) from the clock alone: "moving" towards
+        stop i, or "dwelling" at stop i."""
+        for i in range(len(times)):
+            arr, dep, dist, _delay = times[i]
+            if now < arr:
+                if i == 0:
+                    # Only reachable when RT gives arr[0] > dep[0]: without
+                    # this, times[-1] would fling the train to the far terminus.
+                    return "dwelling", 0, dist, 0.0
+                _p_arr, p_dep, p_dist, _p_delay = times[i - 1]
+                span = arr - p_dep
+                progress = 0.0 if span <= 0 else (now - p_dep) / span
+                progress = min(max(progress, 0.0), 1.0)
+                speed = 0.0 if span <= 0 else abs(dist - p_dist) / span
+                return "moving", i, p_dist + (dist - p_dist) * progress, speed
+            if arr <= now <= dep:
+                return "dwelling", i, dist, 0.0
+        return None
+
+    @staticmethod
+    def _confirm(stops, times, est, seen: dict, now: float) -> Tuple[str, int, float, float]:
+        """Correct the clock estimate with a fresh stop report.
+
+        A report is a bound, not a position: the feed lags the event by tens
+        of seconds, so "at X" means the train is at X or beyond it, and
+        "heading to X" means it has left the stop before X (and, while the
+        report is young, not yet reached X). An estimate inside the bounds is
+        kept as is; one outside is moved to the nearest edge.
+        """
+        status, i, d, speed = est
+        matches = [k for k, s in enumerate(stops) if s[1] == seen["stop_id"]]
+        if not matches:
+            return est
+        j = min(matches, key=lambda k: abs(k - i))
+        dist_j = times[j][2]
+        if seen["status"] == "at":
+            if d < dist_j:
+                return "dwelling", j, dist_j, 0.0
+            return est
+        if j == 0:
+            return est
+        dist_prev = times[j - 1][2]
+        if d < dist_prev or (status == "dwelling" and i == j - 1):
+            # Under way to j while the clock still has it at or before j-1:
+            # it has left, so start it on j's segment at its scheduled pace.
+            span = times[j][0] - times[j - 1][1]
+            pace = abs(dist_j - dist_prev) / span if span > 0 else 0.0
+            return "moving", j, dist_prev, pace
+        if (i > j or d > dist_j) and now - seen["ts"] <= HEADING_HOLD_S:
+            # The clock has it past j, but it has not reached j yet: hold it
+            # at the platform end until the next report.
+            return "moving", j, dist_j, 0.0
+        return est
+
     def _solve(self, trip_id: str, t: dict, date: str, rt_trip: Optional[dict],
-               now: float) -> Optional[TrainOut]:
+               now: float, seen: Optional[dict] = None) -> Optional[TrainOut]:
         stops = t["stops"]
         times = self._effective_times(t, date, rt_trip)
 
@@ -487,44 +553,45 @@ class MetroData:
         if not (first_dep <= now <= last_arr):
             return None
 
+        est = self._estimate(times, now)
+        if est is None:
+            return None
+        confirmed = (
+            seen is not None
+            and -CONFIRM_SKEW_S <= now - seen["ts"] <= CONFIRM_FRESH_S
+            and any(s[1] == seen["stop_id"] for s in stops)
+        )
+        status, i, d, speed = self._confirm(stops, times, est, seen, now) if confirmed else est
+
         shape = self.shapes[t["shape_id"]]
-        for i in range(len(times)):
-            arr, dep, dist, delay = times[i]
-            if now < arr:
-                _p_arr, p_dep, p_dist, _p_delay = times[i - 1]
-                span = arr - p_dep
-                progress = 0.0 if span <= 0 else (now - p_dep) / span
-                progress = min(max(progress, 0.0), 1.0)
-                d = p_dist + (dist - p_dist) * progress
-                speed = 0.0 if span <= 0 else abs(dist - p_dist) / span
-                lon, lat, bearing = shape.point_at(d)
-                return TrainOut(
-                    id=trip_id, line=t["line"], latitude=lat, longitude=lon,
-                    bearing=bearing, distance_m=d, speed_m_s=speed,
-                    shape_id=t["shape_id"], headsign=t["headsign"],
-                    delay_s=delay, status="moving",
-                    prev_station=self.stops[stops[i - 1][1]]["name"],
-                    next_station=self.stops[stops[i][1]]["name"],
-                    platform=self.stops[stops[i][1]].get("platform"),
-                    next_arrival_ts=int(arr), prev_departure_ts=int(p_dep),
-                    stops_remaining=len(stops) - i,
-                    final_arrival_ts=int(times[-1][0]), realtime=rt_trip is not None,
-                )
-            if arr <= now <= dep:
-                lon, lat, bearing = shape.point_at(dist)
-                return TrainOut(
-                    id=trip_id, line=t["line"], latitude=lat, longitude=lon,
-                    bearing=bearing, distance_m=dist, speed_m_s=0.0,
-                    shape_id=t["shape_id"], headsign=t["headsign"],
-                    delay_s=delay, status="dwelling",
-                    prev_station=self.stops[stops[i][1]]["name"],
-                    next_station=self.stops[stops[i + 1][1]]["name"] if i + 1 < len(stops) else None,
-                    platform=self.stops[stops[i][1]].get("platform"),
-                    next_arrival_ts=int(times[i + 1][0]) if i + 1 < len(times) else None,
-                    prev_departure_ts=int(dep),
-                    stops_remaining=len(stops) - 1 - i,
-                    final_arrival_ts=int(times[-1][0]),
-                    realtime=rt_trip is not None,
-                )
-        return None
+        lon, lat, bearing = shape.point_at(d)
+        common = dict(
+            id=trip_id, line=t["line"], latitude=lat, longitude=lon,
+            bearing=bearing, distance_m=d, speed_m_s=speed,
+            shape_id=t["shape_id"], headsign=t["headsign"],
+            delay_s=times[i][3], status=status,
+            final_arrival_ts=int(times[-1][0]), realtime=rt_trip is not None,
+            confidence="confirmed" if confirmed else "live" if rt_trip is not None else "schedule",
+            seen_station=self.stops[seen["stop_id"]]["name"] if seen and seen["stop_id"] in self.stops else None,
+            seen_status=seen["status"] if seen else None,
+            seen_ts=int(seen["ts"]) if seen else None,
+        )
+        if status == "moving":
+            return TrainOut(
+                **common,
+                prev_station=self.stops[stops[i - 1][1]]["name"],
+                next_station=self.stops[stops[i][1]]["name"],
+                platform=self.stops[stops[i][1]].get("platform"),
+                next_arrival_ts=int(times[i][0]), prev_departure_ts=int(times[i - 1][1]),
+                stops_remaining=len(stops) - i,
+            )
+        return TrainOut(
+            **common,
+            prev_station=self.stops[stops[i][1]]["name"],
+            next_station=self.stops[stops[i + 1][1]]["name"] if i + 1 < len(stops) else None,
+            platform=self.stops[stops[i][1]].get("platform"),
+            next_arrival_ts=int(times[i + 1][0]) if i + 1 < len(times) else None,
+            prev_departure_ts=int(times[i][1]),
+            stops_remaining=len(stops) - 1 - i,
+        )
 

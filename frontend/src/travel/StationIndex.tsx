@@ -4,6 +4,7 @@ import { formatPlaceName } from "../format";
 import { Place } from "../components/Place";
 import { Station } from "../types";
 import { LineBadge, Section } from "./ui";
+import { useTravelT } from "./strings";
 
 export interface StationIndexProps {
   stations: Station[];
@@ -26,6 +27,7 @@ export function sortedStations(stations: Station[], line: string | null): Statio
 }
 
 export function StationIndex(p: StationIndexProps) {
+  const txt = useTravelT();
   const [line, setLine] = useState<string | null>(null);
   const all = useMemo(() => sortedStations(p.stations, line), [p.stations, line]);
   const byName = useMemo(() => new Map(p.stations.map((s) => [s.name, s])), [p.stations]);
@@ -65,15 +67,15 @@ export function StationIndex(p: StationIndexProps) {
         className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#1f3a68] px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-[#182e54] disabled:opacity-60 dark:bg-[#c8a951] dark:text-[#111727] dark:hover:bg-[#d6ba67]"
       >
         <LocateFixed size={14} aria-hidden />
-        {p.locating ? "Locatie bepalen…" : "Dichtstbijzijnde station"}
+        {p.locating ? txt.locating : txt.nearestStation}
       </button>
 
       <h3 className="smallcaps mt-3 flex items-center gap-1 text-xs font-semibold text-[#7b2132] dark:text-[#c8a951]">
-        <Star size={12} aria-hidden /> Favorieten
+        <Star size={12} aria-hidden /> {txt.favourites}
       </h3>
       {p.favourites.length === 0 ? (
         <p className="mt-1 text-[11px] leading-snug text-[#7a7262] dark:text-[#8b93a7]">
-          Markeer een station met ★ Favoriet om het hier snel terug te vinden.
+          {txt.favouritesHint}
         </p>
       ) : (
         <ul className="mt-1 space-y-0.5">{p.favourites.map((n) => chip(n))}</ul>
@@ -82,13 +84,13 @@ export function StationIndex(p: StationIndexProps) {
       {p.recent.length > 0 && (
         <>
           <h3 className="smallcaps mt-3 flex items-center gap-1 text-xs font-semibold text-[#7b2132] dark:text-[#c8a951]">
-            <History size={12} aria-hidden /> Recent
+            <History size={12} aria-hidden /> {txt.recent}
             <button
               type="button"
               onClick={p.onClearRecent}
               className="ml-auto rounded p-0.5 text-[#9a9384] hover:text-[#1d2433] dark:hover:text-[#ece6d6]"
-              aria-label="Recente stations wissen"
-              title="Wissen"
+              aria-label={txt.clearRecent}
+              title={txt.clear}
             >
               <X size={12} />
             </button>
@@ -97,15 +99,15 @@ export function StationIndex(p: StationIndexProps) {
         </>
       )}
 
-      <h3 className="smallcaps mt-3 text-xs font-semibold text-[#7b2132] dark:text-[#c8a951]">Alle stations A–Z</h3>
-      <div className="mt-1 flex flex-wrap gap-1" role="group" aria-label="Toon stations van lijn">
+      <h3 className="smallcaps mt-3 text-xs font-semibold text-[#7b2132] dark:text-[#c8a951]">{txt.allStationsAZ}</h3>
+      <div className="mt-1 flex flex-wrap gap-1" role="group" aria-label={txt.stationsOfLine}>
         <button
           type="button"
           onClick={() => setLine(null)}
           aria-pressed={line === null}
           className={`h-5 rounded px-1.5 text-[10px] font-semibold ${line === null ? "bg-[#1f3a68] text-white dark:bg-[#c8a951] dark:text-[#111727]" : "bg-[#f1ebdd] dark:bg-[#1a2134]"}`}
         >
-          alle
+          {txt.all}
         </button>
         {p.lineIds.map((l) => (
           <button key={l} type="button" onClick={() => setLine(line === l ? null : l)} aria-pressed={line === l} className={line && line !== l ? "opacity-40" : ""}>
@@ -113,7 +115,7 @@ export function StationIndex(p: StationIndexProps) {
           </button>
         ))}
       </div>
-      <ul className="mt-1.5 space-y-0.5" aria-label="Alle stations">
+      <ul className="mt-1.5 space-y-0.5" aria-label={txt.allStations}>
         {all.map((s) => chip(s.name))}
       </ul>
     </Section>

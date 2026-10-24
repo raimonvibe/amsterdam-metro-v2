@@ -20,7 +20,7 @@ import { MAP_THEME, Theme } from "../theme";
 import { ChurchMarkers } from "./ChurchMarkers";
 import { TrainPopup } from "./TrainPopup";
 import { getWebGLStatus } from "../webgl";
-import { nl } from "../i18n/nl";
+import { useT } from "../i18n";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 // deck.gl attached as a maplibre overlay control: shares the map camera, so
@@ -103,6 +103,12 @@ const TRAIN_BODY_STEP_M = 4;
 /** Soft bloom only — no hard core sprite. */
 const TRAIN_GLOW_M = 120;
 const DELAY_THRESHOLD_S = 120;
+/**
+ * Body and glow alpha for a train placed by the timetable alone: no live
+ * prediction, no stop report. Drawn fainter rather than moved, so the map does
+ * not claim the same certainty for it as for a train the signalling has seen.
+ */
+const SCHEDULE_ONLY_ALPHA = 0.45;
 /**
  * Late trains breathe; they do not change colour.
  *
@@ -353,6 +359,7 @@ export function MetroMap({
   onMapBackgroundClick,
   paused = false,
 }: MetroMapProps) {
+  const txt = useT();
   const mapRef = useRef<MapRef>(null);
   const deckPickRef = useRef(false);
   /** Per-line canonical lane (longest shape → offset). Shared by tracks + trains. */
@@ -746,6 +753,7 @@ export function MetroMap({
     const path = samplePathBetween(drawn, rear, tip, TRAIN_BODY_STEP_M);
     if (path.length < 2) return [];
     const rgb = hotten(tr.color, t.coreWhiten);
+    const certainty = tr.confidence === "schedule" ? SCHEDULE_ONLY_ALPHA : 1;
     const segs: TrainBodySeg[] = [];
     const weightAt = (d: number): number => {
       if (d >= coreLo && d <= coreHi) return 1;
@@ -763,7 +771,7 @@ export function MetroMap({
       const d1 = rear + ((tip - rear) * (i + 1)) / (path.length - 1);
       // Average endpoints so neighbouring segments share a continuous ramp.
       const w = (weightAt(d0) + weightAt(d1)) / 2;
-      const alpha = Math.round(255 * w);
+      const alpha = Math.round(255 * w * certainty);
       if (alpha < 2) continue;
       segs.push({
         path: [path[i], path[i + 1]],
@@ -1009,8 +1017,13 @@ export function MetroMap({
       billboard: false,
       alphaCutoff: 0,
       getColor: (d: PositionedTrain) =>
-        [...d.color, d.delay_s > DELAY_THRESHOLD_S ? delayedAlpha : t.trainGlowAlpha] as
-          [number, number, number, number],
+        [
+          ...d.color,
+          Math.round(
+            (d.delay_s > DELAY_THRESHOLD_S ? delayedAlpha : t.trainGlowAlpha) *
+              (d.confidence === "schedule" ? SCHEDULE_ONLY_ALPHA : 1),
+          ),
+        ] as [number, number, number, number],
       parameters: haloParams,
       updateTriggers: { getColor: [theme] },
     }),
@@ -1060,13 +1073,13 @@ export function MetroMap({
     return (
       <div className="flex h-full min-h-0 w-full items-center justify-center bg-gray-950 p-4 text-gray-100 sm:p-8">
         <div className="max-w-lg space-y-4 text-sm leading-relaxed">
-          <h2 className="text-lg font-semibold text-white">{nl.webglTitle}</h2>
+          <h2 className="text-lg font-semibold text-white">{txt.webglTitle}</h2>
           <p>{webglError}</p>
-          <p className="text-gray-400">{nl.webglHint}</p>
+          <p className="text-gray-400">{txt.webglHint}</p>
           <ol className="list-decimal space-y-2 pl-5 text-gray-300">
-            <li>{nl.webglStep1}</li>
-            <li>{nl.webglStep2}</li>
-            <li>{nl.webglStep3}</li>
+            <li>{txt.webglStep1}</li>
+            <li>{txt.webglStep2}</li>
+            <li>{txt.webglStep3}</li>
           </ol>
         </div>
       </div>

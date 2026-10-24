@@ -49,6 +49,14 @@ class TrainOut(BaseModel):
     stops_remaining: int = 0     # calls still ahead, terminus included
     final_arrival_ts: Optional[int] = None  # arrival at the terminus
     realtime: bool = False
+    # How sure the position is: "confirmed" (the signalling system reported
+    # the train at or heading to a stop within CONFIRM_FRESH_S), "live"
+    # (clock estimate on realtime predictions) or "schedule" (timetable only).
+    confidence: str = "schedule"
+    # The latest stop report, however old: station name, "at" | "to", epoch.
+    seen_station: Optional[str] = None
+    seen_status: Optional[str] = None
+    seen_ts: Optional[int] = None
 
 
 class StatusOut(BaseModel):

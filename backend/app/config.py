@@ -18,6 +18,14 @@ GTFS_REFRESH_SECONDS = 3600
 
 TRIP_UPDATES_URL = "https://gtfs.ovapi.nl/nl/tripUpdates.pb"
 RT_POLL_SECONDS = 30
+# Metro entries carry no GPS (0,0) but do name the stop a train is at or
+# heading to, with the time the signalling system reported it. Small (~35KB
+# nationally), so polled faster than trip updates: a platform stop lasts ~25s.
+VEHICLE_POSITIONS_URL = "https://gtfs.ovapi.nl/nl/vehiclePositions.pb"
+VEHICLE_POLL_SECONDS = 20
+# KV15 service messages: ~350KB for the whole country and slow to change.
+ALERTS_URL = "https://gtfs.ovapi.nl/nl/alerts.pb"
+ALERTS_POLL_SECONDS = 120
 
 # Comma-separated list, or "*" when unset (handy for local dev).
 _cors = os.getenv("CORS_ORIGINS", "").strip()

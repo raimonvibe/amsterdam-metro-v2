@@ -1,17 +1,21 @@
-/** Bronvermelding en gebruikte diensten. */
+import { useT, type Dict } from "../i18n";
 
-export const CREDITS = [
+/** Bronvermelding en gebruikte diensten. Labels and notes are string keys. */
+
+type Key = keyof Dict;
+
+export const CREDITS: readonly { label: Key; items: readonly { name: string; href: string }[]; note?: Key }[] = [
   {
-    label: "Reizigersinfo",
+    label: "creditTravel",
     items: [
       { name: "OVapi", href: "https://gtfs.ovapi.nl/" },
       { name: "openOV", href: "https://openov.nl/" },
       { name: "NDOV", href: "https://ndov.nl/" },
     ],
-    note: "CC0 open data via Stichting OpenGeo / OVapi. Geen officieel GVB-product.",
+    note: "creditTravelNote",
   },
   {
-    label: "Kaarttegels",
+    label: "creditTiles",
     items: [
       { name: "OpenFreeMap", href: "https://openfreemap.org/" },
       { name: "OpenStreetMap", href: "https://www.openstreetmap.org/copyright" },
@@ -19,14 +23,14 @@ export const CREDITS = [
     ],
   },
   {
-    label: "Kaart & 3D",
+    label: "creditMap",
     items: [
       { name: "MapLibre GL JS", href: "https://maplibre.org/" },
       { name: "deck.gl", href: "https://deck.gl/" },
     ],
   },
   {
-    label: "Pictogrammen",
+    label: "creditIcons",
     items: [
       {
         name: "Font Awesome Free",
@@ -34,36 +38,38 @@ export const CREDITS = [
       },
       { name: "Lucide", href: "https://lucide.dev/license" },
     ],
-    note: "Social-pictogrammen door Fonticons, Inc.; overige pictogrammen door Lucide.",
+    note: "creditIconsNote",
   },
   {
-    label: "Inspiratie",
+    label: "creditInspiration",
     items: [
       {
         name: "londonunderground.live",
         href: "https://www.londonunderground.live/",
       },
     ],
-    note: "Door Ben James.",
+    note: "creditInspirationNote",
   },
-] as const;
+];
 
 const creditLink =
   "underline decoration-gray-300 underline-offset-2 hover:text-gray-800 dark:text-gray-200 dark:decoration-gray-600 dark:hover:text-white";
 
 export function Credits({ onOpenPrivacy }: { onOpenPrivacy: () => void }) {
+  const txt = useT();
+  const say = (k: Key) => txt[k] as string;
   return (
     <div className="text-xs leading-relaxed text-gray-600 dark:text-gray-300 sm:text-[13px]">
       <p className="mb-2 text-gray-600 dark:text-gray-300">
-        Geen officieel GVB-project — niet gelieerd aan GVB of de gemeente Amsterdam.
+        {txt.notOfficial}
       </p>
       <p className="mb-2 font-medium uppercase tracking-wide text-gray-700 dark:text-gray-200">
-        Bronvermelding
+        {txt.credits}
       </p>
       <ul className="space-y-2.5">
         {CREDITS.map((section) => (
           <li key={section.label}>
-            <span className="text-gray-700 dark:text-gray-200">{section.label}: </span>
+            <span className="text-gray-700 dark:text-gray-200">{say(section.label)}: </span>
             {section.items.map((item, i) => (
               <span key={item.href}>
                 {i > 0 && ", "}
@@ -77,16 +83,16 @@ export function Credits({ onOpenPrivacy }: { onOpenPrivacy: () => void }) {
                 </a>
               </span>
             ))}
-            {"note" in section && section.note && (
-              <span className="mt-0.5 block text-gray-500 dark:text-gray-400">{section.note}</span>
+            {section.note && (
+              <span className="mt-0.5 block text-gray-500 dark:text-gray-400">{say(section.note)}</span>
             )}
           </li>
         ))}
       </ul>
       <p className="mt-2.5 text-gray-600 dark:text-gray-300">
-        Kaartstijl wordt alleen lokaal opgeslagen.{" "}
+        {txt.storedLocally}{" "}
         <button type="button" onClick={onOpenPrivacy} className={creditLink}>
-          Privacybeleid
+          {txt.privacyPolicy}
         </button>
       </p>
       <p className="mt-2 text-gray-600 dark:text-gray-300">

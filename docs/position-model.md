@@ -91,7 +91,23 @@ The correct response to low confidence is to show low confidence, not to relocat
 
 ---
 
+## Update, 24 Oct 2026: stop reports are now used
+
+Checked at 06:16 and 06:40 CEST: `vehiclePositions.pb` carries all five metro lines, but **with no GPS** (latitude and longitude 0). Each entry does name the stop a train is at (`STOPPED_AT`) or heading to (`IN_TRANSIT_TO`), with a timestamp. Those reports reach OVapi 26-60 s after the event, and a few were 5-9 minutes old.
+
+So change 5 cannot replace the solver, but the reports are confirmations, and `MetroData._confirm()` now uses them as bounds on the clock estimate:
+
+| Report | Meaning used | Effect |
+|---|---|---|
+| at X, under `CONFIRM_FRESH_S` (120 s) | at X or beyond | a clock estimate short of X is moved up to X's platform |
+| heading to X, under 120 s | left the stop before X | an estimate still before that stop starts on X's segment |
+| heading to X, under `HEADING_HOLD_S` (60 s) | not yet at X | an estimate past X is held at X |
+
+An estimate inside the bounds is left alone. Change 3 (a fixed dwell) was tried as "hold at the platform for 25 s after an at-report" and dropped: with the feed lag the train has usually left by the time the report arrives.
+
+Change 2 is done as `TrainOut.confidence`: `confirmed` (a fresh report), `live` (realtime predictions only) or `schedule`. The map draws schedule-only trains fainter, and the train card names the latest report and its age. Change 1 is done as well (the `i == 0` guard in `_estimate()`). In the first live run, 15 of 18 trains were confirmed and 2-3 had their estimate corrected by 100-370 m.
+
 ## Open checks
 
-- [ ] Does `vehiclePositions.pb` carry GVB routes 50-54 during service hours?
+- [x] Does `vehiclePositions.pb` carry GVB routes 50-54 during service hours? Yes, without GPS (see above).
 - [ ] Do GVB metro stop_times set `arrival_time == departure_time` at intermediate stops?

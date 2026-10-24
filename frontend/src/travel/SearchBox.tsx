@@ -6,6 +6,7 @@ import { Place } from "../components/Place";
 import { Station } from "../types";
 import { SearchResult, allStations, search, searchStations } from "./search";
 import { LineBadge, useNarrowScreen, useTouchScreen } from "./ui";
+import { useTravelT } from "./strings";
 
 export interface SearchBoxProps {
   label: string;
@@ -44,6 +45,7 @@ export function SearchBox({
   onNearby,
 }: SearchBoxProps) {
   const id = useId();
+  const txt = useTravelT();
   const narrow = useNarrowScreen();
   const touch = useTouchScreen();
   const shownPlaceholder = narrow && shortPlaceholder ? shortPlaceholder : placeholder;
@@ -58,7 +60,7 @@ export function SearchBox({
   const hits: SearchResult[] = useMemo(() => {
     if (mode === "station") {
       const found: SearchResult[] = searchStations(query, stations, 8);
-      return onNearby && /^(dichtbij|hier|locatie)$/i.test(query.trim()) ? [{ kind: "nearby", score: 300 }, ...found] : found;
+      return onNearby && /^(dichtbij|hier|locatie|nearby|near me|here)$/i.test(query.trim()) ? [{ kind: "nearby", score: 300 }, ...found] : found;
     }
     return search(query, stations, lineIds, 9);
   }, [query, stations, lineIds, mode, onNearby]);
@@ -124,20 +126,20 @@ export function SearchBox({
     <>
       {typed && browsing && (
         <li role="presentation" className="px-3 py-2 text-sm text-[#6b6455] dark:text-[#9aa2b5]">
-          Geen station gevonden voor “{query}”. Kies hieronder:
+          {txt.notFound(query)}
         </li>
       )}
       {!typed && mode === "all" && (
         <li role="presentation" className="border-b border-[#efe8d8] px-3 pb-2 pt-1 text-xs leading-relaxed text-[#5b5446] dark:border-[#1c2436] dark:text-[#a9b0c2]">
-          <span className="smallcaps font-semibold text-[#7b2132] dark:text-[#c8a951]">Probeer</span>{" "}
+          <span className="smallcaps font-semibold text-[#7b2132] dark:text-[#c8a951]">{txt.try}</span>{" "}
           <kbd className="font-sans">arena</kbd> · <kbd className="font-sans">52</kbd> ·{" "}
-          <kbd className="font-sans">noord naar gein</kbd> · <kbd className="font-sans">dichtbij</kbd> ·{" "}
+          <kbd className="font-sans">{txt.tryRoute}</kbd> · <kbd className="font-sans">{txt.tryNearby}</kbd> ·{" "}
           <kbd className="font-sans">waterlopolein</kbd>
         </li>
       )}
       {browsing && (
         <li role="presentation" className="smallcaps px-3 pb-0.5 pt-1.5 text-[11px] font-semibold text-[#7b2132] dark:text-[#c8a951]">
-          Alle stations
+          {txt.allStations}
         </li>
       )}
       {results.map((r, i) => (
@@ -203,12 +205,12 @@ export function SearchBox({
                 ref={inputRef}
                 type="search"
                 role="combobox"
-                aria-label={`${label}: typ om te zoeken`}
+                aria-label={`${label}: ${txt.typeToSearch}`}
                 aria-expanded
                 aria-controls={listId}
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="Typ om te zoeken, of kies hieronder"
+                placeholder={txt.typeOrPick}
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
@@ -269,8 +271,8 @@ export function SearchBox({
         <button
           type="button"
           tabIndex={-1}
-          aria-label="Alle stations tonen"
-          title="Alle stations tonen"
+          aria-label={txt.showAllStations}
+          title={txt.showAllStations}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => {
             setActive(-1);
@@ -301,6 +303,7 @@ export function SearchBox({
 /** Full-screen list for touch screens. It fills the visual viewport, so with
  *  the keyboard up the list ends above it instead of behind it. */
 function PickerSheet({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
+  const txt = useTravelT();
   const [height, setHeight] = useState<number | null>(null);
   useEffect(() => {
     const vv = window.visualViewport;
@@ -334,7 +337,7 @@ function PickerSheet({ label, onClose, children }: { label: string; onClose: () 
         <button
           type="button"
           onClick={onClose}
-          aria-label="Sluiten"
+          aria-label={txt.close}
           className="flex h-11 w-11 items-center justify-center rounded-full text-[#1f3a68] hover:bg-[#f1ebdd] dark:text-[#c8a951] dark:hover:bg-[#1a2134]"
         >
           <X size={22} />
@@ -354,12 +357,13 @@ function resultKey(r: SearchResult): string {
 }
 
 function ResultRow({ result: r, colorOf }: { result: SearchResult; colorOf: (l: string) => string }) {
+  const txt = useTravelT();
   if (r.kind === "nearby") {
     return (
       <>
         <LocateFixed size={15} className="shrink-0 text-[#1f3a68] dark:text-[#c8a951]" aria-hidden />
-        <span className="font-medium">Dichtstbijzijnde station</span>
-        <span className="ml-auto text-[11px] text-[#8a8170]">via uw locatie</span>
+        <span className="font-medium">{txt.nearestStation}</span>
+        <span className="ml-auto text-[11px] text-[#8a8170]">{txt.viaLocation}</span>
       </>
     );
   }
@@ -368,7 +372,7 @@ function ResultRow({ result: r, colorOf }: { result: SearchResult; colorOf: (l: 
       <>
         <ArrowRight size={15} className="shrink-0 text-[#1f3a68] dark:text-[#c8a951]" aria-hidden />
         <span className="min-w-0 truncate">
-          Reis van <strong><Place name={r.from.name} /></strong> naar <strong><Place name={r.to.name} /></strong>
+          {txt.tripFrom} <strong><Place name={r.from.name} /></strong> {txt.tripTo} <strong><Place name={r.to.name} /></strong>
         </span>
       </>
     );
@@ -378,7 +382,7 @@ function ResultRow({ result: r, colorOf }: { result: SearchResult; colorOf: (l: 
       <>
         <TrainTrack size={15} className="shrink-0 text-[#1f3a68] dark:text-[#c8a951]" aria-hidden />
         <LineBadge id={r.line} color={colorOf(r.line)} small />
-        <span>Lijnoverzicht metro {r.line}</span>
+        <span>{txt.lineOverviewOf(r.line)}</span>
       </>
     );
   }
