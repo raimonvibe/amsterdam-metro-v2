@@ -177,7 +177,8 @@ export default function App() {
           e.preventDefault();
           openTravelForSelection();
         }}
-        className="sr-only z-[70] rounded-lg bg-[#1f3a68] px-4 py-2.5 text-sm font-semibold text-white shadow-lg focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
+        // not-sr-only resets padding to 0, so the focused padding is set after it.
+        className="sr-only z-[70] rounded-lg bg-[#1f3a68] text-sm font-semibold text-white shadow-lg focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:px-4 focus:py-2.5"
       >
         {txt.textVersion}
       </a>
