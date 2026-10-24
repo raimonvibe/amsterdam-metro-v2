@@ -75,6 +75,9 @@ interface MetroMapProps {
   /** Covered by a full-screen page: stop the animation clock, which would
    *  otherwise re-render the map ~30 times a second for nobody. */
   paused?: boolean;
+  /** A map canvas lost its WebGL context (phones do this to backgrounded
+   *  apps). The parent remounts the map: see App. */
+  onContextLost?: () => void;
 }
 
 /** Style-switch veil: quick cover, gentler reveal; reveal anyway if tiles stall. */
@@ -240,6 +243,10 @@ const ADDITIVE = {
   blendAlphaDstFactor: "one",
 } as const;
 
+/** The camera where the visitor left it. Module-level, so a map rebuilt after
+ *  a lost WebGL context opens on the same view instead of replaying the intro. */
+let lastView: { longitude: number; latitude: number; zoom: number; pitch: number; bearing: number } | null = null;
+
 const INTRO_START = {
   longitude: 4.9004,
   latitude: 52.3778,
@@ -383,6 +390,7 @@ export function MetroMap({
   onStopFollow,
   onMapBackgroundClick,
   paused = false,
+  onContextLost,
 }: MetroMapProps) {
   const txt = useT();
   const lang = useLang();
@@ -442,7 +450,10 @@ export function MetroMap({
     const status = getWebGLStatus();
     return status.ok ? null : status.reason;
   });
-  const introDone = useRef(false);
+  // A rebuilt map (lastView set) starts where the old one was: no intro.
+  const introDone = useRef(lastView !== null);
+  // A canvas lost its WebGL context; stays true until the parent remounts.
+  const [glLost, setGlLost] = useState(false);
   const trailsRef = useRef<Record<string, Trail>>({});
   const lastSampleRef = useRef(0);
   const [mapReady, setMapReady] = useState(false);
@@ -583,6 +594,26 @@ export function MetroMap({
     if (reduceMotionRef.current) map.jumpTo(view);
     else map.flyTo({ ...view, duration: 1800, essential: true });
   }, [focusStation, mapReady]);
+
+  // A lost context cannot be trusted to come back: MapLibre restores its own,
+  // deck.gl does not, and during MapLibre's restore the overlay reads a map
+  // without a style and throws, which took the whole app down (blank page).
+  // So report the first loss and let the parent rebuild the map from scratch.
+  // webglcontextlost does not bubble: listen in the capture phase.
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!map || !mapReady || !onContextLost) return;
+    const container = map.getContainer();
+    let reported = false;
+    const lost = () => {
+      if (reported) return;
+      reported = true;
+      setGlLost(true);
+      onContextLost();
+    };
+    container.addEventListener("webglcontextlost", lost, true);
+    return () => container.removeEventListener("webglcontextlost", lost, true);
+  }, [mapReady, onContextLost]);
 
   const handleLoad = useCallback(() => {
     const map = mapRef.current?.getMap();
@@ -1155,7 +1186,7 @@ export function MetroMap({
     <div className="relative h-full min-h-0 w-full">
       <Map
         ref={mapRef}
-        initialViewState={INTRO_START}
+        initialViewState={lastView ?? INTRO_START}
         mapStyle={styleUrl}
         styleDiffing={false}
         attributionControl={false}
@@ -1164,7 +1195,11 @@ export function MetroMap({
         locale={MAP_LOCALE[lang]}
         onLoad={handleLoad}
         onMove={(e) => setZoom(e.viewState.zoom)}
-        onMoveEnd={(e) => setZoom(e.viewState.zoom)}
+        onMoveEnd={(e) => {
+          setZoom(e.viewState.zoom);
+          const { longitude, latitude, zoom: z, pitch, bearing } = e.viewState;
+          lastView = { longitude, latitude, zoom: z, pitch, bearing };
+        }}
         onClick={() => {
           if (!onMapBackgroundClick) return;
           setTimeout(() => {
@@ -1178,13 +1213,17 @@ export function MetroMap({
         {/* Click alternatives to dragging (WCAG 2.5.7): zoom, and a compass
             that resets rotation and tilt. */}
         <NavigationControl position="bottom-right" visualizePitch />
-        <DeckGLOverlay
-          layers={layers}
-          pickingRadius={12}
-          getCursor={({ isHovering, isDragging }) =>
-            isDragging ? "grabbing" : isHovering ? "pointer" : "grab"
-          }
-        />
+        {/* Not drawn once a context is lost: the overlay would read the map
+            mid-restore and throw. The parent rebuilds the map shortly. */}
+        {!glLost && (
+          <DeckGLOverlay
+            layers={layers}
+            pickingRadius={12}
+            getCursor={({ isHovering, isDragging }) =>
+              isDragging ? "grabbing" : isHovering ? "pointer" : "grab"
+            }
+          />
+        )}
       </Map>
       <ChurchMarkers mapRef={mapRef} mapReady={mapReady} theme={theme} />
       {popupTrain && popupScreen && (

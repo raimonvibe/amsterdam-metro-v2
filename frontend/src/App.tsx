@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { PanelLeftOpen } from "lucide-react";
 import { useAlerts } from "./hooks/useAlerts";
 import { AlertAnnouncer } from "./components/AlertList";
@@ -17,6 +17,7 @@ import { useTravelRoute } from "./hooks/useTravelRoute";
 import { formatPlaceName } from "./format";
 import { useSidebarOpen } from "./hooks/useSidebarOpen";
 import { ChunkErrorBoundary } from "./components/ChunkErrorBoundary";
+import { MapErrorBoundary } from "./components/MapErrorBoundary";
 
 // Rarely opened; kept out of the initial bundle.
 const PrivacyPolicy = lazy(() =>
@@ -47,6 +48,31 @@ export default function App() {
   const [hoveredStation, setHoveredStation] = useState<Station | null>(null);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [followedTrainId, setFollowedTrainId] = useState<string | null>(null);
+  // Bumped to rebuild the map from scratch: after a lost WebGL context, or
+  // from the crash fallback. A new key remounts MapLibre and deck.gl with
+  // fresh contexts; the camera stays where it was (see lastView).
+  const [mapKey, setMapKey] = useState(0);
+  const [mapLost, setMapLost] = useState(false);
+  const onMapContextLost = useCallback(() => setMapLost(true), []);
+  useEffect(() => {
+    if (!mapLost) return;
+    // A backgrounded phone gets no new context until the page is shown
+    // again, so rebuild only once it is visible.
+    let timer: number | undefined;
+    const rebuild = () => {
+      if (document.visibilityState !== "visible") return;
+      timer = window.setTimeout(() => {
+        setMapKey((k) => k + 1);
+        setMapLost(false);
+      }, 300);
+    };
+    rebuild();
+    document.addEventListener("visibilitychange", rebuild);
+    return () => {
+      document.removeEventListener("visibilitychange", rebuild);
+      window.clearTimeout(timer);
+    };
+  }, [mapLost]);
   // Followed from a list (the station card) rather than the map itself.
   const [followedFromList, setFollowedFromList] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -245,7 +271,9 @@ export default function App() {
             {error}
           </div>
         )}
+        <MapErrorBoundary key={mapKey} onReset={() => setMapKey((k) => k + 1)}>
         <MetroMap
+          onContextLost={onMapContextLost}
           lines={lines}
           stations={stations}
           trains={trains}
@@ -274,6 +302,14 @@ export default function App() {
           onMapBackgroundClick={sidebarOpen ? closeSidebar : followedTrainId ? () => setFollowedTrainId(null) : undefined}
           paused={showTravel}
         />
+        </MapErrorBoundary>
+        {mapLost && (
+          <div role="status" className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+            <span className="rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-gray-800 shadow dark:bg-gray-950/85 dark:text-gray-100">
+              {txt.mapRecovering}
+            </span>
+          </div>
+        )}
         <LiveBadge status={status} />
         <AlertAnnouncer alerts={alerts} />
         {selectedStation && (
