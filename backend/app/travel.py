@@ -129,9 +129,10 @@ def _runs_from(metro: MetroData, rt: RealtimeState, station: str, trip_ids,
                start: float, end: float):
     """Runs leaving `station` between start and end: (dep, index, trip_id, t,
     times). Cancelled runs and skipped calls are left out."""
+    updates = rt.live_updates()
     for trip_id in trip_ids:
         t = metro.trips[trip_id]
-        rt_trip = rt.trip_updates.get(trip_id)
+        rt_trip = updates.get(trip_id)
         rt_stops = rt_trip["stops"] if rt_trip else {}
         for date in metro.service_dates.get(t["service_id"], []):
             if rt.is_cancelled(trip_id, date) or not metro._may_run(t, date, start, end):

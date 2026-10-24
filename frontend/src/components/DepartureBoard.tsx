@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { Clock, X } from "lucide-react";
 import { fetchDepartures } from "../api";
 import { pollWhileVisible } from "../poll";
 import { strings, useT } from "../i18n";
@@ -20,6 +20,8 @@ interface DepartureBoardProps {
   /** Trips on the map right now: those rows can be picked to follow the train. */
   followable?: Set<string>;
   onFollow?: (tripId: string) => void;
+  /** False while the live feed is down or stale: every time is the timetable. */
+  live?: boolean;
 }
 
 function countdown(ts: number, nowMs: number): string {
@@ -28,7 +30,7 @@ function countdown(ts: number, nowMs: number): string {
   return `${Math.round(s / 60)} ${strings().min}`;
 }
 
-export function DepartureBoard({ station, lines, alerts = [], onClose, onMore, followable, onFollow }: DepartureBoardProps) {
+export function DepartureBoard({ station, lines, alerts = [], onClose, onMore, followable, onFollow, live = true }: DepartureBoardProps) {
   const txt = useT();
   const [departures, setDepartures] = useState<Departure[] | null>(null);
   const [nowMs, setNowMs] = useState(Date.now());
@@ -84,6 +86,15 @@ export function DepartureBoard({ station, lines, alerts = [], onClose, onMore, f
           {txt.noDepartures}
         </div>
       )}
+      {/* Live is the rule, so only the exceptions are marked ("gepland"), and
+          the card says so once, rather than tagging every row "live". */}
+      {departures && departures.length > 0 && (!live ? (
+        <p role="status" className="mb-1.5 rounded-md bg-amber-50 px-2 py-1 text-[11px] leading-snug text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+          {txt.liveDown}
+        </p>
+      ) : departures.some((d) => !d.realtime) ? (
+        <p className="mb-1.5 text-[11px] leading-snug text-gray-600 dark:text-gray-400">{txt.timesLiveNote}</p>
+      ) : null)}
       {departures && departures.length > 0 && (
         <ul className="space-y-1">
           {departures.map((d) => {
@@ -100,7 +111,7 @@ export function DepartureBoard({ station, lines, alerts = [], onClose, onMore, f
                   ? {
                       type: "button" as const,
                       onClick: () => onFollow?.(d.trip_id),
-                      "aria-label": `${txt.followTrain(d.line, formatPlaceName(d.headsign))}, ${countdown(d.departure_ts, nowMs)}`,
+                      "aria-label": `${txt.followTrain(d.line, formatPlaceName(d.headsign))}, ${countdown(d.departure_ts, nowMs)}${d.realtime ? "" : `, ${txt.plannedSr}`}`,
                     }
                   : {})}
                 className={`flex min-h-8 w-full items-center justify-between rounded-lg px-2 py-1 text-left text-sm ${
@@ -118,8 +129,18 @@ export function DepartureBoard({ station, lines, alerts = [], onClose, onMore, f
                   <Place name={d.headsign} />
                 </span>
               </span>
-              <span className="ml-2 shrink-0 text-right">
-                <span className="font-semibold tabular-nums">
+              <span className="ml-2 flex shrink-0 items-center gap-1 text-right">
+                {d.realtime ? (
+                  // Live: the same pulsing dot as the travel page.
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden />
+                ) : (
+                  <span className="flex items-center gap-0.5 text-[11px] text-gray-500 dark:text-gray-400">
+                    <Clock size={11} aria-hidden />
+                    <span aria-hidden>{txt.planned}</span>
+                    <span className="sr-only">{txt.plannedSr}</span>
+                  </span>
+                )}
+                <span className={`tabular-nums ${d.realtime ? "font-semibold" : "font-normal text-gray-500 dark:text-gray-400"}`}>
                   <Num>{countdown(d.departure_ts, nowMs)}</Num>
                 </span>
                 {d.delay_s > 60 && (

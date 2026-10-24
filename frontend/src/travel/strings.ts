@@ -162,6 +162,11 @@ const nl = {
   departed: "vertrokken",
   hours: "u",
   every: (m: number) => `elke ~${m} min`,
+  planned: "gepland",
+  plannedSr: "volgens dienstregeling, geen live signaal",
+  timesLiveNote: "Tijden zijn live, tenzij ‘gepland’.",
+  liveDown: "Live gegevens tijdelijk niet beschikbaar: alle tijden volgens dienstregeling.",
+  legendPlannedTag: "volgens dienstregeling: geen live signaal",
 };
 
 export type TravelStrings = typeof nl;
@@ -318,6 +323,11 @@ const en: TravelStrings = {
   departed: "departed",
   hours: "h",
   every: (m: number) => `every ~${m} min`,
+  planned: "scheduled",
+  plannedSr: "from the timetable, no live signal",
+  timesLiveNote: "Times are live unless marked ‘scheduled’.",
+  liveDown: "Live data temporarily unavailable: all times are from the timetable.",
+  legendPlannedTag: "from the timetable: no live signal",
 };
 
 const DICTS: Record<Lang, TravelStrings> = { nl, en };

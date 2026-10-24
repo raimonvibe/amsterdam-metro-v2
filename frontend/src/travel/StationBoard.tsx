@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Footprints, Link2, MapPin, Radio, Route, Star } from "lucide-react";
+import { Clock, Footprints, Link2, MapPin, Radio, Route, Star } from "lucide-react";
 import { fetchBoard, fetchStationInfo } from "../api";
 import { delayLabel } from "../format";
 import { Place } from "../components/Place";
@@ -34,6 +34,8 @@ export interface StationBoardProps {
   routeLeg?: JourneyLeg | null;
   /** Every metro service message; the board shows the ones for this station. */
   alerts?: ServiceAlert[];
+  /** False while the live feed is down or stale: every time is the timetable. */
+  live?: boolean;
 }
 
 interface Group {
@@ -267,6 +269,16 @@ export function StationBoard(props: StationBoardProps) {
         </label>
       </div>
 
+      {/* Live is the rule, so only exceptions are marked ("gepland"); say so
+          once here instead of tagging every row "live". */}
+      {deps !== null && groups.length > 0 && (props.live === false ? (
+        <p role="status" className="mt-3 rounded-md bg-amber-50 px-2.5 py-1.5 text-xs leading-snug text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+          {txt.liveDown}
+        </p>
+      ) : visible.some((d) => !d.realtime && !d.cancelled) ? (
+        <p className="mt-3 text-xs leading-snug text-[#6b6455] dark:text-[#8b93a7]">{txt.timesLiveNote}</p>
+      ) : null)}
+
       {/* The board */}
       {/* A container: whether directions sit side by side depends on this
           panel's width, not the viewport's (the panel is narrow in the 3-column layout). */}
@@ -457,13 +469,24 @@ function DepartureRow({
           <span className="font-semibold text-[#b42335] dark:text-[#f08a9b]">{txt.cancelled}</span>
         ) : (
           <>
-            <span
-              className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${d.realtime ? "animate-pulse bg-emerald-500" : "bg-[#b8ae99] dark:bg-[#4b5468]"}`}
-              title={d.realtime ? txt.liveTracked : txt.bySchedule}
-              role="img"
-              aria-label={d.realtime ? txt.liveShort : txt.scheduleShort}
-            />
-            <span className={`min-w-0 truncate ${late ? "font-semibold text-amber-700 dark:text-amber-400" : ""}`}>{d.realtime ? <Num>{delayLabel(d.delay_s)}</Num> : txt.scheduleShort}</span>
+            {d.realtime ? (
+              <>
+                <span
+                  className="inline-block h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500"
+                  title={txt.liveTracked}
+                  role="img"
+                  aria-label={txt.liveShort}
+                />
+                <span className={`min-w-0 truncate ${late ? "font-semibold text-amber-700 dark:text-amber-400" : ""}`}><Num>{delayLabel(d.delay_s)}</Num></span>
+              </>
+            ) : (
+              // Timetable only: a clock and a word, not just a colour.
+              <span className="flex shrink-0 items-center gap-0.5 text-[#6b6455] dark:text-[#8b93a7]" title={txt.bySchedule}>
+                <Clock size={11} aria-hidden />
+                <span aria-hidden>{txt.planned}</span>
+                <span className="sr-only">{txt.plannedSr}</span>
+              </span>
+            )}
             {/* Shrinks long before the status label does, so narrow cards drop the detail first. */}
             <span className="hidden min-w-0 shrink-[100] truncate text-[#6b6455] sm:inline dark:text-[#8b93a7]">
               · {txt.stops(d.stops_remaining)} · {txt.arrShort} <Num>{clock(d.terminus_ts)}</Num>
@@ -471,7 +494,16 @@ function DepartureRow({
           </>
         )}
       </span>
-      <span className={`text-right font-semibold tabular-nums ${d.cancelled ? "text-[#6b6455] dark:text-[#8b93a7]" : URGENCY_CLASS[u]}`}>
+      <span
+        className={`text-right tabular-nums ${
+          d.cancelled
+            ? "font-semibold text-[#6b6455] dark:text-[#8b93a7]"
+            : d.realtime
+              ? `font-semibold ${URGENCY_CLASS[u]}`
+              : // A planned countdown is a guess: grey and light, never the urgent red.
+                "font-normal text-[#6b6455] dark:text-[#8b93a7]"
+        }`}
+      >
         <Num>{d.cancelled ? "—" : reachable ? countdown(d.departure_ts, nowMs) : txt.notReachable}</Num>
       </span>
     </li>

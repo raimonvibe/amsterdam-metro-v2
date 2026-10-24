@@ -88,4 +88,8 @@ export const en: Dict = {
   textVersion: "Text version: departures and lines",
   followTrain: (line: string, to: string) => `Follow metro ${line} to ${to} on the map`,
   alertAnnounce: (lines: string, text: string) => `Message ${lines}: ${text}`,
+  planned: "scheduled",
+  plannedSr: "from the timetable, no live signal",
+  timesLiveNote: "Times are live unless marked ‘scheduled’.",
+  liveDown: "Live data temporarily unavailable: all times are from the timetable.",
 };

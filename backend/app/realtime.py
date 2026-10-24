@@ -41,6 +41,9 @@ class RealtimeState:
         self.alerts: List[dict] = []
         self.last_success_ts: Optional[int] = None
         self.last_error: Optional[str] = None
+        # The trip-update feed's own header timestamp: a 304 keeps our poll
+        # "successful" while OVapi's content itself may have stopped moving.
+        self.feed_ts: Optional[int] = None
 
     def is_cancelled(self, trip_id: str, date: str) -> bool:
         dates = self.cancelled.get(trip_id)
@@ -48,8 +51,31 @@ class RealtimeState:
 
     @property
     def is_live(self) -> bool:
-        return self.last_success_ts is not None and time.time() - self.last_success_ts < 180
+        """Predictions can still be called live: we polled recently, and the
+        feed itself is recent. GTFS-rt guidance is 90 s; OVapi runs ~45 s
+        behind, so the margin is wider."""
+        now = time.time()
+        return (
+            self.last_success_ts is not None
+            and now - self.last_success_ts < STALE_AFTER_S
+            and (self.feed_ts is None or now - self.feed_ts < STALE_AFTER_S)
+        )
 
+    def live_updates(self) -> Dict[str, dict]:
+        """Trip updates to show as live, or none once the feed is stale.
+
+        Without this, an OVapi outage left the last predictions in place,
+        still labelled live, for as long as the outage lasted. Stale, they
+        are a guess, so every run falls back to its timetable. Known
+        cancellations are kept apart (self.cancelled): a run reported
+        cancelled is not drawn from its schedule either way.
+        """
+        return self.trip_updates if self.is_live else {}
+
+
+# Trip updates older than this (by our last poll or the feed's own clock)
+# are no longer shown as live.
+STALE_AFTER_S = 180
 
 state = RealtimeState()
 
@@ -61,8 +87,8 @@ _Cause = gtfs_realtime_pb2.Alert.Cause
 _Effect = gtfs_realtime_pb2.Alert.Effect
 
 
-def _parse(feed_bytes: bytes, metro_trip_ids: set) -> Tuple[Dict[str, dict], Dict[str, Set[str]]]:
-    """(trip updates, cancellations) for metro trips in the feed.
+def _parse(feed_bytes: bytes, metro_trip_ids: set) -> Tuple[Dict[str, dict], Dict[str, Set[str]], int]:
+    """(trip updates, cancellations, feed timestamp) for metro trips in the feed.
 
     OVapi keeps cancelled runs in the feed (measured: ~90% of metro entries are
     CANCELED, mostly the previous service day's) — they must not count as live
@@ -104,7 +130,7 @@ def _parse(feed_bytes: bytes, metro_trip_ids: set) -> Tuple[Dict[str, dict], Dic
                 "stops": stops,
                 "ts": tu.timestamp or feed.header.timestamp,
             }
-    return updates, cancelled
+    return updates, cancelled, feed.header.timestamp
 
 
 def _parse_vehicles(feed_bytes: bytes, metro_trip_ids: set) -> Dict[str, dict]:
@@ -241,7 +267,8 @@ def _trip_updates_error(e: str) -> None:
 
 
 def _apply_trip_updates(result) -> None:
-    state.trip_updates, state.cancelled = result
+    state.trip_updates, state.cancelled, feed_ts = result
+    state.feed_ts = feed_ts or None
     logger.info(
         "RT poll ok: %d metro trip updates, %d cancelled",
         len(state.trip_updates), len(state.cancelled),

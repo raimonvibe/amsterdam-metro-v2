@@ -86,4 +86,8 @@ export const nl = {
   textVersion: "Tekstversie: vertrektijden en lijnen",
   followTrain: (line: string, to: string) => `Volg metro ${line} naar ${to} op de kaart`,
   alertAnnounce: (lines: string, text: string) => `Melding ${lines}: ${text}`,
+  planned: "gepland",
+  plannedSr: "volgens dienstregeling, geen live signaal",
+  timesLiveNote: "Tijden zijn live, tenzij ‘gepland’.",
+  liveDown: "Live gegevens tijdelijk niet beschikbaar: alle tijden volgens dienstregeling.",
 } as const;

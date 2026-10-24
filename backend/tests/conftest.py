@@ -7,6 +7,7 @@ B is the transfer station. All runs are on one service date, 2026-10-22,
 and NOW is 12:00 Amsterdam time on that day.
 """
 import logging
+import time
 from datetime import datetime
 
 import pytest
@@ -88,7 +89,10 @@ def metro(subset):
 
 @pytest.fixture
 def rt():
-    return RealtimeState()
+    # A feed polled just now: trip updates set by a test count as live.
+    state = RealtimeState()
+    state.last_success_ts = int(time.time())
+    return state
 
 
 def hhmm(ts: float) -> str:
