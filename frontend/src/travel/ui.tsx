@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useTravelT } from "./strings";
+import { onColor } from "../contrast";
 
 /** Shared building blocks of the travel-info page. */
 
@@ -7,10 +8,10 @@ export function LineBadge({ id, color, small = false }: { id: string; color: str
   const txt = useTravelT();
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded font-bold tabular-nums text-gray-950 ${
-        small ? "h-4 min-w-6 px-1 text-[10px]" : "h-5 min-w-7 px-1 text-[11px]"
+      className={`inline-flex shrink-0 items-center justify-center rounded font-bold tabular-nums ${
+        small ? "h-4 min-w-6 px-1 text-[11px]" : "h-5 min-w-7 px-1 text-[11px]"
       }`}
-      style={{ backgroundColor: color }}
+      style={{ backgroundColor: color, color: onColor(color) }}
       aria-label={txt.lineAria(id)}
     >
       {id}

@@ -32,7 +32,7 @@ export function NetworkStatus({ lines, trains, status, onLine, alerts = [] }: Ne
       </dl>
       <table className="mt-2.5 w-full text-xs">
         <thead>
-          <tr className="smallcaps text-left text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
+          <tr className="smallcaps text-left text-[11px] text-[#6b6455] dark:text-[#8b93a7]">
             <th className="pb-1 font-semibold">{txt.lineCol}</th>
             <th className="pb-1 text-right font-semibold">{txt.trainsCol}</th>
             <th className="pb-1 pl-2 font-semibold">{txt.punctuality}</th>
@@ -54,7 +54,7 @@ export function NetworkStatus({ lines, trains, status, onLine, alerts = [] }: Ne
                 <td className="py-1 text-right tabular-nums">{h.trains}</td>
                 <td className="py-1 pl-2">
                   {pct == null ? (
-                    <span className="text-[#9a9384]">{txt.noLiveData}</span>
+                    <span className="text-[#6b6455] dark:text-[#8b93a7]">{txt.noLiveData}</span>
                   ) : (
                     <span className="flex items-center gap-1.5">
                       <span className="h-1.5 flex-1 overflow-hidden rounded bg-[#efe8d8] dark:bg-[#1c2436]" aria-hidden>
@@ -75,7 +75,7 @@ export function NetworkStatus({ lines, trains, status, onLine, alerts = [] }: Ne
           })}
         </tbody>
       </table>
-      <p className="mt-2 text-[10px] leading-snug text-[#7a7262] dark:text-[#8b93a7]">
+      <p className="mt-2 text-[11px] leading-snug text-[#6b6455] dark:text-[#8b93a7]">
         {txt.punctualityNote}
       </p>
     </Section>
@@ -86,7 +86,7 @@ function Stat({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded bg-[#f6f1e4] py-1.5 dark:bg-[#151c2e]">
       <dd className="font-academic text-lg font-semibold tabular-nums leading-none">{value}</dd>
-      <dt className="smallcaps mt-0.5 text-[10px] text-[#7a7262] dark:text-[#8b93a7]">{label}</dt>
+      <dt className="smallcaps mt-0.5 text-[11px] text-[#6b6455] dark:text-[#8b93a7]">{label}</dt>
     </div>
   );
 }

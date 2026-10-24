@@ -325,7 +325,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
             <StationClock nowMs={nowMs} className="h-9 w-9 shrink-0 sm:h-11 sm:w-11" />
             <div className="hidden text-right leading-tight sm:block">
               <div className="font-academic text-lg font-semibold tabular-nums"><Num>{clockWithSeconds(nowMs)}</Num></div>
-              <div className="flex items-center justify-end gap-1 text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
+              <div className="flex items-center justify-end gap-1 text-[11px] text-[#6b6455] dark:text-[#8b93a7]">
                 <span className={`h-1.5 w-1.5 rounded-full ${status?.is_live ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`} aria-hidden />
                 {status?.is_live ? txt.liveData : txt.scheduleData} · {txt.amsterdamTime}
               </div>
@@ -516,7 +516,7 @@ function Legend() {
         </li>
         <li>
           <span className="font-semibold text-amber-700 dark:text-amber-400"><Num>+2 min</Num></span> {txt.legendDelay} ·{" "}
-          <span className="text-[#9a9384] line-through"><Num>12:03</Num></span> {txt.legendPlanned}
+          <span className="text-[#6b6455] dark:text-[#8b93a7] line-through"><Num>12:03</Num></span> {txt.legendPlanned}
         </li>
         <li>
           <span className="font-semibold text-[#b42335] dark:text-[#f08a9b]">{txt.cancelled}</span> {txt.legendCancelled}
@@ -545,7 +545,7 @@ function HelpPanel(props: { shortcuts: boolean; onShortcuts: (on: boolean) => vo
             <kbd className="rounded border border-[#cfc4ad] bg-white px-1 font-sans dark:border-[#33405c] dark:bg-[#0d1322]">{k}</kbd> {v}
           </span>
         ))}
-        <span className="text-[#7a7262] dark:text-[#8b93a7]">{txt.searchHint}</span>
+        <span className="text-[#6b6455] dark:text-[#8b93a7]">{txt.searchHint}</span>
         <label className="flex cursor-pointer items-center gap-1.5">
           <input
             type="checkbox"

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Map, useControl, AttributionControl } from "react-map-gl/maplibre";
+import { Map, useControl, AttributionControl, NavigationControl } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import { MapboxOverlay, MapboxOverlayProps } from "@deck.gl/mapbox";
 import { IconLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
@@ -20,7 +20,26 @@ import { MAP_THEME, Theme } from "../theme";
 import { ChurchMarkers } from "./ChurchMarkers";
 import { TrainPopup } from "./TrainPopup";
 import { getWebGLStatus } from "../webgl";
-import { useT } from "../i18n";
+import { useLang, useT, type Lang } from "../i18n";
+import { useReducedMotion } from "../hooks/useReducedMotion";
+
+/** MapLibre's own control labels, which it otherwise only has in English. */
+const MAP_LOCALE: Record<Lang, Record<string, string>> = {
+  nl: {
+    "NavigationControl.ZoomIn": "Inzoomen",
+    "NavigationControl.ZoomOut": "Uitzoomen",
+    "NavigationControl.ResetBearing": "Kaart recht zetten (noord boven)",
+    "AttributionControl.ToggleAttribution": "Bronvermelding tonen",
+    "Map.Title": "Interactieve kaart met live metro's",
+  },
+  en: {
+    "NavigationControl.ZoomIn": "Zoom in",
+    "NavigationControl.ZoomOut": "Zoom out",
+    "NavigationControl.ResetBearing": "Reset map to north",
+    "AttributionControl.ToggleAttribution": "Toggle attribution",
+    "Map.Title": "Interactive map with live trains",
+  },
+};
 import "maplibre-gl/dist/maplibre-gl.css";
 
 // deck.gl attached as a maplibre overlay control: shares the map camera, so
@@ -43,6 +62,9 @@ interface MetroMapProps {
   /** Basemap background of the incoming style: the colour a style switch fades through. */
   backdropColor: string;
   followedTrainId: string | null;
+  /** Keep the followed train's card open on any device: it was picked from a
+   *  list, so no hover will bring the card up. */
+  showFollowedCard?: boolean;
   onStationHover: (station: Station | null) => void;
   onTrainClick: (train: AnimatedTrain) => void;
   onStationClick: (station: Station) => void;
@@ -127,6 +149,8 @@ const SCHEDULE_ONLY_ALPHA = 0.45;
 const DELAY_PULSE_MS = 1800;
 const DELAY_PULSE_DEPTH = 0.3;
 const TRAIL_SECONDS = 40;
+/** Trail length with "reduce motion" on: a short tick of direction, not a streak. */
+const TRAIL_SECONDS_REDUCED = 8;
 const TRAIL_SAMPLE_MS = 200;
 /**
  * Trails are sampled by distance travelled, not by the clock. On a fixed timer
@@ -351,6 +375,7 @@ export function MetroMap({
   styleUrl: targetStyleUrl,
   backdropColor,
   followedTrainId,
+  showFollowedCard = false,
   onStationHover,
   onTrainClick,
   onStationClick,
@@ -360,6 +385,12 @@ export function MetroMap({
   paused = false,
 }: MetroMapProps) {
   const txt = useT();
+  const lang = useLang();
+  // "Reduce motion": no camera flights, no pulsing, short trails. The trains
+  // still move: where they are is the content of the map.
+  const reduceMotion = useReducedMotion();
+  const reduceMotionRef = useRef(reduceMotion);
+  reduceMotionRef.current = reduceMotion;
   const mapRef = useRef<MapRef>(null);
   const deckPickRef = useRef(false);
   /** Per-line canonical lane (longest shape → offset). Shared by tracks + trains. */
@@ -519,11 +550,38 @@ export function MetroMap({
     });
   }, []);
 
+  // Screen readers: one named, focusable map (MapLibre's canvas, which takes
+  // arrow keys and +/-), in the page's language. deck.gl's overlay canvases
+  // are drawing surfaces only: no name, nothing to do there, so no Tab stop.
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!map || !mapReady) return;
+    // MapLibre puts its own "Map" label back, and deck.gl adds its canvases
+    // after load: re-apply whenever the map settles. Attribute writes only.
+    const apply = () => {
+      const own = map.getCanvas();
+      if (own.getAttribute("aria-label") !== txt.mapLabel) own.setAttribute("aria-label", txt.mapLabel);
+      map.getContainer().querySelectorAll("canvas").forEach((c) => {
+        if (c === own || c.getAttribute("tabindex") === "-1") return;
+        c.setAttribute("tabindex", "-1");
+        c.setAttribute("aria-hidden", "true");
+      });
+    };
+    apply();
+    map.on("idle", apply);
+    return () => {
+      map.off("idle", apply);
+    };
+  }, [mapReady, txt]);
+
   useEffect(() => {
     const map = mapRef.current?.getMap();
     if (!map || !mapReady || !focusStation) return;
     const { longitude, latitude } = focusStation.station;
-    map.flyTo({ center: [longitude, latitude], zoom: Math.max(map.getZoom(), 15.2), pitch: 50, duration: 1800, essential: true });
+    const view = { center: [longitude, latitude] as [number, number], zoom: Math.max(map.getZoom(), 15.2), pitch: 50 };
+    // `essential` flights ignore the OS setting inside MapLibre, so honour it here.
+    if (reduceMotionRef.current) map.jumpTo(view);
+    else map.flyTo({ ...view, duration: 1800, essential: true });
   }, [focusStation, mapReady]);
 
   const handleLoad = useCallback(() => {
@@ -534,8 +592,13 @@ export function MetroMap({
     addBuildings();
     if (!introDone.current) {
       introDone.current = true;
-      map.flyTo({ ...INTRO_END, duration: 3200, essential: true });
-      map.once("moveend", () => setZoom(map.getZoom()));
+      if (reduceMotionRef.current) {
+        map.jumpTo(INTRO_END);
+        setZoom(map.getZoom());
+      } else {
+        map.flyTo({ ...INTRO_END, duration: 3200, essential: true });
+        map.once("moveend", () => setZoom(map.getZoom()));
+      }
     }
   }, [addBuildings]);
 
@@ -617,6 +680,7 @@ export function MetroMap({
   // Fading motion trails: record each train's head position every
   // TRAIL_MIN_STEP_M of track it covers (see the constant for why not by clock)
   const trailNow = (nowMs - TRAIL_EPOCH_MS) / 1000;
+  const trailSeconds = reduceMotion ? TRAIL_SECONDS_REDUCED : TRAIL_SECONDS;
   if (nowMs - lastSampleRef.current > TRAIL_SAMPLE_MS) {
     // Frames stopped (background tab): every trail's last sample is stale.
     if (lastSampleRef.current && nowMs - lastSampleRef.current > TRAIL_MAX_GAP_MS) {
@@ -646,7 +710,7 @@ export function MetroMap({
         trail.path.push(tr.path[tr.path.length - 1]);
         trail.timestamps.push(nowS);
       }
-      while (trail.timestamps.length && trail.timestamps[0] < nowS - TRAIL_SECONDS) {
+      while (trail.timestamps.length && trail.timestamps[0] < nowS - trailSeconds) {
         trail.path.shift();
         trail.timestamps.shift();
       }
@@ -812,11 +876,12 @@ export function MetroMap({
   // Rides the same ~30fps clock as the dead-reckoned movement: `positioned` is
   // a fresh array every frame, so deck.gl re-runs the colour accessor anyway
   // and the pulse costs nothing beyond this one sine.
+  // With reduced motion a delayed train glows steadily brighter instead of pulsing.
   const delayedAlpha = Math.min(
     255,
     Math.round(
       t.trainGlowAlpha *
-        (1 + DELAY_PULSE_DEPTH * Math.sin((nowMs / DELAY_PULSE_MS) * 2 * Math.PI)),
+        (1 + DELAY_PULSE_DEPTH * (reduceMotion ? 1 : Math.sin((nowMs / DELAY_PULSE_MS) * 2 * Math.PI))),
     ),
   );
 
@@ -904,7 +969,7 @@ export function MetroMap({
       getColor: (d: Trail) =>
         [...(trainColor[d.line] ?? [255, 255, 255]), t.trailCoreAlpha] as [number, number, number, number],
       currentTime: trailNow,
-      trailLength: TRAIL_SECONDS,
+      trailLength: trailSeconds,
       fadeTrail: true,
       getWidth: 14,
       widthMinPixels: 3,
@@ -1066,7 +1131,7 @@ export function MetroMap({
   }, [hoverLeft]);
   const popupTrain =
     (!hoverLeft && hoveredTrain) ||
-    (NO_HOVER && followedTrainId ? positioned.find((tr) => tr.id === followedTrainId) : undefined);
+    ((NO_HOVER || showFollowedCard) && followedTrainId ? positioned.find((tr) => tr.id === followedTrainId) : undefined);
   const popupScreen = popupTrain && map ? map.project(popupTrain.center) : null;
 
   if (webglError) {
@@ -1096,6 +1161,7 @@ export function MetroMap({
         attributionControl={false}
         style={{ width: "100%", height: "100%" }}
         maxPitch={72}
+        locale={MAP_LOCALE[lang]}
         onLoad={handleLoad}
         onMove={(e) => setZoom(e.viewState.zoom)}
         onMoveEnd={(e) => setZoom(e.viewState.zoom)}
@@ -1109,6 +1175,9 @@ export function MetroMap({
         onError={(e) => setWebglError(e.error?.message ?? "WebGL2 map failed to start")}
       >
         <AttributionControl compact />
+        {/* Click alternatives to dragging (WCAG 2.5.7): zoom, and a compass
+            that resets rotation and tilt. */}
+        <NavigationControl position="bottom-right" visualizePitch />
         <DeckGLOverlay
           layers={layers}
           pickingRadius={12}
@@ -1128,7 +1197,7 @@ export function MetroMap({
           y={popupScreen.y}
           containerWidth={map?.getContainer().clientWidth ?? 0}
           nowMs={nowMs}
-          onClose={NO_HOVER && popupTrain.id === followedTrainId ? onStopFollow : undefined}
+          onClose={(NO_HOVER || showFollowedCard) && popupTrain.id === followedTrainId ? onStopFollow : undefined}
         />
       )}
       <div

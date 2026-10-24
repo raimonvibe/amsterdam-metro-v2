@@ -15,6 +15,7 @@ Built in the spirit of [londonunderground.live](https://www.londonunderground.li
 - 🏙️ **3D buildings** rendered from vector tiles, with an orbitable, pitchable camera (right-drag to spin around the city)
 - ✅ **Confirmed stops**: where the signalling system reports a train at or heading to a station, that bounds its position; trains known only from the timetable are drawn fainter
 - ⚠️ **GVB service messages** for the metro on the map, the station cards and the travel page, in Dutch or English
+- ♿ **Accessible** (aiming at WCAG 2.2 AA): a text-version link as the first Tab stop, a station picker that needs no map, trains followable from the departure list, zoom and compass buttons instead of dragging, respect for "reduce motion", and spoken service messages
 - 🌐 **Dutch and English**, switchable from the menu and the travel page header
 - ⏱️ **Live delays** — see which trains are running late, straight from the same feed GVB itself uses
 - 🚉 **Click a station** for a live departure board — next 8 trains, headsign, and countdown — with a link to its full travel info

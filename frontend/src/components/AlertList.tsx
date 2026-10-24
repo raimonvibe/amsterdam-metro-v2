@@ -1,7 +1,9 @@
+import { useEffect, useRef, useState } from "react";
 import { TriangleAlert } from "lucide-react";
 import { locale, pick, useLang, useT } from "../i18n";
 import { ServiceAlert } from "../types";
 import { Place } from "./Place";
+import { onColor } from "../contrast";
 
 /** Messages that concern a station: about the station itself, or about a
  *  whole line that calls there. */
@@ -15,7 +17,34 @@ export function alertsFor(alerts: ServiceAlert[], station: { name: string; lines
 
 /** Line-wide messages: the ones that change what a rider can expect anywhere. */
 export function lineWide(alerts: ServiceAlert[]): ServiceAlert[] {
-  return alerts.filter((a) => !a.stations.length);
+  return alerts.filter((a) => !a.stations.length || a.whole_line);
+}
+
+/**
+ * Reads each new line-wide message to screen readers once (WCAG 4.1.3), in
+ * a polite live region: it waits for the reader to finish, and a refresh
+ * that brings nothing new says nothing.
+ */
+export function AlertAnnouncer({ alerts }: { alerts: ServiceAlert[] }) {
+  const txt = useT();
+  const lang = useLang();
+  const announced = useRef(new Set<string>());
+  const [text, setText] = useState("");
+  useEffect(() => {
+    const fresh = lineWide(alerts).filter((a) => !announced.current.has(a.id));
+    if (!fresh.length) return;
+    fresh.forEach((a) => announced.current.add(a.id));
+    setText(
+      fresh
+        .map((a) => txt.alertAnnounce(a.lines.map((l) => `${txt.line.toLowerCase()} ${l}`).join(", "), pick(a.header, lang)))
+        .join(". "),
+    );
+  }, [alerts, txt, lang]);
+  return (
+    <div className="sr-only" role="status" aria-live="polite">
+      {text}
+    </div>
+  );
 }
 
 export interface AlertListProps {
@@ -64,8 +93,8 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
                 {a.lines.map((l) => (
                   <span
                     key={l}
-                    className="inline-flex h-4 min-w-6 items-center justify-center rounded px-1 text-[10px] font-bold text-gray-950"
-                    style={{ backgroundColor: colorOf(l) }}
+                    className="inline-flex h-4 min-w-6 items-center justify-center rounded px-1 text-[11px] font-bold"
+                    style={{ backgroundColor: colorOf(l), color: onColor(colorOf(l)) }}
                     translate="no"
                   >
                     {l}
@@ -75,7 +104,7 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
                   // A whole-line message lists its stations on wide screens;
                   // on a phone that list is long, so the label stands in for it.
                   <span
-                    className={`text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300 ${
+                    className={`text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300 ${
                       a.stations.length ? "sm:hidden" : ""
                     }`}
                   >
@@ -83,7 +112,7 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
                   </span>
                 )}
                 {a.end_ts && (
-                  <span className="text-[10px] text-amber-700 dark:text-amber-300">
+                  <span className="text-[11px] text-amber-700 dark:text-amber-300">
                     {txt.alertUntil(hm.format(new Date(a.end_ts * 1000)))}
                   </span>
                 )}

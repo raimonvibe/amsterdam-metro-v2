@@ -187,20 +187,20 @@ export function SearchBox({
             compact ? "h-9 text-sm" : "h-10 text-[15px]"
           }`}
         >
-          <Search size={compact ? 14 : 16} className="shrink-0 text-[#8a8170] dark:text-[#8b93a7]" aria-hidden />
+          <Search size={compact ? 14 : 16} className="shrink-0 text-[#6b6455] dark:text-[#8b93a7]" aria-hidden />
           {value ? (
             <span className="min-w-0 flex-1 truncate font-semibold text-[#1d2433] dark:text-[#ece6d6]">
               <Place name={value} />
             </span>
           ) : (
-            <span className="min-w-0 flex-1 truncate text-[#8a8170] dark:text-[#8b93a7]">{shownPlaceholder}</span>
+            <span className="min-w-0 flex-1 truncate text-[#6b6455] dark:text-[#8b93a7]">{shownPlaceholder}</span>
           )}
           <ChevronDown size={16} className="shrink-0 text-[#6b6455] dark:text-[#9aa2b5]" aria-hidden />
         </button>
         {open && (
           <PickerSheet label={label} onClose={closeSheet}>
             <div className="relative px-3 pb-2">
-              <Search size={16} className="pointer-events-none absolute left-6 top-5 -translate-y-1/2 text-[#8a8170] dark:text-[#8b93a7]" aria-hidden />
+              <Search size={16} className="pointer-events-none absolute left-6 top-5 -translate-y-1/2 text-[#6b6455] dark:text-[#8b93a7]" aria-hidden />
               <input
                 ref={inputRef}
                 type="search"
@@ -218,7 +218,7 @@ export function SearchBox({
                 }}
                 onKeyDown={onKeyDown}
                 // 16px or more, so iOS does not zoom in on focus.
-                className="h-10 w-full rounded-md border border-[#cfc4ad] bg-white pl-9 pr-2 text-base text-[#1d2433] outline-none placeholder:text-[#8a8170] focus:border-[#1f3a68] focus:ring-2 focus:ring-[#1f3a68]/25 dark:border-[#33405c] dark:bg-[#0d1322] dark:text-[#ece6d6] dark:placeholder:text-[#8b93a7]"
+                className="h-10 w-full rounded-md border border-[#cfc4ad] bg-white pl-9 pr-2 text-base text-[#1d2433] outline-none placeholder:text-[#6b6455] focus:border-[#1f3a68] focus:ring-2 focus:ring-[#1f3a68]/25 dark:border-[#33405c] dark:bg-[#0d1322] dark:text-[#ece6d6] dark:placeholder:text-[#8b93a7]"
               />
             </div>
             <ul id={listId} role="listbox" aria-label={label} className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">
@@ -236,7 +236,7 @@ export function SearchBox({
         {label}
       </label>
       <div className="relative">
-        <Search size={compact ? 14 : 16} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8a8170] dark:text-[#8b93a7]" aria-hidden />
+        <Search size={compact ? 14 : 16} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6b6455] dark:text-[#8b93a7]" aria-hidden />
         <input
           id={`${id}-input`}
           ref={inputRef}
@@ -262,7 +262,7 @@ export function SearchBox({
             if (!boxRef.current?.contains(e.relatedTarget as Node | null)) setTimeout(() => setOpen(false), 120);
           }}
           onKeyDown={onKeyDown}
-          className={`w-full rounded-md border border-[#cfc4ad] bg-white pl-8 pr-9 text-[#1d2433] shadow-inner outline-none transition placeholder:text-[#8a8170] focus:border-[#1f3a68] focus:ring-2 focus:ring-[#1f3a68]/25 dark:border-[#33405c] dark:bg-[#0d1322] dark:text-[#ece6d6] dark:placeholder:text-[#8b93a7] dark:focus:border-[#c8a951] dark:focus:ring-[#c8a951]/25 ${
+          className={`w-full rounded-md border border-[#cfc4ad] bg-white pl-8 pr-9 text-[#1d2433] shadow-inner outline-none transition placeholder:text-[#6b6455] focus:border-[#1f3a68] focus:ring-2 focus:ring-[#1f3a68]/25 dark:border-[#33405c] dark:bg-[#0d1322] dark:text-[#ece6d6] dark:placeholder:text-[#8b93a7] dark:focus:border-[#c8a951] dark:focus:ring-[#c8a951]/25 ${
             compact ? "h-9 text-sm" : "h-10 text-[15px]"
           } ${value ? "placeholder:font-semibold placeholder:text-[#1d2433] dark:placeholder:text-[#ece6d6]" : ""}`}
         />
@@ -363,7 +363,7 @@ function ResultRow({ result: r, colorOf }: { result: SearchResult; colorOf: (l: 
       <>
         <LocateFixed size={15} className="shrink-0 text-[#1f3a68] dark:text-[#c8a951]" aria-hidden />
         <span className="font-medium">{txt.nearestStation}</span>
-        <span className="ml-auto text-[11px] text-[#8a8170]">{txt.viaLocation}</span>
+        <span className="ml-auto text-[11px] text-[#6b6455] dark:text-[#8b93a7]">{txt.viaLocation}</span>
       </>
     );
   }
@@ -390,7 +390,7 @@ function ResultRow({ result: r, colorOf }: { result: SearchResult; colorOf: (l: 
     <>
       <span className="min-w-0 flex-1 truncate">
         <Place name={r.station.name} />
-        {r.via && <span className="ml-1.5 text-[11px] italic text-[#8a8170] dark:text-[#8b93a7]">({r.via})</span>}
+        {r.via && <span className="ml-1.5 text-[11px] italic text-[#6b6455] dark:text-[#8b93a7]">({r.via})</span>}
       </span>
       <span className="flex shrink-0 gap-0.5">
         {r.station.lines.map((l) => (

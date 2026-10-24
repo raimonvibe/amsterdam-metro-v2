@@ -221,7 +221,7 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                 {j.legs.map((leg, k) => (
                   <li key={leg.trip_id + k} className="text-xs">
                     {k > 0 && (
-                      <div className="mb-1 italic text-[#7a7262] dark:text-[#8b93a7]">
+                      <div className="mb-1 italic text-[#6b6455] dark:text-[#8b93a7]">
                         {txt.changeAt} <Place name={leg.from} /> · <Num>{duration(leg.departure_ts - j.legs[k - 1].arrival_ts)}</Num> {txt.wait}
                       </div>
                     )}
@@ -236,7 +236,7 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                         <Num>{clock(leg.departure_ts)}</Num> → <Place name={leg.to} /> <Num>{clock(leg.arrival_ts)}</Num>
                       </span>
                     </div>
-                    <div className="pl-8 text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
+                    <div className="pl-8 text-[11px] text-[#6b6455] dark:text-[#8b93a7]">
                       {txt.towards} <Place name={leg.headsign} /> · {txt.stops(leg.stops)}
                       {leg.realtime ? <> · <Num>{delayLabel(leg.delay_s)}</Num></> : ` · ${txt.scheduleShort}`}
                     </div>
