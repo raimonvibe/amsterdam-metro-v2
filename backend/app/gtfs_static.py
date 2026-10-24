@@ -416,7 +416,14 @@ def load_subset(force_refresh: bool = False) -> dict:
 
 @lru_cache(maxsize=64)
 def service_date_epoch(date_yyyymmdd: str) -> int:
-    """Epoch of midnight (local) for a GTFS service date; GTFS times are
-    seconds relative to this (and can exceed 24h)."""
-    d = datetime.strptime(date_yyyymmdd, "%Y%m%d").replace(tzinfo=TZ)
-    return int(d.timestamp())
+    """Epoch that GTFS times for a service date count from (they can exceed 24h).
+
+    The GTFS reference defines it as "noon minus 12h" local time, not
+    midnight. The two differ on the days the clocks change: local midnight
+    sat an hour off, so on the last Sunday of October every timetable time
+    came out an hour early (and an hour late on the last Sunday of March).
+    Noon is never near a change, so noon local minus 12 hours of elapsed
+    time is right on every day, from the time-zone rules alone.
+    """
+    noon = datetime.strptime(date_yyyymmdd, "%Y%m%d").replace(hour=12, tzinfo=TZ)
+    return int(noon.timestamp()) - 12 * 3600

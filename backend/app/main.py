@@ -61,9 +61,10 @@ STREAM_RETRY_MS = 3000
 # anyone could open connections until the instance runs out of memory or file
 # descriptors. Far above real traffic for this app.
 STREAM_MAX_CLIENTS = 500
-# Streams per visitor (one IP address). Generous, since a school or office
-# shares one address, but one script can no longer take every slot.
-STREAM_MAX_PER_CLIENT = 20
+# Streams per visitor (one IP address). Generous: a school, an office or a
+# mobile network (carrier-grade NAT puts many strangers behind one address)
+# shares it. 100 still keeps one script from taking all 500 slots.
+STREAM_MAX_PER_CLIENT = 100
 # Computed endpoints (departures, station, journey, alerts): per visitor, a
 # burst of 60 and 2 per second after that. One open travel page uses about
 # 10 a minute; this only stops scripts.
