@@ -1,0 +1,11 @@
+# Direct dependencies, as ranges. Edit this file, then regenerate the pinned
+# requirements.txt (see its header). Render and CI install requirements.txt.
+fastapi>=0.156.5
+uvicorn[standard]>=0.54.0
+httpx>=0.28.1
+idna>=3.20
+certifi>=2026.10.19
+anyio>=4.15.1
+gtfs-realtime-bindings>=3.0.0
+protobuf>=7.36.2
+tzdata>=2026.5

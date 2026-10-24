@@ -116,7 +116,7 @@ Local dev: leave unset → allows all origins.
 | **Region** | Frankfurt (closest to Amsterdam) |
 | **Root directory** | `backend` |
 | **Runtime** | Python 3 |
-| **Build command** | `pip install -r requirements.txt` |
+| **Build command** | `pip install -r requirements.txt` (exact pins; ranges in `requirements.in`) |
 | **Start command** | `uvicorn app.main:app --host 0.0.0.0 --port $PORT --no-access-log --timeout-graceful-shutdown 5` |
 | **Health check path** | `/healthz` |
 
@@ -159,7 +159,7 @@ curl https://api.amsterdammetro.nl/api/status
 |---|---|
 | **Name** | `amsterdam-metro` |
 | **Root directory** | `frontend` |
-| **Build command** | `npm install && npm run build` |
+| **Build command** | `npm ci && npm run build` |
 | **Publish directory** | `dist` |
 
 ### Environment variables (build time)

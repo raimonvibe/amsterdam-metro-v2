@@ -9,6 +9,7 @@ on:
       - frontend/package.json
       - frontend/package-lock.json
       - backend/requirements.txt
+      - backend/requirements.in
   schedule:
     # Every Saturday 06:00 UTC (08:00 in the Netherlands in summer).
     - cron: "0 6 * * 6"
