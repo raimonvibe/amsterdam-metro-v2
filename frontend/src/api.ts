@@ -4,8 +4,21 @@ import { BoardDeparture, Journey, NetworkLine, StationInfo } from "./travel/type
 /** Empty in local dev → relative /api/... (Vite proxy). Set on Render build. */
 export const API_BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
+/**
+ * The API asked to slow down (429). Not a connection problem: many people
+ * can share one internet address (mobile networks), and their requests count
+ * together. Callers keep what they show and fetch again on their next poll.
+ */
+export class SlowDown extends Error {
+  constructor(readonly retryAfterS: number) {
+    super(`API rate limit; retry after ${retryAfterS}s`);
+    this.name = "SlowDown";
+  }
+}
+
 async function request(path: string): Promise<Response> {
   const res = await fetch(`${API_BASE}/api${path}`);
+  if (res.status === 429) throw new SlowDown(Number(res.headers.get("Retry-After")) || 1);
   if (!res.ok) throw new Error(`GET /api${path} -> ${res.status}`);
   return res;
 }

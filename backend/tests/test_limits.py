@@ -125,3 +125,13 @@ def test_stream_refuses_a_visitor_over_the_cap(client, monkeypatch):
     monkeypatch.setattr(main, "stream_clients", full)
     r = client.get("/api/trains/stream")
     assert r.status_code == 429 and r.headers["retry-after"] == "30"
+
+
+def test_rate_limit_fits_a_shared_address():
+    # ~100 people behind one address (mobile network), each with an open
+    # travel page at ~10 requests a minute, must not be throttled; the
+    # stream cap is sized for the same 100.
+    people, per_minute = 100, 10
+    assert main.RATE_PER_SECOND * 60 >= people * per_minute
+    assert main.RATE_BURST >= people * 3  # everyone opening the page at once
+    assert main.STREAM_MAX_PER_CLIENT >= people
