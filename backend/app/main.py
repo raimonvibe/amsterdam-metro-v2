@@ -167,7 +167,7 @@ def _solve_snapshot(data: StaticData, seq: int) -> Snapshot:
         static_loaded=True,
         static_age_hours=(now - data.metro.subset["generated_ts"]) / 3600,
         rt_last_success_ts=rt.last_success_ts,
-        rt_trip_count=len(rt.trip_updates),
+        rt_trip_count=len(rt.live_updates()),
         active_trains=len(trains),
         is_live=rt.is_live,
     )

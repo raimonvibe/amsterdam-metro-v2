@@ -238,7 +238,7 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                     </div>
                     <div className="pl-8 text-[11px] text-[#6b6455] dark:text-[#8b93a7]">
                       {txt.towards} <Place name={leg.headsign} /> · {txt.stops(leg.stops)}
-                      {leg.realtime ? <> · <Num>{delayLabel(leg.delay_s)}</Num></> : ` · ${txt.scheduleShort}`}
+                      {leg.realtime ? <> · <Num>{delayLabel(leg.delay_s)}</Num></> : <> · <span aria-hidden>{txt.planned}</span><span className="sr-only">{txt.plannedSr}</span></>}
                     </div>
                   </li>
                 ))}

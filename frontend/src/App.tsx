@@ -282,6 +282,7 @@ export default function App() {
             lines={lines}
             alerts={alerts}
             followable={new Set(trains.map((t) => t.id))}
+            live={status?.is_live !== false}
             onFollow={(id) => {
               setFollowedFromList(true);
               setFollowedTrainId(id);

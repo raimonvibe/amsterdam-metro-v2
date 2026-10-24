@@ -3,6 +3,7 @@
 Trip 50f0 in the synthetic network: at A 12:00, B 12:03-12:03:30, C 12:06:30,
 1000m apart. NOW is 12:00.
 """
+import time
 from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
@@ -182,6 +183,37 @@ def test_report_for_a_stop_off_the_trip_is_ignored(metro, rt):
     _seen(rt, "D52f", "at", NOW + 225)
     tr = _train(metro, rt, NOW + 230)
     assert tr.confidence == "schedule" and tr.status == "moving"
+
+
+def _delayed(rt):
+    rt.trip_updates["50f0"] = {"stops": {1: {"arr": None, "dep": None, "delay": 120, "skipped": False}}, "ts": NOW}
+
+
+def test_stale_feed_falls_back_to_the_timetable(metro, rt):
+    _delayed(rt)
+    live = next(d for d in metro.departures("A", rt, now=NOW) if d["trip_id"] == "50f0")
+    assert live["realtime"] and live["delay_s"] == 120
+    # OVapi stopped answering 4 minutes ago: the old prediction is a guess now.
+    rt.last_success_ts = int(time.time()) - 240
+    stale = next(d for d in metro.departures("A", rt, now=NOW) if d["trip_id"] == "50f0")
+    assert not stale["realtime"] and stale["delay_s"] == 0
+    assert not _train(metro, rt, NOW + 60).realtime
+
+
+def test_feed_whose_own_clock_stopped_is_stale_too(metro, rt):
+    # Polls succeed (304s), but the feed content has not moved for 4 minutes.
+    _delayed(rt)
+    rt.feed_ts = int(time.time()) - 240
+    assert not rt.is_live and rt.live_updates() == {}
+    rt.feed_ts = int(time.time()) - 45
+    assert rt.is_live and "50f0" in rt.live_updates()
+
+
+def test_known_cancellations_survive_a_stale_feed(metro, rt):
+    from tests.conftest import DATE
+    rt.cancelled["50f0"] = {DATE}
+    rt.last_success_ts = int(time.time()) - 240
+    assert all(d["trip_id"] != "50f0" for d in metro.departures("A", rt, now=NOW))
 
 
 def test_estimate_never_wraps_to_the_far_terminus():

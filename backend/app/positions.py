@@ -390,9 +390,10 @@ class MetroData:
         # RT overrides carry absolute times, so the same trip can produce
         # identical entries for each of its service dates — dedupe on the run.
         seen: set = set()
+        updates = rt.live_updates()
         for trip_id in self._trips_by_station.get(station_name, ()):
             t = self.trips[trip_id]
-            rt_trip = rt.trip_updates.get(trip_id)
+            rt_trip = updates.get(trip_id)
             rt_stops = rt_trip["stops"] if rt_trip else {}
             for date in self.service_dates.get(t["service_id"], []):
                 if not self._may_run(t, date, now, horizon):
@@ -433,12 +434,13 @@ class MetroData:
     def trains(self, rt: RealtimeState, now: Optional[float] = None) -> List[TrainOut]:
         now = now or time.time()
         out: List[TrainOut] = []
+        updates = rt.live_updates()
         for trip_id, t in self.trips.items():
             dates = sorted(
                 self.service_dates.get(t["service_id"], []),
                 reverse=True,
             )
-            rt_trip = rt.trip_updates.get(trip_id)
+            rt_trip = updates.get(trip_id)
             for date in dates:
                 if not self._may_run(t, date, now, now) or rt.is_cancelled(trip_id, date):
                     continue

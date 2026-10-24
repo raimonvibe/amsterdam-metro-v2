@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Keyboard, Moon, Sun } from "lucide-react";
+import { ArrowLeft, Clock, Keyboard, Moon, Sun } from "lucide-react";
 import { fetchNetwork } from "../api";
 import { formatPlaceName, fullPlaceName } from "../format";
 import { Theme } from "../theme";
@@ -425,6 +425,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
                 onStation={selectStation}
                 routeLeg={boardLeg}
                 alerts={alerts}
+                live={status?.is_live !== false}
               />
             ) : (
               <Section n={2} title={txt.board}>
@@ -512,7 +513,7 @@ function Legend() {
           <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> {txt.legendLive}
         </li>
         <li className="flex items-center gap-1.5">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#b8ae99]" /> {txt.legendSchedule}
+          <span className="flex items-center gap-0.5 font-medium"><Clock size={11} aria-hidden /> {txt.planned}</span> {txt.legendPlannedTag}
         </li>
         <li>
           <span className="font-semibold text-amber-700 dark:text-amber-400"><Num>+2 min</Num></span> {txt.legendDelay} ·{" "}
