@@ -3,6 +3,7 @@ import { join } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { ROUTE_PAGES, routeHtml } from "./src/seo/routeHtml";
+import { securityHeaders } from "./src/securityHeaders";
 
 /** After the build, write dist/reisinfo/index.html and dist/privacy/index.html:
  *  copies of the entry page whose head already names that page, for crawlers
@@ -40,6 +41,11 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  // `npm run preview` serves the production build with the live site's
+  // security headers, so CSP problems show up before a deploy.
+  preview: {
+    headers: securityHeaders(process.env.VITE_API_URL ?? "https://api.amsterdammetro.nl"),
   },
   build: {
     // MapLibre and deck.gl are ~1.7MB of the bundle and only change on a
