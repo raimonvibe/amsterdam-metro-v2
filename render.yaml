@@ -8,6 +8,7 @@ services:
     runtime: python
     plan: starter
     rootDir: backend
+    # requirements.txt pins every package (audit M3); ranges are in requirements.in.
     buildCommand: pip install -r requirements.txt
     # No per-request access log: on a 0.5-CPU instance formatting those lines
     # is measurable overhead. --timeout-graceful-shutdown: uvicorn otherwise
@@ -26,7 +27,9 @@ services:
     name: amsterdam-metro
     runtime: static
     rootDir: frontend
-    buildCommand: npm install && npm run build
+    # npm ci installs exactly package-lock.json, as CI does; npm install could
+    # resolve newer versions than were tested (audit M3).
+    buildCommand: npm ci && npm run build
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
