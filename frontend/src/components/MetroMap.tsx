@@ -22,6 +22,7 @@ import { TrainPopup } from "./TrainPopup";
 import { getWebGLStatus } from "../webgl";
 import { useLang, useT, type Lang } from "../i18n";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { relabelControls } from "../mapControls";
 
 /** MapLibre's own control labels, which it otherwise only has in English. */
 const MAP_LOCALE: Record<Lang, Record<string, string>> = {
@@ -572,6 +573,9 @@ export function MetroMap({
     const apply = () => {
       const own = map.getCanvas();
       if (own.getAttribute("aria-label") !== txt.mapLabel) own.setAttribute("aria-label", txt.mapLabel);
+      // MapLibre reads `locale` once, when the map is created: after a
+      // language switch its buttons kept the old words. Relabel them here.
+      relabelControls(map.getContainer(), MAP_LOCALE[lang]);
       map.getContainer().querySelectorAll("canvas").forEach((c) => {
         if (c === own || c.getAttribute("tabindex") === "-1") return;
         c.setAttribute("tabindex", "-1");
@@ -583,7 +587,7 @@ export function MetroMap({
     return () => {
       map.off("idle", apply);
     };
-  }, [mapReady, txt]);
+  }, [mapReady, txt, lang]);
 
   useEffect(() => {
     const map = mapRef.current?.getMap();
