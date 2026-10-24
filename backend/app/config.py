@@ -31,6 +31,10 @@ ALERTS_POLL_SECONDS = 120
 _cors = os.getenv("CORS_ORIGINS", "").strip()
 CORS_ORIGINS = ["*"] if not _cors else [o.strip() for o in _cors.split(",") if o.strip()]
 
+# Interactive API docs (/docs, /redoc, /openapi.json): off unless asked for,
+# so production does not publish them. Set API_DOCS=1 locally to browse.
+API_DOCS = os.getenv("API_DOCS", "").strip().lower() in ("1", "true", "yes")
+
 # Required by OVapi technical usage policy: https://gtfs.ovapi.nl/README
 HTTP_USER_AGENT = os.getenv(
     "HTTP_USER_AGENT",

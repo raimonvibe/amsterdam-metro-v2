@@ -15,12 +15,13 @@ from fastapi.sse import format_sse_event
 
 from . import gtfs_static, realtime, travel
 from .broadcast import DROPPED, Broadcaster
-from .config import CORS_ORIGINS, GTFS_REFRESH_SECONDS
+from .config import API_DOCS, CORS_ORIGINS, GTFS_REFRESH_SECONDS
 from .gtfs_static import TZ
 from .limits import ClientCounter, RateLimiter, TTLCache, client_ip, snap_up
 from .models import StatusOut
 from .payload import Payload
 from .positions import MetroData
+from .security import SecurityHeadersMiddleware
 from .sse import HEARTBEAT, EventStream
 
 logging.basicConfig(
@@ -260,7 +261,16 @@ async def lifespan(app: FastAPI):
         task.cancel()
 
 
-app = FastAPI(title="Amsterdam Metro Live API", lifespan=lifespan)
+app = FastAPI(
+    title="Amsterdam Metro Live API",
+    lifespan=lifespan,
+    docs_url="/docs" if API_DOCS else None,
+    redoc_url="/redoc" if API_DOCS else None,
+    openapi_url="/openapi.json" if API_DOCS else None,
+)
+
+# Added first, so it runs innermost: CORS headers and errors pass through it too.
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
