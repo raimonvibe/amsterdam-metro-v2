@@ -17,6 +17,7 @@ from . import gtfs_static, realtime, travel
 from .broadcast import DROPPED, Broadcaster
 from .config import CORS_ORIGINS, GTFS_REFRESH_SECONDS
 from .gtfs_static import TZ
+from .limits import ClientCounter, RateLimiter, TTLCache, client_ip, snap_up
 from .models import StatusOut
 from .payload import Payload
 from .positions import MetroData
@@ -59,6 +60,19 @@ STREAM_RETRY_MS = 3000
 # anyone could open connections until the instance runs out of memory or file
 # descriptors. Far above real traffic for this app.
 STREAM_MAX_CLIENTS = 500
+# Streams per visitor (one IP address). Generous, since a school or office
+# shares one address, but one script can no longer take every slot.
+STREAM_MAX_PER_CLIENT = 20
+# Computed endpoints (departures, station, journey, alerts): per visitor, a
+# burst of 60 and 2 per second after that. One open travel page uses about
+# 10 a minute; this only stops scripts.
+RATE_PER_SECOND = 2.0
+RATE_BURST = 60
+# The only request values the app sends. Anything else is served from the
+# next step up, so the cache key space stays small whatever the query says.
+DEPARTURE_MINUTES_STEPS = (15, 30, 45, 60, 120, 180)
+DEPARTURE_LIMIT_STEPS = (8, 20, 60)
+JOURNEY_LIMIT_STEPS = (6, 10)
 
 
 @dataclass(frozen=True)
@@ -83,15 +97,36 @@ class Snapshot:
 
 static: Optional[StaticData] = None
 snapshot: Optional[Snapshot] = None
-_departures_cache: Dict[tuple, Tuple[float, Payload]] = {}
-_station_info_cache: Dict[str, Tuple[float, Payload]] = {}
-_journey_cache: Dict[tuple, Tuple[float, Payload]] = {}
 STATION_INFO_TTL_SECONDS = 60
 JOURNEY_TTL_SECONDS = 20
-# Journeys are keyed by station pairs (39 x 38 x limits): bounded, but drop
-# the lot now and then instead of letting expired entries accumulate.
-JOURNEY_CACHE_MAX = 2000
+# Cached answers: (rows, payload). Bounded and least-recently-used first, so
+# memory stays flat however the endpoints are called. Before, the departures
+# cache had 823,680 possible keys and never dropped one.
+# 39 stations x 6 windows x 3 limits x 2 = 1,404 departures keys in practice.
+_departures_cache: TTLCache[Tuple[list, Payload]] = TTLCache(2000)
+_station_info_cache: TTLCache[Payload] = TTLCache(200)
+# Station pairs x 2 limits: up to ~3,000, so the least used fall out.
+_journey_cache: TTLCache[Tuple[list, Payload]] = TTLCache(2000)
 broadcaster = Broadcaster(STREAM_MAX_QUEUED)
+stream_clients = ClientCounter(STREAM_MAX_PER_CLIENT)
+rate_limiter = RateLimiter(RATE_PER_SECOND, RATE_BURST)
+
+
+def _rate_limited(request: Request) -> Optional[Response]:
+    """429 with Retry-After once a visitor exceeds the computed-endpoint rate."""
+    wait = rate_limiter.check(client_ip(request))
+    if wait is None:
+        return None
+    return Response(
+        content=b'{"detail":"Too many requests"}', status_code=429, media_type="application/json",
+        headers={"Retry-After": str(wait), "Cache-Control": "no-store"},
+    )
+
+
+def _sliced(rows: list, payload: Payload, limit: int, computed_for: int) -> Payload:
+    """The cached answer, cut to the requested length when it was computed
+    for a larger step. The app asks for step values, so this is rare."""
+    return payload if limit >= computed_for else Payload.of(rows[:limit])
 
 
 def _prepare(subset: dict) -> StaticData:
@@ -327,6 +362,11 @@ async def trains_stream(request: Request):
     if len(broadcaster) >= STREAM_MAX_CLIENTS:
         logger.warning("SSE at capacity (%d streams); refusing a client", STREAM_MAX_CLIENTS)
         return Response(status_code=503, headers={"Retry-After": "30", "Cache-Control": "no-store"})
+    who = client_ip(request)
+    if not stream_clients.acquire(who):
+        # The client backs off and retries; a person with 20 tabs is unlikely.
+        logger.warning("SSE per-client cap (%d) reached; refusing a stream", STREAM_MAX_PER_CLIENT)
+        return Response(status_code=429, headers={"Retry-After": "30", "Cache-Control": "no-store"})
     resumed_from = request.headers.get("last-event-id") or request.query_params.get("lastEventId")
     if resumed_from:
         # %r and a length cap: the value is client-supplied, keep it inert in logs.
@@ -354,7 +394,11 @@ async def trains_stream(request: Request):
 
     # Same check as Payload.respond. EventSource requests always offer gzip.
     gzip = "gzip" in request.headers.get("accept-encoding", "")
-    return EventStream(events(), on_close=lambda: broadcaster.unsubscribe(queue), gzip=gzip)
+    def close() -> None:
+        broadcaster.unsubscribe(queue)
+        stream_clients.release(who)
+
+    return EventStream(events(), on_close=close, gzip=gzip)
 
 
 @app.get("/api/status")
@@ -371,6 +415,8 @@ async def network(request: Request):
 @app.get("/api/alerts")
 async def alerts(request: Request):
     """GVB service messages (KV15) for the metro that are in force now."""
+    if limited := _rate_limited(request):
+        return limited
     data = _static()
     return Payload.of(travel.alerts(data.metro, realtime.state)).respond(request, "public, max-age=60")
 
@@ -384,43 +430,52 @@ async def departures(
     cancelled: bool = Query(False),
 ):
     """Upcoming departures for a station (by grouped station name)."""
+    if limited := _rate_limited(request):
+        return limited
     data = _static()
     if station not in data.station_names:
         return Payload.of([]).respond(request, "no-store")
-    key = (station, limit, minutes, cancelled)
+    # Served from the next step up: a window of 50 minutes is the 60-minute
+    # answer, which already holds every departure of the 50.
+    window = snap_up(minutes, DEPARTURE_MINUTES_STEPS)
+    computed_for = snap_up(limit, DEPARTURE_LIMIT_STEPS)
+    key = (station, computed_for, window, cancelled)
     now = time.time()
-    hit = _departures_cache.get(key)
-    if hit is None or hit[0] < now:
-        # Keyed only by real station names x bounded params, so the cache is
-        # bounded too however the endpoint is called.
+    hit = _departures_cache.get(key, now)
+    if hit is None:
         # Off the event loop: a miss costs tens of ms of CPU, and inline that
         # would stall every open /api/trains/stream connection meanwhile.
-        payload = await asyncio.to_thread(
-            lambda: Payload.of(data.metro.departures(
-                station, realtime.state, now=now, limit=limit,
-                horizon_s=minutes * 60, include_cancelled=cancelled,
-            ))
-        )
-        hit = (now + DEPARTURES_TTL_SECONDS, payload)
-        _departures_cache[key] = hit
-    return hit[1].respond(request, "no-store")
+        def compute():
+            rows = data.metro.departures(
+                station, realtime.state, now=now, limit=computed_for,
+                horizon_s=window * 60, include_cancelled=cancelled,
+            )
+            return rows, Payload.of(rows)
+        hit = await asyncio.to_thread(compute)
+        _departures_cache.set(key, hit, now + DEPARTURES_TTL_SECONDS)
+    rows, payload = hit
+    if window != minutes:
+        rows = [d for d in rows if d["departure_ts"] <= now + minutes * 60]
+        return Payload.of(rows[:limit]).respond(request, "no-store")
+    return _sliced(rows, payload, limit, computed_for).respond(request, "no-store")
 
 
 @app.get("/api/station")
 async def station_info(request: Request, station: str = Query(..., max_length=100)):
     """First/last train today, frequency and stops ahead, per direction."""
+    if limited := _rate_limited(request):
+        return limited
     data = _static()
     if station not in data.station_names:
         raise HTTPException(status_code=404, detail="Unknown station")
     now = time.time()
-    hit = _station_info_cache.get(station)
-    if hit is None or hit[0] < now:
+    payload = _station_info_cache.get(station, now)
+    if payload is None:
         payload = await asyncio.to_thread(
             lambda: Payload.of(travel.station_info(data.metro, station, realtime.state, now=now))
         )
-        hit = (now + STATION_INFO_TTL_SECONDS, payload)
-        _station_info_cache[station] = hit
-    return hit[1].respond(request, "no-store")
+        _station_info_cache.set(station, payload, now + STATION_INFO_TTL_SECONDS)
+    return payload.respond(request, "no-store")
 
 
 @app.get("/api/journey")
@@ -431,20 +486,22 @@ async def journey(
     limit: int = Query(5, ge=1, le=10),
 ):
     """Direct and one-transfer journeys between two stations, soonest first."""
+    if limited := _rate_limited(request):
+        return limited
     data = _static()
     if origin not in data.station_names or dest not in data.station_names:
         raise HTTPException(status_code=404, detail="Unknown station")
     if origin == dest:
         raise HTTPException(status_code=422, detail="Origin and destination are the same")
-    key = (origin, dest, limit)
+    computed_for = snap_up(limit, JOURNEY_LIMIT_STEPS)
+    key = (origin, dest, computed_for)
     now = time.time()
-    hit = _journey_cache.get(key)
-    if hit is None or hit[0] < now:
-        if len(_journey_cache) >= JOURNEY_CACHE_MAX:
-            _journey_cache.clear()
-        payload = await asyncio.to_thread(
-            lambda: Payload.of(travel.journeys(data.metro, realtime.state, origin, dest, now=now, limit=limit))
-        )
-        hit = (now + JOURNEY_TTL_SECONDS, payload)
-        _journey_cache[key] = hit
-    return hit[1].respond(request, "no-store")
+    hit = _journey_cache.get(key, now)
+    if hit is None:
+        def compute():
+            rows = travel.journeys(data.metro, realtime.state, origin, dest, now=now, limit=computed_for)
+            return rows, Payload.of(rows)
+        hit = await asyncio.to_thread(compute)
+        _journey_cache.set(key, hit, now + JOURNEY_TTL_SECONDS)
+    rows, payload = hit
+    return _sliced(rows, payload, limit, computed_for).respond(request, "no-store")

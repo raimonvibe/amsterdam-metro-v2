@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import main
+from app.limits import RateLimiter
 from tests.conftest import NOW
 
 
@@ -16,6 +17,7 @@ def client(subset, monkeypatch):
     monkeypatch.setattr(main, "static", main._prepare(subset))
     # The synthetic timetable runs 12:00-13:00 on one date; pin the clock there.
     monkeypatch.setattr(main, "time", SimpleNamespace(time=lambda: NOW))
+    monkeypatch.setattr(main, "rate_limiter", RateLimiter(main.RATE_PER_SECOND, main.RATE_BURST))
     for cache in (main._departures_cache, main._station_info_cache, main._journey_cache):
         cache.clear()
     return TestClient(main.app)
