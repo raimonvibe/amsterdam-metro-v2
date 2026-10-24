@@ -1,4 +1,5 @@
 import { Train } from "../types";
+import { travelStrings } from "./strings";
 
 export interface LineHealth {
   line: string;
@@ -29,25 +30,26 @@ export function lineHealth(lineIds: string[], trains: Train[]): LineHealth[] {
   });
 }
 
-/** One plain-Dutch sentence about the network as a whole. */
+/** One plain sentence about the network as a whole. */
 export function networkSummary(health: LineHealth[]): string {
+  const s = travelStrings();
   const running = health.filter((h) => h.trains > 0);
-  if (running.length === 0) return "Er rijden nu geen metro's (nachtrust of storing).";
+  if (running.length === 0) return s.summaryNone;
   if (running.every((h) => h.live === 0)) {
-    return "Er zijn nu geen live gegevens; posities en tijden volgen de dienstregeling.";
+    return s.summaryNoLive;
   }
   const quiet = health.filter((h) => h.trains === 0).map((h) => `M${h.line}`);
   const late = running.filter((h) => (h.avgDelayS ?? 0) >= 180).map((h) => `M${h.line}`);
   const slight = running.filter((h) => (h.avgDelayS ?? 0) >= 60 && (h.avgDelayS ?? 0) < 180).map((h) => `M${h.line}`);
   const parts: string[] = [];
-  if (late.length) parts.push(`Vertraging op ${list(late)}`);
-  if (slight.length) parts.push(`lichte vertraging op ${list(slight)}`);
-  if (!parts.length) parts.push("Het metronet rijdt vrijwel op tijd");
-  if (quiet.length) parts.push(`geen metro's gezien op ${list(quiet)}`);
-  const s = parts.join("; ");
-  return s.charAt(0).toUpperCase() + s.slice(1) + ".";
+  if (late.length) parts.push(s.summaryDelay(list(late)));
+  if (slight.length) parts.push(s.summarySlight(list(slight)));
+  if (!parts.length) parts.push(s.summaryOnTime);
+  if (quiet.length) parts.push(s.summaryQuiet(list(quiet)));
+  const sentence = parts.join("; ");
+  return sentence.charAt(0).toUpperCase() + sentence.slice(1) + ".";
 }
 
 function list(items: string[]): string {
-  return items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} en ${items[items.length - 1]}`;
+  return items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} ${travelStrings().and} ${items[items.length - 1]}`;
 }

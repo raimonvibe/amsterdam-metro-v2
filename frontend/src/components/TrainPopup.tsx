@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { X } from "lucide-react";
 import { delayLabel } from "../format";
 import { Place } from "./Place";
-import { nl } from "../i18n/nl";
+import { locale, strings, useLang, useT } from "../i18n";
 import { AnimatedTrain } from "../types";
 import { Num } from "./Num";
 
@@ -20,8 +20,8 @@ interface TrainPopupProps {
   onClose?: () => void;
 }
 
-// Dutch decimal comma, always one decimal: "47,3".
-const PCT = new Intl.NumberFormat("nl-NL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+// Always one decimal, in the reader's notation: "47,3" or "47.3".
+const PCT_OPTS = { minimumFractionDigits: 1, maximumFractionDigits: 1 } as const;
 
 const CARD_W = 264;
 const EDGE_PAD = 8;
@@ -102,6 +102,12 @@ function ArrivalClock({ nowMs, arrivalMs, color }: { nowMs: number; arrivalMs: n
   );
 }
 
+/** "40 s geleden" under a minute and a half, whole minutes after. */
+function ago(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds));
+  return s < 90 ? strings().secondsAgo(s) : strings().minutesAgo(Math.round(s / 60));
+}
+
 /** Progress through the current segment, by clock — the same lerp the server solves with. */
 function segmentProgress(train: AnimatedTrain, nowMs: number): number {
   if (train.status === "dwelling") return 0;
@@ -111,6 +117,8 @@ function segmentProgress(train: AnimatedTrain, nowMs: number): number {
 }
 
 export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs, onClose }: TrainPopupProps) {
+  const txt = useT();
+  const lang = useLang();
   const progress = segmentProgress(train, nowMs) * 100;
   const pct = Math.round(progress);
   const nextMs = train.next_arrival_ts ? train.next_arrival_ts * 1000 : null;
@@ -118,7 +126,7 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
   const finalMs = train.final_arrival_ts ? train.final_arrival_ts * 1000 : nextMs;
   const minsUntil = (ms: number) => {
     const m = Math.max(0, Math.round((ms - nowMs) / 60000));
-    return m === 0 ? nl.now : `${m} ${nl.min}`;
+    return m === 0 ? txt.now : `${m} ${txt.min}`;
   };
   const left = Math.min(Math.max(x - CARD_W / 2, EDGE_PAD), containerWidth - CARD_W - EDGE_PAD);
 
@@ -150,7 +158,7 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
         <button
           type="button"
           onClick={onClose}
-          aria-label={nl.stopFollow}
+          aria-label={txt.stopFollow}
           className="pointer-events-auto absolute -right-1 -top-1 flex h-11 w-11 items-center justify-center rounded-full text-gray-500 active:bg-gray-200 dark:text-gray-400 dark:active:bg-gray-800"
         >
           <X size={18} />
@@ -167,21 +175,21 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
           <div className="break-words text-sm font-semibold leading-snug">→ <Place name={train.headsign ?? ""} /></div>
           {lineName && (
             <div className="break-words text-[11px] leading-snug text-gray-500 dark:text-gray-400">
-              {nl.line} {train.line} · {lineName}
+              {txt.line} {train.line} · {lineName}
             </div>
           )}
         </div>
       </div>
 
       <div className="mb-1 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
-        <span className="text-gray-500 dark:text-gray-400">{train.status === "dwelling" ? nl.atStation : nl.from}</span>
+        <span className="text-gray-500 dark:text-gray-400">{train.status === "dwelling" ? txt.atStation : txt.from}</span>
         <span className="min-w-0 break-words font-medium">
           <Place name={train.prev_station ?? "–"} />
           {train.status === "dwelling" && <PlatformTag platform={train.platform} />}
         </span>
-        <span className="text-gray-500 dark:text-gray-400">{nl.to}</span>
+        <span className="text-gray-500 dark:text-gray-400">{txt.to}</span>
         <span className="min-w-0 break-words font-medium">
-          {train.next_station ? <Place name={train.next_station} /> : nl.terminus}
+          {train.next_station ? <Place name={train.next_station} /> : txt.terminus}
           {train.status === "moving" && train.next_station && <PlatformTag platform={train.platform} />}
         </span>
       </div>
@@ -197,14 +205,23 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
           <Num>{delayLabel(train.delay_s)}</Num>
         </span>
         {!train.realtime && (
-          <span className="text-gray-400 dark:text-gray-500"> · {nl.scheduledNoRt}</span>
+          <span className="text-gray-400 dark:text-gray-500"> · {txt.scheduledNoRt}</span>
         )}
       </div>
+      {train.seen_station && train.seen_ts && (
+        // The signalling system's own word on where it is, so the reader can
+        // tell a confirmed position from the estimate the dot moves by.
+        <div className="-mt-1.5 mb-2 text-[11px] text-gray-500 dark:text-gray-400">
+          {train.seen_status === "at" ? txt.seenAt : txt.seenTo} <Place name={train.seen_station} />
+          {" · "}
+          <Num>{ago(nowMs / 1000 - train.seen_ts)}</Num>
+        </div>
+      )}
 
       <div className="mb-2.5">
         <div className="mb-1 flex justify-between text-[11px] text-gray-500 dark:text-gray-400">
-          <span className="tabular-nums">{PCT.format(progress)}%</span>
-          {train.stops_remaining != null && <span>{nl.stopsLeft(train.stops_remaining)}</span>}
+          <span className="tabular-nums">{new Intl.NumberFormat(locale(lang), PCT_OPTS).format(progress)}%</span>
+          {train.stops_remaining != null && <span>{txt.stopsLeft(train.stops_remaining)}</span>}
         </div>
         <div
           className="h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"
@@ -230,7 +247,7 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
           <ArrivalClock nowMs={nowMs} arrivalMs={finalMs} color={color} />
           <div className="min-w-0">
             <div className="break-words text-[11px] leading-snug text-gray-500 dark:text-gray-400">
-              {nl.arrivesAt} <Place name={train.headsign ?? train.next_station ?? ""} />
+              {txt.arrivesAt} <Place name={train.headsign ?? train.next_station ?? ""} />
             </div>
             <div className="text-lg font-bold tabular-nums leading-tight">
               <Num>{hhmm(finalMs)}</Num>{" "}
@@ -250,11 +267,12 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
 
 /** "· perron 2" after a station; nothing where the timetable has no platform. */
 function PlatformTag({ platform }: { platform?: string | null }) {
+  const txt = useT();
   if (!platform) return null;
   return (
     <span className="whitespace-nowrap font-normal text-gray-500 dark:text-gray-400">
       {" "}
-      · {nl.platform} {platform}
+      · {txt.platform} {platform}
     </span>
   );
 }

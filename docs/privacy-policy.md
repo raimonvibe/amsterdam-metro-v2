@@ -29,6 +29,7 @@ Amsterdam Metro Live is designed to collect as little personal data as possible.
 ## 3. Data we process
 
 - **Map style (localStorage):** The chosen map style (e.g. Liberty, Dark) is stored in your browser so the app reopens in that style. A single setting, not an identifier; never sent to our servers.
+- **Language (localStorage):** If you pick Dutch or English, your browser keeps that choice so the app reopens in it. A single setting, not an identifier; never sent to our servers.
 - **Technical logs (hosting):** IP address, browser type, URL, and timestamp may be logged by our host when you use the site or API.
 - **Map and transit data:** Loaded from third-party services in your browser or by our backend (see section 5).
 
@@ -60,7 +61,7 @@ We do not sell personal data or share it with advertisers.
 
 ## 6. Cookies
 
-No tracking or advertising cookies. Only **localStorage** for the map style: a functional setting, not tracking.
+No tracking or advertising cookies. Only **localStorage** for the map style, the language and the travel-info settings: functional settings, not tracking.
 
 ---
 

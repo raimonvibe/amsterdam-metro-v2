@@ -199,14 +199,26 @@ async def keep_snapshot_fresh() -> None:
         await asyncio.sleep(max(0.1, SNAPSHOT_SECONDS - (time.monotonic() - started)))
 
 
+def _metro_trip_ids() -> set:
+    return static.metro.trip_ids() if static else set()
+
+
+def _metro_alert_ids() -> tuple:
+    """(GTFS route ids, stop ids) of the metro, for filtering alerts.pb."""
+    if not static:
+        return (frozenset(), frozenset())
+    subset = static.metro.subset
+    return (frozenset(subset.get("route_to_line", {})), frozenset(subset["stops"]))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     tasks = [
         asyncio.create_task(keep_static_fresh()),
         asyncio.create_task(keep_snapshot_fresh()),
-        asyncio.create_task(
-            realtime.poll_forever(lambda: static.metro.trip_ids() if static else set())
-        ),
+        asyncio.create_task(realtime.poll_forever(_metro_trip_ids)),
+        asyncio.create_task(realtime.poll_vehicles_forever(_metro_trip_ids)),
+        asyncio.create_task(realtime.poll_alerts_forever(_metro_alert_ids)),
     ]
     yield
     for task in tasks:
@@ -354,6 +366,13 @@ async def status(request: Request):
 async def network(request: Request):
     """Per line and direction: ordered stations and typical run times."""
     return _static().network.respond(request, STATIC_CACHE_CONTROL)
+
+
+@app.get("/api/alerts")
+async def alerts(request: Request):
+    """GVB service messages (KV15) for the metro that are in force now."""
+    data = _static()
+    return Payload.of(travel.alerts(data.metro, realtime.state)).respond(request, "public, max-age=60")
 
 
 @app.get("/api/departures")

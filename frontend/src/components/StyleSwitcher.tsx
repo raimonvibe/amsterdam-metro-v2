@@ -1,6 +1,6 @@
 import { Map as MapIcon, Moon, Mountain, Sparkles, Sun, type LucideIcon } from "lucide-react";
 import { MapStyle } from "../theme";
-import { nl } from "../i18n/nl";
+import { useT } from "../i18n";
 
 /**
  * Icon colour hints at each basemap (Liberty's parks, Fiord's blue-grey).
@@ -10,8 +10,8 @@ import { nl } from "../i18n/nl";
 const OPTIONS: { id: MapStyle; label: string; Icon: LucideIcon; color: string }[] = [
   { id: "liberty", label: "Liberty", Icon: MapIcon, color: "text-emerald-600 dark:text-emerald-400" },
   { id: "bright", label: "Bright", Icon: Sparkles, color: "text-pink-600 dark:text-pink-400" },
-  { id: "light", label: nl.styleLight, Icon: Sun, color: "text-amber-600 dark:text-amber-300" },
-  { id: "dark", label: nl.styleDark, Icon: Moon, color: "text-indigo-600 dark:text-indigo-300" },
+  { id: "light", label: "styleLight", Icon: Sun, color: "text-amber-600 dark:text-amber-300" },
+  { id: "dark", label: "styleDark", Icon: Moon, color: "text-indigo-600 dark:text-indigo-300" },
   { id: "fiord", label: "Fiord", Icon: Mountain, color: "text-[#45516e] dark:text-[#9fb0d0]" },
 ];
 
@@ -26,6 +26,9 @@ interface StyleSwitcherProps {
  * the selection (and so apply it), as with native radios.
  */
 export function StyleSwitcher({ value, onChange }: StyleSwitcherProps) {
+  const txt = useT();
+  // Liberty, Bright and Fiord are names; Light and Dark are words.
+  const labelOf = (label: string) => (label === "styleLight" || label === "styleDark" ? txt[label] : label);
   const onKeyDown = (e: React.KeyboardEvent) => {
     const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
     if (!step) return;
@@ -39,7 +42,7 @@ export function StyleSwitcher({ value, onChange }: StyleSwitcherProps) {
   return (
     <div
       role="radiogroup"
-      aria-label={nl.mapStyle}
+      aria-label={txt.mapStyle}
       onKeyDown={onKeyDown}
       className="grid grid-cols-5 gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-900"
     >
@@ -53,7 +56,7 @@ export function StyleSwitcher({ value, onChange }: StyleSwitcherProps) {
             aria-checked={on}
             data-style={id}
             tabIndex={on ? 0 : -1}
-            title={label}
+            title={labelOf(label)}
             onClick={() => onChange(id)}
             // Selected = raised card with a blue ring rather than a solid blue
             // fill, so the icon keeps its colour when chosen.
@@ -71,7 +74,7 @@ export function StyleSwitcher({ value, onChange }: StyleSwitcherProps) {
               className={color}
               aria-hidden
             />
-            <span className="max-w-full truncate text-[10px] font-semibold leading-tight">{label}</span>
+            <span className="max-w-full truncate text-[10px] font-semibold leading-tight">{labelOf(label)}</span>
           </button>
         );
       })}

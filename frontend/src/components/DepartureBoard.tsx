@@ -2,25 +2,29 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { fetchDepartures } from "../api";
 import { pollWhileVisible } from "../poll";
-import { nl } from "../i18n/nl";
+import { strings, useT } from "../i18n";
 import { Place } from "./Place";
-import { Departure, Line, Station } from "../types";
+import { Departure, Line, ServiceAlert, Station } from "../types";
+import { AlertList, alertsFor } from "./AlertList";
 import { Num } from "./Num";
 
 interface DepartureBoardProps {
   station: Station;
   lines: Line[];
+  /** Every metro service message; the card shows the ones for this station. */
+  alerts?: ServiceAlert[];
   onClose: () => void;
   onMore?: () => void;
 }
 
 function countdown(ts: number, nowMs: number): string {
   const s = ts - nowMs / 1000;
-  if (s < 45) return nl.now;
-  return `${Math.round(s / 60)} ${nl.min}`;
+  if (s < 45) return strings().now;
+  return `${Math.round(s / 60)} ${strings().min}`;
 }
 
-export function DepartureBoard({ station, lines, onClose, onMore }: DepartureBoardProps) {
+export function DepartureBoard({ station, lines, alerts = [], onClose, onMore }: DepartureBoardProps) {
+  const txt = useT();
   const [departures, setDepartures] = useState<Departure[] | null>(null);
   const [nowMs, setNowMs] = useState(Date.now());
 
@@ -57,21 +61,22 @@ export function DepartureBoard({ station, lines, onClose, onMore }: DepartureBoa
         <button
           type="button"
           onClick={onClose}
-          aria-label={nl.closeDepartures}
+          aria-label={txt.closeDepartures}
           className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100 sm:min-h-0 sm:min-w-0 sm:p-1"
         >
           <X size={14} />
         </button>
       </div>
 
+      <AlertList alerts={alertsFor(alerts, station)} colorOf={colorOf} compact className="mb-2" />
       {departures === null && (
         <div className="py-3 text-center text-xs text-gray-500 dark:text-gray-400">
-          {nl.loadingDepartures}
+          {txt.loadingDepartures}
         </div>
       )}
       {departures?.length === 0 && (
         <div className="py-3 text-center text-xs text-gray-500 dark:text-gray-400">
-          {nl.noDepartures}
+          {txt.noDepartures}
         </div>
       )}
       {departures && departures.length > 0 && (
@@ -112,7 +117,7 @@ export function DepartureBoard({ station, lines, onClose, onMore }: DepartureBoa
           onClick={onMore}
           className="mt-2 w-full rounded-lg py-1.5 text-xs font-semibold text-[#4363D8] hover:bg-gray-100 dark:text-[#8aa2ff] dark:hover:bg-gray-900"
         >
-          {nl.allDepartures} →
+          {txt.allDepartures} →
         </button>
       )}
     </div>

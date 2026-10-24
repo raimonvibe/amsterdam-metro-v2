@@ -1,5 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { PanelLeftOpen } from "lucide-react";
+import { useAlerts } from "./hooks/useAlerts";
+import { strings, useT } from "./i18n";
 import { MetroMap, NO_HOVER } from "./components/MetroMap";
 import { Sidebar } from "./components/Sidebar";
 import { LiveBadge } from "./components/LiveBadge";
@@ -14,7 +16,6 @@ import { useTravelRoute } from "./hooks/useTravelRoute";
 import { formatPlaceName } from "./format";
 import { useSidebarOpen } from "./hooks/useSidebarOpen";
 import { ChunkErrorBoundary } from "./components/ChunkErrorBoundary";
-import { nl } from "./i18n/nl";
 
 // Rarely opened; kept out of the initial bundle.
 const PrivacyPolicy = lazy(() =>
@@ -58,6 +59,8 @@ export default function App() {
     setFocusStation({ station, nonce: Date.now() });
   };
   const [sidebarOpen, openSidebar, closeSidebar] = useSidebarOpen();
+  const alerts = useAlerts();
+  const txt = useT();
   // Phones: the sidebar is a drawer over the map. Left open from before the
   // travel page, it would be all one sees on the way back, so close it on
   // every return (page buttons and the browser's back button alike).
@@ -111,7 +114,7 @@ export default function App() {
         setError(null);
       } catch {
         if (stop) return;
-        setError(nl.backendError);
+        setError(strings().backendError);
         timer = window.setTimeout(load, delay);
         delay = Math.min(delay * 2, STATIC_RETRY_MAX_MS);
       }
@@ -190,14 +193,15 @@ export default function App() {
           onOpenPrivacy={openPrivacy}
           onOpenTravel={openTravelForSelection}
           onClose={closeSidebar}
+          alerts={alerts}
         />
       </div>
       <main inert={showTravel} className="relative min-h-0 min-w-0 flex-1">
         <button
           type="button"
           onClick={openSidebar}
-          title={nl.menu}
-          aria-label={nl.menu}
+          title={txt.menu}
+          aria-label={txt.menu}
           aria-hidden={sidebarOpen}
           tabIndex={sidebarOpen ? -1 : 0}
           className={`absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-20 flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-[#4363D8] px-3.5 py-2 text-sm font-semibold text-white shadow-md transition-[opacity,transform,background-color,box-shadow] duration-300 ease-in-out hover:bg-[#3651b8] hover:shadow-lg dark:border-gray-700 dark:bg-[#4363D8]/40 dark:text-blue-100 dark:hover:bg-[#4363D8]/55 ${
@@ -207,7 +211,7 @@ export default function App() {
           }`}
         >
           <PanelLeftOpen size={18} strokeWidth={2.25} />
-          <span className="hidden sm:inline">{nl.menu}</span>
+          <span className="hidden sm:inline">{txt.menu}</span>
         </button>
         {error && (
           <div className="absolute inset-x-0 top-0 z-10 bg-red-900/90 px-4 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] text-sm">
@@ -244,6 +248,7 @@ export default function App() {
           <DepartureBoard
             station={selectedStation}
             lines={lines}
+            alerts={alerts}
             onClose={() => setSelectedStation(null)}
             onMore={openTravelForSelection}
           />
@@ -271,7 +276,7 @@ export default function App() {
               // Same backdrop as the page, so the map never flashes through
               // while the page's chunk loads.
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#f3eee3] text-sm text-[#5b5446] dark:bg-[#0a0e18] dark:text-[#a9b0c2]">
-                <span className="font-academic animate-pulse text-lg">{nl.travelInfo} laden…</span>
+                <span className="font-academic animate-pulse text-lg">{txt.travelInfoLoading}</span>
               </div>
             }
           >
@@ -282,6 +287,7 @@ export default function App() {
               status={status}
               theme={palette}
               onToggleTheme={toggleTheme}
+              alerts={alerts}
               onClose={(station) => {
                 closeTravel();
                 // Land on the station the visitor chose on the page, without

@@ -5,6 +5,7 @@ import { AnimatedTrain, Station } from "../types";
 import { cumulativeMinutes, placeTrains } from "./diagram";
 import { JourneyLeg, NetworkLine } from "./types";
 import { LineBadge, Section, SkeletonRows, useNarrowScreen } from "./ui";
+import { useTravelT } from "./strings";
 
 /** Row height in px. Phones get two lines per station (name, then badges and
  *  travel time) so even "Station Bijlmer ArenA" fits; trains and the track are
@@ -28,6 +29,7 @@ export interface LineDiagramProps {
 
 export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf, current, route, onStation, nowMs }: LineDiagramProps) {
   const rowH = useNarrowScreen() ? ROW_H_NARROW : ROW_H;
+  const txt = useTravelT();
   const line = network?.find((l) => l.id === lineId) ?? network?.[0] ?? null;
   const placed = useMemo(() => (line ? placeTrains(line, trains, nowMs) : []), [line, trains, nowMs]);
   const linesAt = useMemo(() => new Map(stations.map((s) => [s.name, s.lines])), [stations]);
@@ -45,9 +47,9 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
     <Section
       n={4}
       id="lijnoverzicht"
-      title="Lijnoverzicht"
+      title={txt.lineOverview}
       aside={
-        <div className="flex gap-1" role="tablist" aria-label="Kies een lijn">
+        <div className="flex gap-1" role="tablist" aria-label={txt.chooseLine}>
           {(network ?? []).map((l) => (
             <button
               key={l.id}
@@ -71,11 +73,11 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
             <span className="font-academic text-sm font-semibold text-[#1d2433] dark:text-[#ece6d6]">
               Metro {line.id} · <Place name={line.name} />
             </span>{" "}
-            · {placed.length} {placed.length === 1 ? "metro" : "metro's"} onderweg · ritduur ~{minutes[minutes.length - 1]} min
+            · {txt.trainsUnderway(placed.length)} · {txt.runTime(minutes[minutes.length - 1])}
           </p>
           {stretches.length > 0 && (
             <p className="mb-2 text-xs font-semibold text-[#7b2132] dark:text-[#c8a951]">
-              Jouw reis:{" "}
+              {txt.yourJourney}{" "}
               {stretches.map(([a, b], k) => (
                 <span key={k}>
                   {k > 0 && ", "}
@@ -86,7 +88,7 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
           )}
           <div className="mb-1 grid grid-cols-[1.25rem_minmax(0,1fr)_2.5rem_2.5rem] sm:grid-cols-[1.25rem_minmax(0,1fr)_4.75rem_4.75rem] gap-x-1.5 text-[10px] text-[#7a7262] dark:text-[#8b93a7]">
             <span />
-            <span className="smallcaps">station · reistijd</span>
+            <span className="smallcaps">{txt.stationTravelTime}</span>
             {/* Phones: just the arrows; the chips below carry the direction too. */}
             <span translate="no" className="smallcaps truncate text-center" title={formatPlaceName(dirA.headsign)}>
               ↓<span className="sr-only sm:not-sr-only"> <Place name={dirA.headsign} /></span>
@@ -160,10 +162,10 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
                   forward ? "right-[calc(2.5rem+0.375rem+0.125rem)] sm:right-[calc(4.75rem+0.375rem+0.125rem)]" : "right-0.5"
                 }`}
                 style={{ top: pos * rowH + rowH / 2, backgroundColor: line.color }}
-                title={`${train.status === "dwelling" ? "Staat op" : "Rijdt na"} ${formatPlaceName(train.prev_station ?? "")}`}
+                title={`${train.status === "dwelling" ? txt.standsAt : txt.runsPast} ${formatPlaceName(train.prev_station ?? "")}`}
               >
                 {forward ? "↓" : "↑"}{" "}
-                {train.delay_s >= 60 ? `+${Math.round(train.delay_s / 60)}′` : <span className="sr-only sm:not-sr-only">op tijd</span>}
+                {train.delay_s >= 60 ? `+${Math.round(train.delay_s / 60)}′` : <span className="sr-only sm:not-sr-only">{txt.onTime}</span>}
               </span>
             ))}
           </div>

@@ -13,6 +13,9 @@ Built in the spirit of [londonunderground.live](https://www.londonunderground.li
 - 🚈 **Live trains** for all active GVB metro lines (50–54), positioned every few seconds from real GTFS-realtime data
 - 🛤️ **Real track geometry** — trains ride the actual curves of the rails, not straight lines between stations
 - 🏙️ **3D buildings** rendered from vector tiles, with an orbitable, pitchable camera (right-drag to spin around the city)
+- ✅ **Confirmed stops**: where the signalling system reports a train at or heading to a station, that bounds its position; trains known only from the timetable are drawn fainter
+- ⚠️ **GVB service messages** for the metro on the map, the station cards and the travel page, in Dutch or English
+- 🌐 **Dutch and English**, switchable from the menu and the travel page header
 - ⏱️ **Live delays** — see which trains are running late, straight from the same feed GVB itself uses
 - 🚉 **Click a station** for a live departure board — next 8 trains, headsign, and countdown — with a link to its full travel info
 - 🎯 **Click a train** to follow it with the camera; its card shows the next stop, delay, arrival time and **platform number**. On phones it has its own close button, and a tap on empty map stops following
@@ -40,6 +43,8 @@ Amsterdam's metro fleet — like London's — publishes **no GPS positions**. So
 
 1. 📦 **GTFS static** (daily, from [OVapi](https://gtfs.ovapi.nl/nl/)) gives us the metro routes, stations, timetables, and true track shapes
 2. 📡 **GTFS-realtime `tripUpdates.pb`** (polled every ~30s) gives live per-station arrival/departure predictions for every active trip
+   - **`vehiclePositions.pb`** (every 20s) has no GPS for the metro, but names the stop each train was last reported at or heading to
+   - **`alerts.pb`** (every 2 min) carries GVB's KV15 service messages
 3. 🧮 A **position solver** places each train along its track shape between its last departed and next predicted station — smooth, believable, live movement
 4. 📤 Positions are **pushed to the browser over Server-Sent Events** (gzipped per client), so the map updates without polling. The browser pauses the stream in background tabs
 

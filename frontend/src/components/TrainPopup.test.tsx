@@ -53,6 +53,23 @@ describe("TrainPopup platform", () => {
   });
 });
 
+describe("TrainPopup stop report", () => {
+  it("names where the signalling last saw it, and how long ago", () => {
+    show(train({ seen_station: "Amsterdam, Wibautstraat", seen_status: "at", seen_ts: NOW / 1000 - 40 }));
+    expect(screen.getByText(/Gemeld bij/).textContent).toMatch(/Gemeld bij Wibautstraat · 40 s geleden/);
+  });
+
+  it("switches to minutes for older reports", () => {
+    show(train({ seen_station: "Amsterdam, Spaklerweg", seen_status: "to", seen_ts: NOW / 1000 - 300 }));
+    expect(screen.getByText(/Gemeld richting/).textContent).toContain("5 min geleden");
+  });
+
+  it("says nothing without a report", () => {
+    show(train({}));
+    expect(screen.queryByText(/Gemeld/)).toBeNull();
+  });
+});
+
 describe("TrainPopup close button", () => {
   it("is only there for a followed train on touch screens, and stops following", async () => {
     const onClose = vi.fn();

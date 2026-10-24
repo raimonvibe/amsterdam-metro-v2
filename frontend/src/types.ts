@@ -45,6 +45,37 @@ export interface Train {
   /** Arrival at the terminus. */
   final_arrival_ts?: number;
   realtime: boolean;
+  /** How sure the position is: the signalling system recently reported the
+   *  train at or heading to a stop ("confirmed"), a clock estimate on live
+   *  predictions ("live"), or the timetable alone ("schedule"). Absent from a
+   *  backend that predates it. */
+  confidence?: "confirmed" | "live" | "schedule";
+  /** Latest stop report, however old: where, "at" or heading "to", when. */
+  seen_station?: string | null;
+  seen_status?: "at" | "to" | null;
+  seen_ts?: number | null;
+}
+
+/** Text GVB publishes in both languages; English can be missing. */
+export interface LocalText {
+  nl: string;
+  en?: string | null;
+}
+
+/** A GVB service message (KV15) for the metro that is in force now. */
+export interface ServiceAlert {
+  id: string;
+  header: LocalText;
+  /** Only when it says more than the header. */
+  description?: LocalText | null;
+  lines: string[];
+  /** Station names; empty when the message concerns its lines as a whole. */
+  stations: string[];
+  /** Names every station of its lines: about the line as a whole. */
+  whole_line?: boolean;
+  start_ts?: number | null;
+  end_ts?: number | null;
+  effect: string;
 }
 
 export interface ShapeGeom {

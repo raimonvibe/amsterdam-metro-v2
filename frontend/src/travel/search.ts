@@ -58,7 +58,10 @@ const LINE_WORDS: Record<string, string[]> = {
   "54": ["oostlijn", "geinlijn"],
 };
 
-const NEARBY_WORDS = new Set(["dichtbij", "in de buurt", "bij mij", "hier", "locatie", "mijn locatie", "nearby"]);
+const NEARBY_WORDS = new Set([
+  "dichtbij", "in de buurt", "bij mij", "hier", "locatie", "mijn locatie",
+  "nearby", "near me", "here", "my location",
+]);
 
 /** Lowercase, accents off, "Burg." spelled out, punctuation to spaces. */
 /** First code point ("0") of each run of ten decimal digits outside ASCII:
@@ -205,7 +208,9 @@ export function bestStation(phrase: string, stations: Station[], minScore = 58):
   return top && top.score >= minScore ? top.station : null;
 }
 
-const ROUTE_RE = /^\s*(?:van\s+)?(.+?)(?:\s+naar\s+|\s*(?:->|→|=>|>)\s*|\s+-\s+|\s+tot\s+)(.+?)\s*$/i;
+// Dutch and English: "van noord naar gein", "from noord to gein". No metro
+// station name contains " to ", so the English separator cannot split one.
+const ROUTE_RE = /^\s*(?:van\s+|from\s+)?(.+?)(?:\s+naar\s+|\s*(?:->|→|=>|>)\s*|\s+-\s+|\s+tot\s+|\s+to\s+)(.+?)\s*$/i;
 
 /** "noord naar gein" → both stations, when both halves resolve confidently. */
 export function parseRoute(query: string, stations: Station[]): { from: Station; to: Station } | null {

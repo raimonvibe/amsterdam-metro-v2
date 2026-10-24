@@ -80,7 +80,7 @@ describe("searchStations", () => {
 
 describe("parseRoute", () => {
   it("understands 'van … naar …', arrows and 'tot'", () => {
-    for (const q of ["noord naar gein", "van Noord naar Gein", "noord -> gein", "noord → gein", "noord tot gein"]) {
+    for (const q of ["noord naar gein", "van Noord naar Gein", "noord -> gein", "noord → gein", "noord tot gein", "noord to gein", "from Noord to Gein"]) {
       const r = parseRoute(q, STATIONS);
       expect(r?.from.name, q).toBe("Amsterdam, Noord");
       expect(r?.to.name, q).toBe("Amsterdam, Gein");
