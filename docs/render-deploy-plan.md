@@ -89,7 +89,7 @@ Local dev: leave unset → allows all origins.
 | File | Purpose |
 |---|---|
 | `render.yaml` | Blueprint describing both services (see note below) |
-| `backend/runtime.txt` | Python 3.12.8 |
+| `backend/runtime.txt` | Python 3.12.15 |
 
 > **`render.yaml` is not applied to the production services.** They were created by hand in the Render dashboard, not from a Blueprint, so Render never reads this file: start command, headers and rewrites in it have no effect. **The dashboard is the source of truth.** Keep `render.yaml` in sync as documentation (or link it as a Blueprint), and make real changes in the dashboard:
 >
@@ -98,6 +98,7 @@ Local dev: leave unset → allows all origins.
 > | `amsterdam-metro-api` | Settings → Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT --no-access-log --timeout-graceful-shutdown 5` |
 > | `amsterdam-metro` | Manage → Headers | `/assets/*` → `Cache-Control: public, max-age=31536000, immutable`; `/*` → `Referrer-Policy: strict-origin-when-cross-origin` |
 > | `amsterdam-metro` | Manage → Redirects/Rewrites | Source `/*` → Destination `/index.html`, action **Rewrite** |
+> | `amsterdam-metro-api` | Environment → `PYTHON_VERSION` | `3.12.15` (was `3.12.8`; the dashboard value overrides `runtime.txt`) |
 
 ---
 
@@ -123,7 +124,7 @@ Local dev: leave unset → allows all origins.
 
 | Key | Value | Notes |
 |---|---|---|
-| `PYTHON_VERSION` | `3.12.8` | Match local dev |
+| `PYTHON_VERSION` | `3.12.15` | Match local dev. Takes precedence over `runtime.txt`, so bump it in the dashboard when upgrading |
 | `CORS_ORIGINS` | `https://amsterdammetro.nl,https://www.amsterdammetro.nl` | Set in `render.yaml` |
 | `GTFS_DATA_DIR` | e.g. `/var/data/gtfs` | Optional. Point at a persistent disk mount to keep the GTFS zip + subset across deploys/restarts |
 
