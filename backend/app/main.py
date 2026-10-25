@@ -65,11 +65,13 @@ STREAM_MAX_CLIENTS = 500
 # mobile network (carrier-grade NAT puts many strangers behind one address)
 # shares it. 100 still keeps one script from taking all 500 slots.
 STREAM_MAX_PER_CLIENT = 100
-# Computed endpoints (departures, station, journey, alerts): per visitor, a
-# burst of 60 and 2 per second after that. One open travel page uses about
-# 10 a minute; this only stops scripts.
-RATE_PER_SECOND = 2.0
-RATE_BURST = 60
+# Computed endpoints (departures, station, journey, alerts): per address, a
+# burst of 300 and 20 per second after that. Sized like STREAM_MAX_PER_CLIENT
+# for ~100 people behind one address (mobile networks share addresses), each
+# with an open travel page at ~10 requests a minute (~17/s together). A
+# script still hits it; the bounded caches cap what a burst can cost.
+RATE_PER_SECOND = 20.0
+RATE_BURST = 300
 # The only request values the app sends. Anything else is served from the
 # next step up, so the cache key space stays small whatever the query says.
 DEPARTURE_MINUTES_STEPS = (15, 30, 45, 60, 120, 180)
