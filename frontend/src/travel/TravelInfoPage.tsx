@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Clock, Keyboard, Moon, Sun } from "lucide-react";
+import { Activity, ArrowLeft, Clock, Keyboard, LucideIcon, MapPin, Moon, Route, Sun, TrainTrack } from "lucide-react";
 import { fetchNetwork } from "../api";
 import { formatPlaceName, fullPlaceName } from "../format";
 import { Theme } from "../theme";
@@ -39,6 +39,13 @@ export interface TravelInfoPageProps {
 
 type Tab = "vertrekken" | "plannen" | "lijnen" | "stations" | "status";
 const TABS: Tab[] = ["vertrekken", "plannen", "lijnen", "stations", "status"];
+const TAB_ICONS: Record<Tab, LucideIcon> = {
+  vertrekken: Clock,
+  plannen: Route,
+  lijnen: TrainTrack,
+  stations: MapPin,
+  status: Activity,
+};
 const DEFAULT_STATION = "Amsterdam, Centraal Station";
 
 export default function TravelInfoPage({ stations, lines, trains, status, theme, onToggleTheme, onClose, onShowOnMap, alerts = [] }: TravelInfoPageProps) {
@@ -361,21 +368,31 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
             </button>
           </div>
         </div>
-        {/* Mobile section tabs */}
-        <nav className="mx-auto flex max-w-[1680px] gap-1 overflow-x-auto px-3 pb-2 lg:hidden" aria-label={txt.sections}>
-          {TABS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              aria-current={tab === t ? "page" : undefined}
-              className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-                tab === t ? "bg-[#1f3a68] text-white dark:bg-[#c8a951] dark:text-[#111727]" : "bg-[#e9e2d2] text-[#3b4457] dark:bg-[#151c2e] dark:text-[#c9c3b4]"
-              }`}
-            >
-              {txt.tabs[t]}
-            </button>
-          ))}
+        {/* Mobile section tabs: one segmented bar of five equal columns, so
+            every section is in sight at 320px without swiping. */}
+        <nav className="mx-auto max-w-[1680px] px-2 pb-2 min-[360px]:px-3 lg:hidden" aria-label={txt.sections}>
+          <div className="grid grid-cols-5 gap-0.5 rounded-xl border border-[#d8cfbd] bg-[#efe8d8] p-0.5 dark:border-[#232b3e] dark:bg-[#111827]">
+            {TABS.map((t) => {
+              const Icon = TAB_ICONS[t];
+              const on = tab === t;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTab(t)}
+                  aria-current={on ? "page" : undefined}
+                  className={`flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-[10px] text-[10px] font-semibold leading-tight tracking-tight transition min-[360px]:px-0.5 min-[360px]:text-[11px] min-[360px]:tracking-normal ${
+                    on
+                      ? "bg-[#1f3a68] text-white shadow-sm dark:bg-[#c8a951] dark:text-[#111727]"
+                      : "text-[#4a4436] active:bg-[#e3dac7] dark:text-[#b9bfcc] dark:active:bg-[#1a2134]"
+                  }`}
+                >
+                  <Icon size={17} strokeWidth={on ? 2.4 : 2} aria-hidden />
+                  <span className="max-w-full truncate">{txt.tabs[t]}</span>
+                </button>
+              );
+            })}
+          </div>
         </nav>
       </header>
 
