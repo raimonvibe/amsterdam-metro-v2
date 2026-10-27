@@ -659,8 +659,21 @@ export function MetroMap({
         map.jumpTo(INTRO_END);
         setZoom(map.getZoom());
       } else {
-        map.flyTo({ ...INTRO_END, duration: 3200, essential: true });
-        map.once("moveend", () => setZoom(map.getZoom()));
+        // Fly once the first view is on screen. Started on "load", a slower
+        // phone (iPhone 11 Pro) spent most of the 3.2 s still building tiles,
+        // buildings and layers, and showed only the start and then the end.
+        // The timeout keeps the intro coming if "idle" is slow to fire.
+        let flown = false;
+        const fly = () => {
+          if (flown) return;
+          flown = true;
+          clearTimeout(fallback);
+          map.off("idle", fly);
+          map.flyTo({ ...INTRO_END, duration: 3200, essential: true });
+          map.once("moveend", () => setZoom(map.getZoom()));
+        };
+        const fallback = setTimeout(fly, 2500);
+        map.once("idle", fly);
       }
     }
   }, [addBuildings]);
