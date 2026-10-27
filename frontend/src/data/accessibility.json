@@ -13,10 +13,10 @@
       "osm": "node/250222266"
     },
     "Amsterdam, Bullewijk": {
-      "step_free": "yes",
+      "step_free": "no",
       "source": "checked",
       "osm": "node/4046388677",
-      "note": "GVB station page (CHB), 2026-10-27; its only lift has been reported broken since Nov 2023"
+      "note": "GVB station page (CHB) says accessible, 2026-10-27, but its only lift has been reported broken since Nov 2023; set back to yes once GVB's lift faults no longer list it"
     },
     "Amsterdam, Burg. De Vlugtlaan": {
       "step_free": "yes",
@@ -55,16 +55,16 @@
       "osm": "node/4041640589"
     },
     "Amsterdam, Heemstedestraat": {
-      "step_free": "yes",
+      "step_free": "limited",
       "source": "checked",
       "osm": "node/4053335995",
-      "note": "GVB station page (CHB), 2026-10-27"
+      "note": "GVB station page (CHB) says accessible, OpenStreetMap says limited, 2026-10-27; sources disagree, so not counted as step-free"
     },
     "Amsterdam, Henk Sneevlietweg": {
-      "step_free": "yes",
+      "step_free": "limited",
       "source": "checked",
       "osm": "node/4075987791",
-      "note": "GVB station page (CHB), 2026-10-27"
+      "note": "GVB station page (CHB) says accessible, OpenStreetMap says limited, 2026-10-27; sources disagree, so not counted as step-free"
     },
     "Amsterdam, Isolatorweg": {
       "step_free": "yes",
