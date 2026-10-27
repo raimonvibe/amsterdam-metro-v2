@@ -254,9 +254,12 @@ const ADDITIVE = {
  *  a lost WebGL context opens on the same view instead of replaying the intro. */
 let lastView: { longitude: number; latitude: number; zoom: number; pitch: number; bearing: number } | null = null;
 
+// Straight above where the intro ends, so the flight is one smooth zoom in.
+// Started elsewhere, flyTo arcs out and back to cover the distance, which on
+// a narrow phone or tablet screen looks like a lurch.
 const INTRO_START = {
-  longitude: 4.9004,
-  latitude: 52.3778,
+  longitude: 4.9238,
+  latitude: 52.336,
   zoom: 10.8,
   pitch: 0,
   bearing: 0,
