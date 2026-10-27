@@ -16,7 +16,7 @@ import {
 } from "../animate";
 import { formatPlaceName } from "../format";
 import { angleForBearing, GLOW_ICON_MAPPING, glowSpriteUrl } from "../glow";
-import { MAP_THEME, Theme } from "../theme";
+import { MAP_STYLES, MAP_THEME, Theme } from "../theme";
 import { ChurchMarkers } from "./ChurchMarkers";
 import { TrainPopup } from "./TrainPopup";
 import { getWebGLStatus } from "../webgl";
@@ -261,14 +261,14 @@ const INTRO_START = {
   pitch: 0,
   bearing: 0,
 };
-// Centraal Station: hub of lines 52/53/54 (and 51's terminus), ringed by the
-// dense old-city building fabric — the busiest, most 3D-building-dense spot
-// in the network to open on.
+// Spaklerweg and Overamstel, looking north-north-east: lines 51, 53 and 54
+// run side by side across the A10 while 50 and 51 curve off towards
+// Overamstel, so five lines meet in one view. Same view on every screen size.
 const INTRO_END = {
-  center: [4.9035, 52.373] as [number, number],
-  zoom: 15.1,
+  center: [4.9238, 52.336] as [number, number],
+  zoom: 15,
   pitch: 58,
-  bearing: 20,
+  bearing: 18,
 };
 
 /** Wash a line colour toward white — the centre of a light source is hotter
@@ -512,6 +512,8 @@ export function MetroMap({
   // Read by addBuildings, which runs from a style.load listener bound once.
   const themeRef = useRef(theme);
   themeRef.current = theme;
+  const styleUrlRef = useRef(styleUrl);
+  styleUrlRef.current = styleUrl;
 
   // ~30fps animation clock for dead-reckoned train movement
   useEffect(() => {
@@ -534,7 +536,24 @@ export function MetroMap({
   // (OpenMapTiles schema `building` layer). Re-added on every style load.
   const addBuildings = useCallback(() => {
     const map = mapRef.current?.getMap();
-    if (!map || map.getLayer("3d-buildings")) return;
+    if (!map) return;
+    // None of the OpenFreeMap styles has a sky, so tilted far back on a wide
+    // screen the space above the horizon was empty and showed the page
+    // behind it as a white or black band. Fill it with the basemap's own
+    // background, hazing the far ground into it, so the map reaches the top.
+    const ground = Object.values(MAP_STYLES).find((s) => s.styleUrl === styleUrlRef.current)?.swatch[0];
+    if (ground) {
+      map.setSky({
+        "sky-color": ground,
+        "horizon-color": ground,
+        "fog-color": ground,
+        "sky-horizon-blend": 1,
+        "horizon-fog-blend": 1,
+        "fog-ground-blend": 0.85,
+        "atmosphere-blend": 0,
+      });
+    }
+    if (map.getLayer("3d-buildings")) return;
     // Liberty ships its own extrusion; two coincident ones z-fight, so ours wins.
     if (map.getLayer("building-3d")) map.setLayoutProperty("building-3d", "visibility", "none");
     const style = map.getStyle();
