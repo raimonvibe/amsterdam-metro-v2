@@ -1,3 +1,5 @@
+import { AttributionControl } from "maplibre-gl";
+
 /** MapLibre control buttons by class, and the locale key of their label. */
 const CONTROL_LABELS: [selector: string, key: string][] = [
   [".maplibregl-ctrl-zoom-in", "NavigationControl.ZoomIn"],
@@ -21,4 +23,25 @@ export function relabelControls(container: ParentNode, labels: Record<string, st
       if (el.getAttribute("title") !== label) el.setAttribute("title", label);
     });
   }
+}
+
+/**
+ * MapLibre's compact attribution opens itself on load and stays open until
+ * the map is dragged. This one starts folded on every screen size: the ⓘ
+ * button opens it.
+ */
+export function foldedAttribution(): AttributionControl {
+  const control = new AttributionControl({ compact: true });
+  const update = control._updateCompact;
+  // Replaced before `onAdd`, which subscribes this function to map events.
+  control._updateCompact = () => {
+    const container = control._container;
+    const wasCompact = container.classList.contains("maplibregl-compact");
+    update();
+    if (!wasCompact && container.classList.contains("maplibregl-compact")) {
+      container.classList.remove("maplibregl-compact-show");
+      container.removeAttribute("open");
+    }
+  };
+  return control;
 }

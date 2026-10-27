@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Map, useControl, AttributionControl, NavigationControl } from "react-map-gl/maplibre";
+import { Map, useControl, NavigationControl } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import { MapboxOverlay, MapboxOverlayProps } from "@deck.gl/mapbox";
 import { IconLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
@@ -22,7 +22,7 @@ import { TrainPopup } from "./TrainPopup";
 import { getWebGLStatus } from "../webgl";
 import { useLang, useT, type Lang } from "../i18n";
 import { useReducedMotion } from "../hooks/useReducedMotion";
-import { relabelControls } from "../mapControls";
+import { foldedAttribution, relabelControls } from "../mapControls";
 
 /** MapLibre's own control labels, which it otherwise only has in English. */
 const MAP_LOCALE: Record<Lang, Record<string, string>> = {
@@ -42,6 +42,12 @@ const MAP_LOCALE: Record<Lang, Record<string, string>> = {
   },
 };
 import "maplibre-gl/dist/maplibre-gl.css";
+
+// Map credits behind the ⓘ button, folded until someone opens them.
+function FoldedAttribution() {
+  useControl(foldedAttribution, { position: "bottom-right" });
+  return null;
+}
 
 // deck.gl attached as a maplibre overlay control: shares the map camera, so
 // pitch/rotate (right-drag) works on every layer including 3D buildings.
@@ -1213,7 +1219,7 @@ export function MetroMap({
         }}
         onError={(e) => setWebglError(e.error?.message ?? "WebGL2 map failed to start")}
       >
-        <AttributionControl compact />
+        <FoldedAttribution />
         {/* Click alternatives to dragging (WCAG 2.5.7): zoom, and a compass
             that resets rotation and tilt. */}
         <NavigationControl position="bottom-right" visualizePitch />
