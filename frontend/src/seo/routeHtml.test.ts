@@ -17,7 +17,7 @@ describe("routeHtml", () => {
       expect(html).toContain(`<title>${page.title.replace(/&/g, "&amp;")}</title>`);
       expect(html.match(/content="([^"]*)"/g)?.join("\n")).toContain(page.description);
       expect(html).not.toContain('href="https://amsterdammetro.nl/" />');
-      expect(html).not.toContain("Live metrokaart &amp; metro map");
+      expect(html).not.toContain("3D metrokaart &amp; metro map");
     }
   });
 
