@@ -7,6 +7,7 @@ import { Place } from "./Place";
 import { formatPlaceName } from "../format";
 import { Departure, Line, ServiceAlert, Station } from "../types";
 import { AlertList, alertsFor } from "./AlertList";
+import { StepFree } from "./StepFree";
 import { Num } from "./Num";
 import { onColor } from "../contrast";
 
@@ -82,6 +83,7 @@ export function DepartureBoard({ station, lines, alerts = [], onClose, onMore, f
         </button>
       </div>
 
+      <StepFree station={station.name} className="-mt-1 mb-2" />
       <AlertList alerts={alertsFor(alerts, station)} colorOf={colorOf} compact className="mb-2" />
       {departures === null && (
         <div className="py-3 text-center text-xs text-gray-500 dark:text-gray-400">

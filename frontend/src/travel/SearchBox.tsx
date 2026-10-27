@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { ArrowRight, ChevronDown, LocateFixed, Search, TrainTrack, X } from "lucide-react";
 import { formatPlaceName } from "../format";
 import { Place } from "../components/Place";
+import { StepFreeMark } from "../components/StepFree";
 import { Station } from "../types";
 import { SearchResult, allStations, search, searchStations } from "./search";
 import { LineBadge, useNarrowScreen, useTouchScreen } from "./ui";
@@ -392,6 +393,7 @@ function ResultRow({ result: r, colorOf }: { result: SearchResult; colorOf: (l: 
         <Place name={r.station.name} />
         {r.via && <span className="ml-1.5 text-[11px] italic text-[#6b6455] dark:text-[#8b93a7]">({r.via})</span>}
       </span>
+      <StepFreeMark station={r.station.name} />
       <span className="flex shrink-0 gap-0.5">
         {r.station.lines.map((l) => (
           <LineBadge key={l} id={l} color={colorOf(l)} small />

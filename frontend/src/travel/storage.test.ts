@@ -40,8 +40,8 @@ describe("recent", () => {
 
 describe("prefs", () => {
   it("round-trips valid preferences and rejects invalid ones", () => {
-    savePrefs({ windowMin: 60, showCancelled: false, walkMin: 5, shortcuts: false });
-    expect(loadPrefs()).toEqual({ windowMin: 60, showCancelled: false, walkMin: 5, shortcuts: false });
+    savePrefs({ windowMin: 60, showCancelled: false, walkMin: 5, shortcuts: false, avoidStairs: true });
+    expect(loadPrefs()).toEqual({ windowMin: 60, showCancelled: false, walkMin: 5, shortcuts: false, avoidStairs: true });
     localStorage.setItem("metro-live:travel-prefs", JSON.stringify({ windowMin: 7, walkMin: 99 }));
     expect(loadPrefs()).toEqual(DEFAULT_PREFS);
   });

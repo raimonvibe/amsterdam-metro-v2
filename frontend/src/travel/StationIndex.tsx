@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { History, LocateFixed, Star, X } from "lucide-react";
 import { formatPlaceName } from "../format";
 import { Place } from "../components/Place";
+import { StepFreeMark } from "../components/StepFree";
 import { Station } from "../types";
 import { LineBadge, Section } from "./ui";
 import { useTravelT } from "./strings";
@@ -48,6 +49,7 @@ export function StationIndex(p: StationIndexProps) {
         >
           {icon}
           <span className="min-w-0 flex-1 truncate"><Place name={name} /></span>
+          <StepFreeMark station={name} />
           <span className="flex shrink-0 gap-0.5">
             {s.lines.map((l) => (
               <LineBadge key={l} id={l} color={p.colorOf(l)} small />

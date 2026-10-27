@@ -5,6 +5,7 @@ import { delayLabel } from "../format";
 import { Place } from "../components/Place";
 import { pollWhileVisible } from "../poll";
 import { AlertList, alertsFor } from "../components/AlertList";
+import { StepFree } from "../components/StepFree";
 import { AnimatedTrain, ServiceAlert, Station } from "../types";
 import { TravelPrefs } from "./storage";
 import { catchable, clock, countdown, headwayLabel, urgency } from "./time";
@@ -186,6 +187,7 @@ export function StationBoard(props: StationBoardProps) {
               <span className="ml-1 text-xs text-[#6b6455] dark:text-[#8b93a7]">{station.name.split(",")[0]}</span>
             )}
           </div>
+          <StepFree station={station.name} className="mt-1.5" />
         </div>
         <div className="flex flex-wrap gap-1.5">
           <ActionButton onClick={props.onToggleFavourite} label={props.favourite ? txt.unfavourite : txt.favourite} pressed={props.favourite}>

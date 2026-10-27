@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { STATIONS } from "../test/fixtures";
 import { AnimatedTrain } from "../types";
-import { JourneyPlanner, fastestIndex, routeKeyOf } from "./JourneyPlanner";
+import { JourneyPlanner, JourneyPlannerProps, fastestIndex, routeKeyOf, stairsOn } from "./JourneyPlanner";
 import { routeStretches } from "./LineDiagram";
 import { SearchBox } from "./SearchBox";
 import { StationBoard, groupByDirection } from "./StationBoard";
@@ -401,7 +401,7 @@ describe("JourneyPlanner", () => {
     ],
   });
 
-  function renderPlanner(js: Journey[], onRoute = vi.fn()) {
+  function renderPlanner(js: Journey[], onRoute = vi.fn(), extra: Partial<JourneyPlannerProps> = {}) {
     vi.mocked(api.fetchJourneys).mockResolvedValue(js);
     const props = {
       onRoute,
@@ -416,10 +416,51 @@ describe("JourneyPlanner", () => {
       onStation: vi.fn(),
       onNearby: vi.fn(),
       nowMs: NOW,
+      ...extra,
     };
     render(<JourneyPlanner {...props} />);
     return props;
   }
+
+  // A journey between stations checked step-free on GVB's site.
+  const via = (a: string, b: string, c: string): Journey => ({
+    ...journey(3, 30, 1),
+    legs: [
+      { ...journey(3, 30, 1).legs[0], from: a, to: b },
+      { ...journey(3, 30, 1).legs[1], from: b, to: c },
+    ],
+  });
+  const stepFreeTrip = via("Amsterdam, De Pijp", "Amsterdam, Waterlooplein", "Amsterdam, Nieuwmarkt");
+
+  it("counts only the stations a rider uses as possible stairs", () => {
+    expect(stairsOn(via("Amsterdam, Strandvliet", "Nowhere, Atlantis", "Amsterdam, De Pijp"))).toEqual([
+      { name: "Amsterdam, Strandvliet", state: "no" },
+      { name: "Nowhere, Atlantis", state: "no" },
+    ]);
+    expect(stairsOn(stepFreeTrip)).toEqual([]);
+  });
+
+  it("with avoid stairs on, marks a step-free journey; the box reports the switch", async () => {
+    const onAvoidStairs = vi.fn();
+    renderPlanner([stepFreeTrip], vi.fn(), { avoidStairs: true, onAvoidStairs });
+    expect(await screen.findByText("zonder trappen")).toBeInTheDocument();
+    expect(screen.queryByText(/Niet zeker zonder trappen/)).not.toBeInTheDocument();
+    // Step-free by design is only step-free today while the lifts work.
+    const lifts = screen.getByText(/zolang de liften werken/).closest("p")!;
+    expect(within(lifts).getByRole("link", { name: "Liftstoringen bij GVB" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("checkbox", { name: /Zonder trappen/ }));
+    expect(onAvoidStairs).toHaveBeenCalledWith(false);
+  });
+
+  it("with avoid stairs on, names the stations that may need stairs and links the lift faults", async () => {
+    const j = journey(3, 30, 0);
+    j.legs[0] = { ...j.legs[0], to: "Amsterdam, Strandvliet" };
+    renderPlanner([j], vi.fn(), { avoidStairs: true, onAvoidStairs: vi.fn() });
+    const warning = (await screen.findByText(/Niet zeker zonder trappen/)).closest("p")!;
+    expect(warning).toHaveTextContent("Strandvliet (niet toegankelijk)");
+    expect(within(warning).getByRole("link", { name: "Liftstoringen bij GVB" })).toBeInTheDocument();
+    expect(screen.queryByText("zonder trappen")).not.toBeInTheDocument();
+  });
 
   it("with only a departure station, confirms it and offers its departures", async () => {
     const onShowDepartures = vi.fn();

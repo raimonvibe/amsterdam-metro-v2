@@ -9,6 +9,7 @@ import { locale, useLang, useT } from "../i18n";
 import { LanguageToggle } from "./LanguageToggle";
 import { Place } from "./Place";
 import { formatPlaceName } from "../format";
+import { stepFree } from "../data/accessibility";
 import { SocialIcons } from "./SocialIcons";
 import { Credits } from "./Credits";
 
@@ -125,7 +126,9 @@ export function Sidebar({
               .sort((a, b) => formatPlaceName(a.name).localeCompare(formatPlaceName(b.name), "nl"))
               .map((s) => (
                 <option key={s.name} value={s.name}>
-                  {formatPlaceName(s.name)} ({s.lines.join(", ")})
+                  {/* Options hold text only, so the mark is the character;
+                      screen readers say "wheelchair symbol". */}
+                  {formatPlaceName(s.name)}{stepFree(s.name) === "yes" ? " ♿" : ""} ({s.lines.join(", ")})
                 </option>
               ))}
           </select>

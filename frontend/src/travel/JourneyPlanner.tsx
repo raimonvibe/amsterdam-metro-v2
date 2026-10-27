@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDownUp, Clock3, Repeat } from "lucide-react";
+import { Accessibility, ArrowDownUp, Clock3, Repeat } from "lucide-react";
 import { fetchJourneys, SlowDown } from "../api";
+import { GVB_LIFT_FAULTS, StepFree as StepFreeState, stepFree } from "../data/accessibility";
+import { useT } from "../i18n";
 import { delayLabel } from "../format";
 import { Place } from "../components/Place";
 import { pollWhileVisible } from "../poll";
@@ -32,7 +34,23 @@ export interface JourneyPlannerProps {
   onRoute?: (legs: JourneyLeg[] | null) => void;
   /** Phones: open the line overview for the picked option (another tab there). */
   onShowLine?: () => void;
+  /** Flag journeys through stations not known to be step-free. */
+  avoidStairs?: boolean;
+  onAvoidStairs?: (on: boolean) => void;
   nowMs: number;
+}
+
+/** The stations a rider uses on a journey (start, each change, end) that are
+ *  not known to be step-free, in order. Stations the train only passes
+ *  through do not count: nobody leaves the platform there. */
+export function stairsOn(j: Journey): { name: string; state: Exclude<StepFreeState, "yes"> }[] {
+  const used = j.legs.length ? [j.legs[0].from, ...j.legs.map((l) => l.to)] : [];
+  const out: { name: string; state: Exclude<StepFreeState, "yes"> }[] = [];
+  for (const name of new Set(used)) {
+    const state = stepFree(name);
+    if (state !== "yes") out.push({ name, state });
+  }
+  return out;
 }
 
 /** Index of the fastest option, ties to the earliest departure. */
@@ -149,6 +167,18 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
           {txt.departFrom} <Place name={props.current.name} />
         </button>
       )}
+      {props.onAvoidStairs && (
+        <label className="mt-1.5 flex min-h-9 w-fit cursor-pointer items-center gap-1.5 text-xs text-[#5b5446] dark:text-[#a9b0c2]">
+          <input
+            type="checkbox"
+            checked={Boolean(props.avoidStairs)}
+            onChange={(e) => props.onAvoidStairs?.(e.target.checked)}
+            className="accent-[#1f3a68] dark:accent-[#c8a951]"
+          />
+          <Accessibility size={13} aria-hidden />
+          {txt.avoidStairs}
+        </label>
+      )}
 
       <div className="mt-2.5">
         {!from && (
@@ -195,7 +225,7 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
               // The whole card picks the option; the station names inside keep
               // their own action. The time below is the keyboard way in.
               onClick={(e) => {
-                if (!(e.target as HTMLElement).closest("button")) pick(j);
+                if (!(e.target as HTMLElement).closest("button, a")) pick(j);
               }}
               className={`cursor-pointer rounded-md border p-2 transition ${
                 isChosen ? "border-[#c8a951] ring-2 ring-[#c8a951]" : "border-[#e3dac7] hover:border-[#c8a951] dark:border-[#232b3e]"
@@ -223,7 +253,14 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                 </span>
                 {i === 0 && <Tag>{txt.next}</Tag>}
                 {i === fastest && upcoming.length > 1 && <Tag>{txt.fastest}</Tag>}
+                {props.avoidStairs && stairsOn(j).length === 0 && (
+                  <Tag>
+                    <Accessibility size={10} className="mr-0.5 inline align-[-1px]" aria-hidden />
+                    {txt.stepFreeTrip}
+                  </Tag>
+                )}
               </div>
+              {props.avoidStairs && <StairsWarning journey={j} />}
               <ol className="mt-1.5 space-y-1 border-l-2 border-[#d8cfbd] pl-2 dark:border-[#2a3245]">
                 {j.legs.map((leg, k) => (
                   <li key={leg.trip_id + k} className="text-xs">
@@ -265,6 +302,41 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
         </ol>
       </div>
     </Section>
+  );
+}
+
+/** The stations on a journey that may need stairs, and where to check the
+ *  lifts. A step-free journey still gets the lift link: step-free by design
+ *  is only step-free today while every lift on it works. */
+function StairsWarning({ journey }: { journey: Journey }) {
+  const txt = useTravelT();
+  const t = useT();
+  const risks = stairsOn(journey);
+  if (!risks.length) {
+    return (
+      <p className="mt-1 text-[11px] leading-snug text-[#5b5446] dark:text-[#a9b0c2]">
+        {txt.liftCheck}{" "}
+        <a href={GVB_LIFT_FAULTS} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+          {t.liftFaults}
+        </a>
+      </p>
+    );
+  }
+  const say = { limited: txt.accessLimited, no: txt.accessNo, unknown: txt.accessUnknown };
+  return (
+    <p className="mt-1 rounded bg-amber-50 px-1.5 py-1 text-[11px] leading-snug text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+      {txt.stairsWarning}{" "}
+      {risks.map((r, k) => (
+        <span key={r.name}>
+          {k > 0 && ", "}
+          <strong><Place name={r.name} /></strong> ({say[r.state]})
+        </span>
+      ))}
+      {" · "}
+      <a href={GVB_LIFT_FAULTS} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+        {t.liftFaults}
+      </a>
+    </p>
   );
 }
 
