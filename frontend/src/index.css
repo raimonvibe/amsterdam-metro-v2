@@ -39,22 +39,9 @@ a {
   font-weight: 700;
   line-height: 1;
   z-index: 5;
-}
-
-/* One tone per basemap, kept quiet: dark grey on the light styles, a shade
-   off the roofs they sit on; black on the dark ones, barely there. */
-.church-marker-liberty,
-.church-marker-bright {
-  color: rgb(80 72 64 / 0.85);
-}
-
-.church-marker-light {
-  color: rgb(72 70 68 / 0.85);
-}
-
-.church-marker-dark,
-.church-marker-fiord {
-  color: rgb(0 0 0);
+  /* One deep tan on every basemap. Per-style tones would go in
+     .church-marker-<style>. */
+  color: rgb(115 92 58);
 }
 
 /* Social icons — same pattern as github.com/raimonvibe/eleven-up */

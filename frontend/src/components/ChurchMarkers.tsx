@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { MapRef } from "react-map-gl/maplibre";
-import { CHURCHES } from "../data/churches";
+import { churchesNear } from "../data/churches";
+import type { Station } from "../types";
 import { MAP_STYLES, type MapStyle } from "../theme";
 
 /** Street-level zoom — same band as follow-cam and 3D buildings. */
@@ -9,6 +10,8 @@ const MIN_ZOOM = 14;
 interface ChurchMarkersProps {
   mapRef: React.RefObject<MapRef | null>;
   mapReady: boolean;
+  /** Metro stations: only churches near one are drawn. */
+  stations: Station[];
   /** Basemap on screen: each style gets its own cross tone. */
   styleUrl: string;
 }
@@ -17,19 +20,22 @@ const styleOf = (url: string) =>
   (Object.keys(MAP_STYLES) as MapStyle[]).find((s) => MAP_STYLES[s].styleUrl === url) ?? "liberty";
 
 /** HTML overlay above deck.gl — positions sync on map `render` to avoid zoom jitter. */
-export function ChurchMarkers({ mapRef, mapReady, styleUrl }: ChurchMarkersProps) {
+export function ChurchMarkers({ mapRef, mapReady, stations, styleUrl }: ChurchMarkersProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const markerElsRef = useRef<HTMLDivElement[]>([]);
   const mapRenderedRef = useRef(false);
+  const churches = useMemo(() => churchesNear(stations), [stations]);
+  const churchesRef = useRef(churches);
+  churchesRef.current = churches;
 
   // Build marker DOM once; update theme class when it changes.
   useEffect(() => {
     const container = containerRef.current;
     if (!mapReady || !container) return;
 
-    if (markerElsRef.current.length !== CHURCHES.length) {
+    if (markerElsRef.current.length !== churches.length) {
       for (const el of markerElsRef.current) el.remove();
-      markerElsRef.current = CHURCHES.map(() => {
+      markerElsRef.current = churches.map(() => {
         const el = document.createElement("div");
         el.className = "church-marker";
         el.textContent = "†";
@@ -46,7 +52,7 @@ export function ChurchMarkers({ mapRef, mapReady, styleUrl }: ChurchMarkersProps
     for (const el of markerElsRef.current) {
       el.className = `church-marker ${tone}`;
     }
-  }, [mapReady, styleUrl]);
+  }, [mapReady, churches, styleUrl]);
 
   useEffect(() => {
     if (!mapReady) {
@@ -66,8 +72,9 @@ export function ChurchMarkers({ mapRef, mapReady, styleUrl }: ChurchMarkersProps
       container.style.display = show ? "block" : "none";
       if (!show) return;
 
-      for (let i = 0; i < CHURCHES.length; i++) {
-        const church = CHURCHES[i];
+      const list = churchesRef.current;
+      for (let i = 0; i < list.length && i < markerElsRef.current.length; i++) {
+        const church = list[i];
         const { x, y } = map.project([church.longitude, church.latitude]);
         markerElsRef.current[i].style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
       }
