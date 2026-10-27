@@ -263,25 +263,25 @@ export function StationBoard(props: StationBoardProps) {
           />
           {txt.showCancelled}
         </label>
-        {/* Phones: a row of its own, with what it does said, a finger-sized
-            select and 16px text (iOS zooms the page on smaller selects).
-            From sm up it is back to one compact line among the controls. */}
+        {/* A row of its own on every screen, with what it does said, a
+            finger-sized select (tablets are touch screens too) and 16px text
+            (iOS zooms the page on smaller selects). */}
         <label
-          className={`flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-md border px-2.5 py-2 text-sm text-[#3b4457] dark:text-[#c9c3b4] sm:w-auto sm:flex-nowrap sm:gap-1.5 sm:border-0 sm:p-0 sm:text-xs ${
+          className={`flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-md border px-2.5 py-2 text-sm text-[#3b4457] dark:text-[#c9c3b4] ${
             prefs.walkMin > 0
-              ? "border-[#1f3a68] bg-[#eef1f8] dark:border-[#c8a951] dark:bg-[#1a2134] sm:bg-transparent sm:dark:bg-transparent"
+              ? "border-[#1f3a68] bg-[#eef1f8] dark:border-[#c8a951] dark:bg-[#1a2134]"
               : "border-[#e3dac7] dark:border-[#232b3e]"
           }`}
         >
-          <Footprints size={16} className="shrink-0 sm:size-[13px]" aria-hidden />
-          <span className="font-semibold sm:font-normal">{txt.walkTime}</span>
-          <span id={walkHintId} className="order-last basis-full text-xs leading-snug text-[#6b6455] dark:text-[#8b93a7] sm:hidden">{txt.walkHint}</span>
+          <Footprints size={16} className="shrink-0" aria-hidden />
+          <span className="font-semibold">{txt.walkTime}</span>
+          <span id={walkHintId} className="order-last basis-full text-xs leading-snug text-[#6b6455] dark:text-[#8b93a7]">{txt.walkHint}</span>
           <select
             aria-label={txt.walkTime}
             aria-describedby={walkHintId}
             value={prefs.walkMin}
             onChange={(e) => onPrefs({ ...prefs, walkMin: Number(e.target.value) })}
-            className={`ml-auto min-h-11 rounded-md border bg-white px-2 text-base tabular-nums dark:bg-[#0d1322] sm:ml-0 sm:min-h-0 sm:rounded sm:px-1 sm:py-0.5 sm:text-xs ${
+            className={`ml-auto min-h-11 rounded-md border bg-white px-2 text-base tabular-nums dark:bg-[#0d1322] ${
               prefs.walkMin > 0 ? "border-[#1f3a68] font-semibold dark:border-[#c8a951]" : "border-[#d8cfbd] dark:border-[#2a3245]"
             }`}
           >
