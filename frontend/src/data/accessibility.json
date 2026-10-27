@@ -146,10 +146,10 @@
       "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27"
     },
     "Amsterdam, Station Holendrecht": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/250233810",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Station Lelylaan": {
       "step_free": "no",
