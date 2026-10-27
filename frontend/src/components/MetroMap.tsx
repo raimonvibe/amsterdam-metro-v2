@@ -1235,7 +1235,7 @@ export function MetroMap({
           />
         )}
       </Map>
-      <ChurchMarkers mapRef={mapRef} mapReady={mapReady} styleUrl={styleUrl} />
+      <ChurchMarkers mapRef={mapRef} mapReady={mapReady} stations={stations} styleUrl={styleUrl} />
       {popupTrain && popupScreen && (
         <TrainPopup
           key={popupTrain.id}
