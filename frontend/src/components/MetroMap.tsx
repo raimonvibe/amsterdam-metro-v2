@@ -257,6 +257,15 @@ let lastView: { longitude: number; latitude: number; zoom: number; pitch: number
 // Straight above where the intro ends, so the flight is one smooth zoom in.
 // Started elsewhere, flyTo arcs out and back to cover the distance, which on
 // a narrow phone or tablet screen looks like a lurch.
+/** Station names show from this zoom up. */
+const LABEL_ZOOM = 12.8;
+
+/** Draw at most 2 pixels per CSS pixel. A 3x phone (iPhone 11 Pro: 1125x2436)
+ *  otherwise fills 2.25 times the pixels of 2x every frame, 3D buildings and
+ *  additive glow included, for a sharpness the eye barely sees at that size.
+ *  Laptops and 2x screens are unchanged. */
+const PIXEL_RATIO = typeof window === "undefined" ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+
 const INTRO_START = {
   longitude: 4.9238,
   latitude: 52.336,
@@ -454,7 +463,20 @@ export function MetroMap({
     }
     return cached;
   };
-  const [zoom, setZoom] = useState(INTRO_START.zoom);
+  // Only whether station names show, not the zoom itself: kept as zoom, it
+  // changed on every frame of a camera move and re-rendered the whole map,
+  // rebuilding every deck.gl layer 60 times a second. A phone could not keep
+  // up and the opening flight dropped to a handful of frames. A boolean only
+  // changes when the threshold is crossed. The ref guard matters: a setter
+  // called with an unchanged value still renders while the train clock's own
+  // update is pending, which is most frames.
+  const [showLabels, setShowLabelsState] = useState(INTRO_START.zoom >= LABEL_ZOOM);
+  const showLabelsRef = useRef(showLabels);
+  const setShowLabels = useCallback((show: boolean) => {
+    if (show === showLabelsRef.current) return;
+    showLabelsRef.current = show;
+    setShowLabelsState(show);
+  }, []);
   const [tick, setTick] = useState(0);
   const [webglError, setWebglError] = useState<string | null>(() => {
     const status = getWebGLStatus();
@@ -657,7 +679,7 @@ export function MetroMap({
       introDone.current = true;
       if (reduceMotionRef.current) {
         map.jumpTo(INTRO_END);
-        setZoom(map.getZoom());
+        setShowLabels(map.getZoom() >= LABEL_ZOOM);
       } else {
         // Fly once the first view is on screen. Started on "load", a slower
         // phone (iPhone 11 Pro) spent most of the 3.2 s still building tiles,
@@ -670,7 +692,7 @@ export function MetroMap({
           clearTimeout(fallback);
           map.off("idle", fly);
           map.flyTo({ ...INTRO_END, duration: 3200, essential: true });
-          map.once("moveend", () => setZoom(map.getZoom()));
+          map.once("moveend", () => setShowLabels(map.getZoom() >= LABEL_ZOOM));
         };
         const fallback = setTimeout(fly, 2500);
         map.once("idle", fly);
@@ -833,7 +855,13 @@ export function MetroMap({
     };
   }, [followedTrainId, trains, shapes, onStopFollow, laneRefs, paused]);
 
-  const visibleTracks = tracks.filter((tk) => visibleLines.includes(tk.line));
+  // Memoised: a fresh array every render (30 a second, from the train clock)
+  // made deck.gl rebuild the four rail layers and the station dots and names
+  // each time. On a phone that alone cost most of every frame.
+  const visibleTracks = useMemo(
+    () => tracks.filter((tk) => visibleLines.includes(tk.line)),
+    [tracks, visibleLines],
+  );
   // Stations stay on raw GTFS coords; lane-offset rails would leave them in the
   // gap (Gein). Snap each marker to the average of the nearest point on every
   // visible line it serves so multi-line stops sit on the corridor again.
@@ -871,7 +899,6 @@ export function MetroMap({
         };
       });
   }, [stations, visibleTracks, visibleLines]);
-  const showLabels = zoom >= 12.8;
 
   const trailData = Object.values(trailsRef.current).filter(
     (tr) => tr.path.length > 1 && visibleLines.includes(tr.line),
@@ -1237,11 +1264,12 @@ export function MetroMap({
         attributionControl={false}
         style={{ width: "100%", height: "100%" }}
         maxPitch={72}
+        pixelRatio={PIXEL_RATIO}
         locale={MAP_LOCALE[lang]}
         onLoad={handleLoad}
-        onMove={(e) => setZoom(e.viewState.zoom)}
+        onMove={(e) => setShowLabels(e.viewState.zoom >= LABEL_ZOOM)}
         onMoveEnd={(e) => {
-          setZoom(e.viewState.zoom);
+          setShowLabels(e.viewState.zoom >= LABEL_ZOOM);
           const { longitude, latitude, zoom: z, pitch, bearing } = e.viewState;
           lastView = { longitude, latitude, zoom: z, pitch, bearing };
         }}
@@ -1264,6 +1292,7 @@ export function MetroMap({
           <DeckGLOverlay
             layers={layers}
             pickingRadius={12}
+            useDevicePixels={PIXEL_RATIO}
             getCursor={({ isHovering, isDragging }) =>
               isDragging ? "grabbing" : isHovering ? "pointer" : "grab"
             }
