@@ -44,7 +44,10 @@ export function Section({
       aria-labelledby={headingId}
       className={`rounded-lg border border-[#d8cfbd] bg-[#fffdf8] shadow-[0_1px_0_rgba(60,45,20,0.06)] dark:border-[#2a3245] dark:bg-[#111727] ${className}`}
     >
-      <header className="rule-double flex items-center justify-between gap-2 px-3 pb-1.5 pt-2">
+      {/* Wraps rather than squeezes: when the aside (the line picker on a
+          phone) does not fit beside the title, it moves to a line of its own
+          and the title stays whole instead of "Line ov…". */}
+      <header className="rule-double flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 px-3 pb-1.5 pt-2">
         <h2 id={headingId} className="font-academic flex min-w-0 items-baseline gap-2 text-[15px] font-semibold text-[#1d2433] dark:text-[#ece6d6]">
           <span className="smallcaps text-[#7b2132] dark:text-[#c8a951]" aria-hidden>
             {ROMAN[n]}.
