@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Clock, Footprints, Link2, MapPin, Radio, Route, Star } from "lucide-react";
 import { fetchBoard, fetchStationInfo, SlowDown } from "../api";
 import { delayLabel } from "../format";
@@ -76,6 +76,7 @@ export function groupByDirection(deps: BoardDeparture[]): Group[] {
 export function StationBoard(props: StationBoardProps) {
   const { station, colorOf, trains, prefs, onPrefs, nowMs } = props;
   const txt = useTravelT();
+  const walkHintId = useId();
   const [deps, setDeps] = useState<BoardDeparture[] | null>(null);
   const [info, setInfo] = useState<StationInfo | null>(null);
   const [error, setError] = useState(false);
@@ -262,13 +263,27 @@ export function StationBoard(props: StationBoardProps) {
           />
           {txt.showCancelled}
         </label>
-        <label className="flex items-center gap-1.5 text-xs text-[#3b4457] dark:text-[#c9c3b4]">
-          <Footprints size={13} aria-hidden />
-          {txt.walkTime}
+        {/* Phones: a row of its own, with what it does said, a finger-sized
+            select and 16px text (iOS zooms the page on smaller selects).
+            From sm up it is back to one compact line among the controls. */}
+        <label
+          className={`flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-md border px-2.5 py-2 text-sm text-[#3b4457] dark:text-[#c9c3b4] sm:w-auto sm:flex-nowrap sm:gap-1.5 sm:border-0 sm:p-0 sm:text-xs ${
+            prefs.walkMin > 0
+              ? "border-[#1f3a68] bg-[#eef1f8] dark:border-[#c8a951] dark:bg-[#1a2134] sm:bg-transparent sm:dark:bg-transparent"
+              : "border-[#e3dac7] dark:border-[#232b3e]"
+          }`}
+        >
+          <Footprints size={16} className="shrink-0 sm:size-[13px]" aria-hidden />
+          <span className="font-semibold sm:font-normal">{txt.walkTime}</span>
+          <span id={walkHintId} className="order-last basis-full text-xs leading-snug text-[#6b6455] dark:text-[#8b93a7] sm:hidden">{txt.walkHint}</span>
           <select
+            aria-label={txt.walkTime}
+            aria-describedby={walkHintId}
             value={prefs.walkMin}
             onChange={(e) => onPrefs({ ...prefs, walkMin: Number(e.target.value) })}
-            className="rounded border border-[#d8cfbd] bg-white px-1 py-0.5 text-xs tabular-nums dark:border-[#2a3245] dark:bg-[#0d1322]"
+            className={`ml-auto min-h-11 rounded-md border bg-white px-2 text-base tabular-nums dark:bg-[#0d1322] sm:ml-0 sm:min-h-0 sm:rounded sm:px-1 sm:py-0.5 sm:text-xs ${
+              prefs.walkMin > 0 ? "border-[#1f3a68] font-semibold dark:border-[#c8a951]" : "border-[#d8cfbd] dark:border-[#2a3245]"
+            }`}
           >
             {[0, 1, 2, 3, 5, 8, 10, 15].map((m) => (
               <option key={m} value={m}>
