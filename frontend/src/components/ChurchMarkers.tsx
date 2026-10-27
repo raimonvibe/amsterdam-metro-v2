@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { MapRef } from "react-map-gl/maplibre";
 import { CHURCHES } from "../data/churches";
-import type { Theme } from "../theme";
+import { MAP_STYLES, type MapStyle } from "../theme";
 
 /** Street-level zoom — same band as follow-cam and 3D buildings. */
 const MIN_ZOOM = 14;
@@ -9,11 +9,15 @@ const MIN_ZOOM = 14;
 interface ChurchMarkersProps {
   mapRef: React.RefObject<MapRef | null>;
   mapReady: boolean;
-  theme: Theme;
+  /** Basemap on screen: each style gets its own cross tone. */
+  styleUrl: string;
 }
 
+const styleOf = (url: string) =>
+  (Object.keys(MAP_STYLES) as MapStyle[]).find((s) => MAP_STYLES[s].styleUrl === url) ?? "liberty";
+
 /** HTML overlay above deck.gl — positions sync on map `render` to avoid zoom jitter. */
-export function ChurchMarkers({ mapRef, mapReady, theme }: ChurchMarkersProps) {
+export function ChurchMarkers({ mapRef, mapReady, styleUrl }: ChurchMarkersProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const markerElsRef = useRef<HTMLDivElement[]>([]);
   const mapRenderedRef = useRef(false);
@@ -38,11 +42,11 @@ export function ChurchMarkers({ mapRef, mapReady, theme }: ChurchMarkersProps) {
       });
     }
 
-    const tone = theme === "dark" ? "church-marker-dark" : "church-marker-light";
+    const tone = `church-marker-${styleOf(styleUrl)}`;
     for (const el of markerElsRef.current) {
       el.className = `church-marker ${tone}`;
     }
-  }, [mapReady, theme]);
+  }, [mapReady, styleUrl]);
 
   useEffect(() => {
     if (!mapReady) {
