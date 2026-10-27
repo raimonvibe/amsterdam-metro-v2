@@ -8,10 +8,10 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Amstelveenseweg": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/250222266",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Bullewijk": {
       "step_free": "no",
@@ -20,10 +20,10 @@
       "note": "GVB station page (CHB) says accessible, 2026-10-27, but its only lift has been reported broken since Nov 2023; set back to yes once GVB's lift faults no longer list it"
     },
     "Amsterdam, Burg. De Vlugtlaan": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/2237721918",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Centraal Station": {
       "step_free": "unknown",
@@ -38,28 +38,28 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Europaplein": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "no",
+      "source": "checked",
       "osm": "node/5737467956",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27"
     },
     "Amsterdam, Gaasperplas": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "no",
+      "source": "checked",
       "osm": "node/4041642874",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27"
     },
     "Amsterdam, Ganzenhoef": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/4041662264",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Gein": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "no",
+      "source": "checked",
       "osm": "node/4041640589",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27"
     },
     "Amsterdam, Heemstedestraat": {
       "step_free": "yes",
@@ -74,22 +74,22 @@
       "note": "GVB station page (CHB), 2026-10-27; OpenStreetMap says limited"
     },
     "Amsterdam, Isolatorweg": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "no",
+      "source": "checked",
       "osm": "node/4077313759",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27"
     },
     "Amsterdam, Jan van Galenstraat": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/250224485",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Kraaiennest": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/4041662265",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Nieuwmarkt": {
       "step_free": "yes",
@@ -98,46 +98,46 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Noord": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/5737467961",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Noorderpark": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/5737467960",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Overamstel": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/427565080",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Postjesweg": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/4077313763",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Reigersbos": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "no",
+      "source": "checked",
       "osm": "node/4041640590",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27"
     },
     "Amsterdam, Rokin": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "way/266903916",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Spaklerweg": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "no",
+      "source": "checked",
       "osm": "node/4073693626",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27"
     },
     "Amsterdam, Station Bijlmer ArenA": {
       "step_free": "unknown",
@@ -152,10 +152,10 @@
       "osm_wheelchair": "yes"
     },
     "Amsterdam, Station Lelylaan": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "no",
+      "source": "checked",
       "osm": "node/14127078780",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB) says accessible, 2026-10-27, but GVB's lift faults list its metro lift as out of service; set back to yes once they no longer list it"
     },
     "Amsterdam, Station RAI": {
       "step_free": "yes",
@@ -170,10 +170,10 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Station Zuid": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/5267675295",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Strandvliet": {
       "step_free": "no",
@@ -182,22 +182,22 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Van der Madeweg": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/289445435",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Venserpolder": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/4041664287",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Vijzelgracht": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/5737467958",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Waterlooplein": {
       "step_free": "yes",
@@ -206,28 +206,28 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Weesperplein": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "way/268998785",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Wibautstraat": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/4073693628",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Diemen, Station Diemen Zuid": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "no",
+      "source": "checked",
       "osm": "node/14140826449",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB) says accessible, 2026-10-27, but its lift has been reported broken since Nov 2023; set back to yes once GVB's lift faults no longer list it"
     },
     "Diemen, Verrijn Stuartweg": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/4064153245",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page (CHB), 2026-10-27"
     },
     "Duivendrecht, Station Duivendrecht": {
       "step_free": "unknown",
