@@ -1,5 +1,8 @@
 import accessibility from "./accessibility.json";
 
+// The rule, the sources and the regular checks of this data:
+// docs/step-free-stations.md. Read it before editing accessibility.json.
+
 /** Whether a metro station is step-free. Only a station checked on GVB's
  *  station page can be "yes"; anything not confirmed is "no", since telling
  *  a rider "step-free" and being wrong is worse than the other way round. */
