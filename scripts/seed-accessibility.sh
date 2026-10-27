@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Seed frontend/src/data/accessibility.json from OpenStreetMap (Overpass API).
+# How the data is checked and kept current: docs/step-free-stations.md.
 #
 # Unlike churches.json this file is curated. Only a station whose "source" is
 # "checked" (verified on GVB's station page) can be step-free, and it is never
