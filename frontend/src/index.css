@@ -41,11 +41,19 @@ a {
   z-index: 5;
 }
 
-.church-marker-light {
-  color: rgb(232 228 220);
+/* One tone per basemap, kept quiet: dark grey on the light styles, a shade
+   off the roofs they sit on; black on the dark ones, barely there. */
+.church-marker-liberty,
+.church-marker-bright {
+  color: rgb(80 72 64 / 0.85);
 }
 
-.church-marker-dark {
+.church-marker-light {
+  color: rgb(72 70 68 / 0.85);
+}
+
+.church-marker-dark,
+.church-marker-fiord {
   color: rgb(0 0 0);
 }
 
