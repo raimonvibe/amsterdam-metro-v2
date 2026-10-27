@@ -1,0 +1,210 @@
+{
+  "updated": "2026-10-27",
+  "stations": {
+    "Amsterdam, Amstelstation": {
+      "step_free": "yes",
+      "source": "checked",
+      "osm": "node/4040491812",
+      "note": "GVB station page (CHB), 2026-10-27"
+    },
+    "Amsterdam, Amstelveenseweg": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/250222266"
+    },
+    "Amsterdam, Bullewijk": {
+      "step_free": "yes",
+      "source": "checked",
+      "osm": "node/4046388677",
+      "note": "GVB station page (CHB), 2026-10-27; its only lift has been reported broken since Nov 2023"
+    },
+    "Amsterdam, Burg. De Vlugtlaan": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/2237721918"
+    },
+    "Amsterdam, Centraal Station": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/5424713348"
+    },
+    "Amsterdam, De Pijp": {
+      "step_free": "yes",
+      "source": "checked",
+      "osm": "node/5737467957",
+      "note": "GVB station page (CHB), 2026-10-27"
+    },
+    "Amsterdam, Europaplein": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/5737467956"
+    },
+    "Amsterdam, Gaasperplas": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/4041642874"
+    },
+    "Amsterdam, Ganzenhoef": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/4041662264"
+    },
+    "Amsterdam, Gein": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/4041640589"
+    },
+    "Amsterdam, Heemstedestraat": {
+      "step_free": "yes",
+      "source": "checked",
+      "osm": "node/4053335995",
+      "note": "GVB station page (CHB), 2026-10-27"
+    },
+    "Amsterdam, Henk Sneevlietweg": {
+      "step_free": "yes",
+      "source": "checked",
+      "osm": "node/4075987791",
+      "note": "GVB station page (CHB), 2026-10-27"
+    },
+    "Amsterdam, Isolatorweg": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/4077313759"
+    },
+    "Amsterdam, Jan van Galenstraat": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/250224485"
+    },
+    "Amsterdam, Kraaiennest": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/4041662265"
+    },
+    "Amsterdam, Nieuwmarkt": {
+      "step_free": "yes",
+      "source": "checked",
+      "osm": "node/4073743506",
+      "note": "GVB station page (CHB), 2026-10-27"
+    },
+    "Amsterdam, Noord": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/5737467961"
+    },
+    "Amsterdam, Noorderpark": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/5737467960"
+    },
+    "Amsterdam, Overamstel": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/427565080"
+    },
+    "Amsterdam, Postjesweg": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/4077313763"
+    },
+    "Amsterdam, Reigersbos": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/4041640590"
+    },
+    "Amsterdam, Rokin": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "way/266903916"
+    },
+    "Amsterdam, Spaklerweg": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/4073693626"
+    },
+    "Amsterdam, Station Bijlmer ArenA": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/4005961975"
+    },
+    "Amsterdam, Station Holendrecht": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/250233810"
+    },
+    "Amsterdam, Station Lelylaan": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/14127078780"
+    },
+    "Amsterdam, Station RAI": {
+      "step_free": "yes",
+      "source": "checked",
+      "osm": "node/5360384018",
+      "note": "GVB station page (CHB), 2026-10-27"
+    },
+    "Amsterdam, Station Sloterdijk": {
+      "step_free": "yes",
+      "source": "checked",
+      "osm": "node/5267675296",
+      "note": "GVB station page (CHB), 2026-10-27"
+    },
+    "Amsterdam, Station Zuid": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/5267675295"
+    },
+    "Amsterdam, Strandvliet": {
+      "step_free": "no",
+      "source": "checked",
+      "osm": "node/4046383465",
+      "note": "GVB station page (CHB), 2026-10-27"
+    },
+    "Amsterdam, Van der Madeweg": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/289445435"
+    },
+    "Amsterdam, Venserpolder": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/4041664287"
+    },
+    "Amsterdam, Vijzelgracht": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/5737467958"
+    },
+    "Amsterdam, Waterlooplein": {
+      "step_free": "yes",
+      "source": "checked",
+      "osm": "way/268782305",
+      "note": "GVB station page (CHB), 2026-10-27"
+    },
+    "Amsterdam, Weesperplein": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "way/268998785"
+    },
+    "Amsterdam, Wibautstraat": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/4073693628"
+    },
+    "Diemen, Station Diemen Zuid": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/14140826449"
+    },
+    "Diemen, Verrijn Stuartweg": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/4064153245"
+    },
+    "Duivendrecht, Station Duivendrecht": {
+      "step_free": "yes",
+      "source": "osm",
+      "osm": "node/4041666291"
+    }
+  }
+}

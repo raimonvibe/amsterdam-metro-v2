@@ -65,9 +65,11 @@ export interface TravelPrefs {
   /** Single-key shortcuts (/, F, P, ?). Switchable off (WCAG 2.1.4): speech
    *  input types letters too, and would otherwise trigger them. */
   shortcuts: boolean;
+  /** Planner: flag journeys through stations not known to be step-free. */
+  avoidStairs: boolean;
 }
 
-export const DEFAULT_PREFS: TravelPrefs = { windowMin: 30, showCancelled: true, walkMin: 0, shortcuts: true };
+export const DEFAULT_PREFS: TravelPrefs = { windowMin: 30, showCancelled: true, walkMin: 0, shortcuts: true, avoidStairs: false };
 
 export function loadPrefs(): TravelPrefs {
   const p = read<Partial<TravelPrefs>>(PREFS, {});
@@ -76,6 +78,7 @@ export function loadPrefs(): TravelPrefs {
     showCancelled: typeof p.showCancelled === "boolean" ? p.showCancelled : DEFAULT_PREFS.showCancelled,
     walkMin: typeof p.walkMin === "number" && p.walkMin >= 0 && p.walkMin <= 30 ? p.walkMin : DEFAULT_PREFS.walkMin,
     shortcuts: typeof p.shortcuts === "boolean" ? p.shortcuts : DEFAULT_PREFS.shortcuts,
+    avoidStairs: typeof p.avoidStairs === "boolean" ? p.avoidStairs : DEFAULT_PREFS.avoidStairs,
   };
 }
 

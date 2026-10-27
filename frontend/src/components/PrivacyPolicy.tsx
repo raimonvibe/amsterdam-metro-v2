@@ -116,7 +116,7 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
                 <strong>Reisinformatie-instellingen (localStorage):</strong> Op de pagina
                 Reisinformatie bewaart uw browser uw favoriete stations, de laatst bekeken stations
                 (maximaal zes) en uw weergave-instellingen (tijdvenster, vervallen ritten tonen,
-                looptijd). Ook dit blijft in uw browser; wij ontvangen het niet.
+                looptijd, zonder trappen). Ook dit blijft in uw browser; wij ontvangen het niet.
               </li>
               <li>
                 <strong>Locatie (alleen op uw verzoek):</strong> Kiest u “Dichtstbijzijnde
