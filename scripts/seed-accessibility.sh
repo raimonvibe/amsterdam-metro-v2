@@ -3,9 +3,9 @@
 #
 # Unlike churches.json this file is curated. Only a station whose "source" is
 # "checked" (verified on GVB's station page) can be step-free, and it is never
-# overwritten. Stations still on "osm" (or new ones) stay "unknown" and get the
-# OSM wheelchair tag of the nearest metro station as "osm_wheelchair", a hint
-# for whoever checks them next. Station names and positions come from a
+# overwritten. Stations still on "osm" (or new ones) are "no" until checked,
+# and get the OSM wheelchair tag of the nearest metro station as
+# "osm_wheelchair", a hint for whoever checks them next. Station names and positions come from a
 # running backend.
 #
 #   scripts/seed-accessibility.sh [backend-url]   (default http://localhost:8020)
@@ -62,7 +62,7 @@ for s in sorted(stations, key=lambda s: s["name"]):
     pool = metro_only or near
     tagged = [el for el in pool if el.get("tags", {}).get("wheelchair") in STATES]
     el = tagged[0] if tagged else (pool[0] if pool else None)
-    entry = {"step_free": "unknown", "source": "osm"}
+    entry = {"step_free": "no", "source": "osm"}
     if el:
         state = STATES.get(el.get("tags", {}).get("wheelchair"), "unknown")
         # A combined station's "limited" or "no" may be about the train

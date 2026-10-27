@@ -1,14 +1,15 @@
 import accessibility from "./accessibility.json";
 
 /** Whether a metro station is step-free. Only a station checked on GVB's
- *  station page is "yes" or "no": telling a rider "step-free" and being wrong
- *  is worse than saying "unknown". */
+ *  station page can be "yes"; anything not confirmed is "no", since telling
+ *  a rider "step-free" and being wrong is worse than the other way round. */
 export type StepFree = "yes" | "limited" | "no" | "unknown";
 
 export interface StationAccess {
   step_free: StepFree;
   /** "checked": verified on GVB's station page, and kept when the seed script
-   *  runs again; "osm": seeded by scripts/seed-accessibility.sh, still unknown. */
+   *  runs again; "osm": seeded by scripts/seed-accessibility.sh, not yet
+   *  checked, so "no". */
   source: "osm" | "checked";
   /** The nearest OSM station element, e.g. "node/4053335995". */
   osm?: string;
@@ -20,9 +21,10 @@ export interface StationAccess {
 
 const STATIONS = accessibility.stations as Record<string, StationAccess>;
 
-/** Step-free access at a station, by its grouped name ("Amsterdam, Rokin"). */
+/** Step-free access at a station, by its grouped name ("Amsterdam, Rokin").
+ *  A station missing from the file (renamed, or new) is not step-free. */
 export function stepFree(station: string): StepFree {
-  return STATIONS[station]?.step_free ?? "unknown";
+  return STATIONS[station]?.step_free ?? "no";
 }
 
 /** GVB's own list of lift and escalator faults: live, but only in a browser. */

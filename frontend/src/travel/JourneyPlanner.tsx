@@ -306,12 +306,22 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
 }
 
 /** The stations on a journey that may need stairs, and where to check the
- *  lifts; nothing when every station used is step-free. */
+ *  lifts. A step-free journey still gets the lift link: step-free by design
+ *  is only step-free today while every lift on it works. */
 function StairsWarning({ journey }: { journey: Journey }) {
   const txt = useTravelT();
   const t = useT();
   const risks = stairsOn(journey);
-  if (!risks.length) return null;
+  if (!risks.length) {
+    return (
+      <p className="mt-1 text-[11px] leading-snug text-[#5b5446] dark:text-[#a9b0c2]">
+        {txt.liftCheck}{" "}
+        <a href={GVB_LIFT_FAULTS} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+          {t.liftFaults}
+        </a>
+      </p>
+    );
+  }
   const say = { limited: txt.accessLimited, no: txt.accessNo, unknown: txt.accessUnknown };
   return (
     <p className="mt-1 rounded bg-amber-50 px-1.5 py-1 text-[11px] leading-snug text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">

@@ -17,18 +17,19 @@ describe("accessibility.json", () => {
     }
   });
 
-  it("calls a station step-free only once it is checked on GVB's site", () => {
+  it("calls a station step-free only once it is checked on GVB's site; the rest are not", () => {
     for (const [name, e] of Object.entries(accessibility.stations)) {
-      if (e.source !== "checked") expect(e.step_free, name).toBe("unknown");
+      if (e.source !== "checked") expect(e.step_free, name).toBe("no");
+      expect(["yes", "no"], name).toContain(e.step_free);
     }
   });
 });
 
 describe("stepFree", () => {
-  it("reads a station's state and calls a station it does not know unknown", () => {
+  it("reads a station's state and calls a station it does not know not step-free", () => {
     expect(stepFree("Amsterdam, Strandvliet")).toBe("no");
     expect(stepFree("Amsterdam, De Pijp")).toBe("yes");
-    expect(stepFree("Nowhere, Atlantis")).toBe("unknown");
+    expect(stepFree("Nowhere, Atlantis")).toBe("no");
   });
 });
 
@@ -57,8 +58,8 @@ describe("StepFree", () => {
     expect(screen.getByText("Rolstoeltoegankelijk")).toHaveClass("sr-only");
   });
 
-  it("says when it does not know", () => {
+  it("says not step-free for a station it does not know", () => {
     render(<StepFree station="Nowhere, Atlantis" />);
-    expect(screen.getByText("Toegankelijkheid onbekend")).toBeInTheDocument();
+    expect(screen.getByText("Niet rolstoeltoegankelijk")).toBeInTheDocument();
   });
 });

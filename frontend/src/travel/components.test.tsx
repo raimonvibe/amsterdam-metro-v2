@@ -435,7 +435,7 @@ describe("JourneyPlanner", () => {
   it("counts only the stations a rider uses as possible stairs", () => {
     expect(stairsOn(via("Amsterdam, Strandvliet", "Nowhere, Atlantis", "Amsterdam, De Pijp"))).toEqual([
       { name: "Amsterdam, Strandvliet", state: "no" },
-      { name: "Nowhere, Atlantis", state: "unknown" },
+      { name: "Nowhere, Atlantis", state: "no" },
     ]);
     expect(stairsOn(stepFreeTrip)).toEqual([]);
   });
@@ -445,6 +445,9 @@ describe("JourneyPlanner", () => {
     renderPlanner([stepFreeTrip], vi.fn(), { avoidStairs: true, onAvoidStairs });
     expect(await screen.findByText("zonder trappen")).toBeInTheDocument();
     expect(screen.queryByText(/Niet zeker zonder trappen/)).not.toBeInTheDocument();
+    // Step-free by design is only step-free today while the lifts work.
+    const lifts = screen.getByText(/zolang de liften werken/).closest("p")!;
+    expect(within(lifts).getByRole("link", { name: "Liftstoringen bij GVB" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("checkbox", { name: /Zonder trappen/ }));
     expect(onAvoidStairs).toHaveBeenCalledWith(false);
   });
