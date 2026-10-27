@@ -8,9 +8,10 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Amstelveenseweg": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/250222266"
+      "osm": "node/250222266",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Bullewijk": {
       "step_free": "no",
@@ -19,14 +20,16 @@
       "note": "GVB station page (CHB) says accessible, 2026-10-27, but its only lift has been reported broken since Nov 2023; set back to yes once GVB's lift faults no longer list it"
     },
     "Amsterdam, Burg. De Vlugtlaan": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/2237721918"
+      "osm": "node/2237721918",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Centraal Station": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/5424713348"
+      "osm": "node/5424713348",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, De Pijp": {
       "step_free": "yes",
@@ -35,51 +38,58 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Europaplein": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/5737467956"
+      "osm": "node/5737467956",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Gaasperplas": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/4041642874"
+      "osm": "node/4041642874",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Ganzenhoef": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/4041662264"
+      "osm": "node/4041662264",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Gein": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/4041640589"
+      "osm": "node/4041640589",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Heemstedestraat": {
-      "step_free": "limited",
+      "step_free": "yes",
       "source": "checked",
       "osm": "node/4053335995",
-      "note": "GVB station page (CHB) says accessible, OpenStreetMap says limited, 2026-10-27; sources disagree, so not counted as step-free"
+      "note": "GVB station page (CHB), 2026-10-27; OpenStreetMap says limited"
     },
     "Amsterdam, Henk Sneevlietweg": {
-      "step_free": "limited",
+      "step_free": "yes",
       "source": "checked",
       "osm": "node/4075987791",
-      "note": "GVB station page (CHB) says accessible, OpenStreetMap says limited, 2026-10-27; sources disagree, so not counted as step-free"
+      "note": "GVB station page (CHB), 2026-10-27; OpenStreetMap says limited"
     },
     "Amsterdam, Isolatorweg": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/4077313759"
+      "osm": "node/4077313759",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Jan van Galenstraat": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/250224485"
+      "osm": "node/250224485",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Kraaiennest": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/4041662265"
+      "osm": "node/4041662265",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Nieuwmarkt": {
       "step_free": "yes",
@@ -88,54 +98,64 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Noord": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/5737467961"
+      "osm": "node/5737467961",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Noorderpark": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/5737467960"
+      "osm": "node/5737467960",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Overamstel": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/427565080"
+      "osm": "node/427565080",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Postjesweg": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/4077313763"
+      "osm": "node/4077313763",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Reigersbos": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/4041640590"
+      "osm": "node/4041640590",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Rokin": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "way/266903916"
+      "osm": "way/266903916",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Spaklerweg": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/4073693626"
+      "osm": "node/4073693626",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Station Bijlmer ArenA": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/4005961975"
+      "osm": "node/4005961975",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Station Holendrecht": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/250233810"
+      "osm": "node/250233810",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Station Lelylaan": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/14127078780"
+      "osm": "node/14127078780",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Station RAI": {
       "step_free": "yes",
@@ -150,9 +170,10 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Station Zuid": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/5267675295"
+      "osm": "node/5267675295",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Strandvliet": {
       "step_free": "no",
@@ -161,19 +182,22 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Van der Madeweg": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/289445435"
+      "osm": "node/289445435",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Venserpolder": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/4041664287"
+      "osm": "node/4041664287",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Vijzelgracht": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/5737467958"
+      "osm": "node/5737467958",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Waterlooplein": {
       "step_free": "yes",
@@ -182,29 +206,34 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Weesperplein": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "way/268998785"
+      "osm": "way/268998785",
+      "osm_wheelchair": "yes"
     },
     "Amsterdam, Wibautstraat": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/4073693628"
+      "osm": "node/4073693628",
+      "osm_wheelchair": "yes"
     },
     "Diemen, Station Diemen Zuid": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/14140826449"
+      "osm": "node/14140826449",
+      "osm_wheelchair": "yes"
     },
     "Diemen, Verrijn Stuartweg": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/4064153245"
+      "osm": "node/4064153245",
+      "osm_wheelchair": "yes"
     },
     "Duivendrecht, Station Duivendrecht": {
-      "step_free": "yes",
+      "step_free": "unknown",
       "source": "osm",
-      "osm": "node/4041666291"
+      "osm": "node/4041666291",
+      "osm_wheelchair": "yes"
     }
   }
 }

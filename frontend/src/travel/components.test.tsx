@@ -422,24 +422,27 @@ describe("JourneyPlanner", () => {
     return props;
   }
 
+  // A journey between stations checked step-free on GVB's site.
+  const via = (a: string, b: string, c: string): Journey => ({
+    ...journey(3, 30, 1),
+    legs: [
+      { ...journey(3, 30, 1).legs[0], from: a, to: b },
+      { ...journey(3, 30, 1).legs[1], from: b, to: c },
+    ],
+  });
+  const stepFreeTrip = via("Amsterdam, De Pijp", "Amsterdam, Waterlooplein", "Amsterdam, Nieuwmarkt");
+
   it("counts only the stations a rider uses as possible stairs", () => {
-    const via = (to: string): Journey => ({
-      ...journey(3, 30, 1),
-      legs: [
-        { ...journey(3, 30, 1).legs[0], from: "Amsterdam, Strandvliet", to: "Nowhere, Atlantis" },
-        { ...journey(3, 30, 1).legs[1], from: "Nowhere, Atlantis", to },
-      ],
-    });
-    expect(stairsOn(via("Amsterdam, Gein"))).toEqual([
+    expect(stairsOn(via("Amsterdam, Strandvliet", "Nowhere, Atlantis", "Amsterdam, De Pijp"))).toEqual([
       { name: "Amsterdam, Strandvliet", state: "no" },
       { name: "Nowhere, Atlantis", state: "unknown" },
     ]);
-    expect(stairsOn(journey(3, 30, 1))).toEqual([]);
+    expect(stairsOn(stepFreeTrip)).toEqual([]);
   });
 
   it("with avoid stairs on, marks a step-free journey; the box reports the switch", async () => {
     const onAvoidStairs = vi.fn();
-    renderPlanner([journey(3, 30, 1)], vi.fn(), { avoidStairs: true, onAvoidStairs });
+    renderPlanner([stepFreeTrip], vi.fn(), { avoidStairs: true, onAvoidStairs });
     expect(await screen.findByText("zonder trappen")).toBeInTheDocument();
     expect(screen.queryByText(/Niet zeker zonder trappen/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("checkbox", { name: /Zonder trappen/ }));

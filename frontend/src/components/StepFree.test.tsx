@@ -16,19 +16,25 @@ describe("accessibility.json", () => {
       expect(["osm", "checked"], name).toContain(e.source);
     }
   });
+
+  it("calls a station step-free only once it is checked on GVB's site", () => {
+    for (const [name, e] of Object.entries(accessibility.stations)) {
+      if (e.source !== "checked") expect(e.step_free, name).toBe("unknown");
+    }
+  });
 });
 
 describe("stepFree", () => {
   it("reads a station's state and calls a station it does not know unknown", () => {
     expect(stepFree("Amsterdam, Strandvliet")).toBe("no");
-    expect(stepFree("Amsterdam, Rokin")).toBe("yes");
+    expect(stepFree("Amsterdam, De Pijp")).toBe("yes");
     expect(stepFree("Nowhere, Atlantis")).toBe("unknown");
   });
 });
 
 describe("StepFree", () => {
   it("says the state in Dutch and English and links GVB's lift faults", () => {
-    render(<StepFree station="Amsterdam, Rokin" />);
+    render(<StepFree station="Amsterdam, De Pijp" />);
     expect(screen.getByText("Rolstoeltoegankelijk")).toBeInTheDocument();
     const link = screen.getByRole("link", { name: "Liftstoringen bij GVB" });
     expect(link).toHaveAttribute("href", GVB_LIFT_FAULTS);
@@ -42,7 +48,7 @@ describe("StepFree", () => {
   it("marks only step-free stations in lists", () => {
     const { container } = render(
       <>
-        <StepFreeMark station="Amsterdam, Rokin" />
+        <StepFreeMark station="Amsterdam, De Pijp" />
         <StepFreeMark station="Amsterdam, Strandvliet" />
         <StepFreeMark station="Nowhere, Atlantis" />
       </>,

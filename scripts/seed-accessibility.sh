@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Seed frontend/src/data/accessibility.json from OpenStreetMap (Overpass API).
 #
-# Unlike churches.json this file is curated: a station whose "source" is
-# "checked" was verified by hand and is never overwritten. Only stations still
-# on "osm" (or new ones) take the OSM wheelchair tag of the nearest metro
-# station. Station names and positions come from a running backend.
+# Unlike churches.json this file is curated. Only a station whose "source" is
+# "checked" (verified on GVB's station page) can be step-free, and it is never
+# overwritten. Stations still on "osm" (or new ones) stay "unknown" and get the
+# OSM wheelchair tag of the nearest metro station as "osm_wheelchair", a hint
+# for whoever checks them next. Station names and positions come from a
+# running backend.
 #
 #   scripts/seed-accessibility.sh [backend-url]   (default http://localhost:8020)
 set -euo pipefail
@@ -67,8 +69,8 @@ for s in sorted(stations, key=lambda s: s["name"]):
         # platforms only; "yes" covers the whole station, metro included.
         if el not in metro_only and state != "yes":
             state = "unknown"
-        entry["step_free"] = state
         entry["osm"] = f'{el["type"]}/{el["id"]}'
+        entry["osm_wheelchair"] = state
     result[name] = entry
 
 doc = {"updated": datetime.date.today().isoformat(), "stations": result}

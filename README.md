@@ -32,7 +32,7 @@ A second page at **[amsterdammetro.nl/reisinfo](https://amsterdammetro.nl/reisin
 - 🔢 **Platform numbers** from the timetable: on the direction card, or per departure when a direction uses several platforms. The big interchanges (CS, Zuid, Sloterdijk…) have none in the official data, so none are shown there
 - 🗺️ **Reisplanner**: direct and one-transfer journeys. The departure station also appears on the board
 - 🚦 **Lijnen and Netwerkstatus**: line diagrams with the trains running right now, plus punctuality per line
-- ♿ **Step-free stations**: a ♿ in station lists and search, step-free status on every station card with a link to GVB's lift faults, and an "avoid stairs" option in the planner that names any station on a journey that may need stairs. Seeded from OpenStreetMap by `scripts/seed-accessibility.sh`, checked against GVB's station pages
+- ♿ **Step-free stations**: a ♿ in station lists and search, step-free status on every station card with a link to GVB's lift faults, and an "avoid stairs" option in the planner that names any station on a journey that may need stairs. A station counts as step-free only once it is checked on GVB's station page; the rest show "unknown". `scripts/seed-accessibility.sh` adds OpenStreetMap's tag as a hint for checking
 - ⭐ **Favourites, recent stations and shareable links** (`/reisinfo?station=Noord&van=Noord&naar=Gein`), kept only in your browser
 - 🕰️ **A Dutch station clock** in Amsterdam time, and a **light/dark toggle** in the header
 - 🔎 **Smart search**: "arena", "52", "cs naar zuid" or "dichtbij" for the nearest station

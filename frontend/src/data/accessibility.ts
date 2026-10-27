@@ -1,15 +1,19 @@
 import accessibility from "./accessibility.json";
 
-/** OSM's wheelchair tag for a metro station; "unknown" where OSM has none. */
+/** Whether a metro station is step-free. Only a station checked on GVB's
+ *  station page is "yes" or "no": telling a rider "step-free" and being wrong
+ *  is worse than saying "unknown". */
 export type StepFree = "yes" | "limited" | "no" | "unknown";
 
 export interface StationAccess {
   step_free: StepFree;
-  /** "osm": seeded by scripts/seed-accessibility.sh; "checked": verified by
-   *  hand, and kept when the script runs again. */
+  /** "checked": verified on GVB's station page, and kept when the seed script
+   *  runs again; "osm": seeded by scripts/seed-accessibility.sh, still unknown. */
   source: "osm" | "checked";
-  /** The OSM element the value came from, e.g. "node/4053335995". */
+  /** The nearest OSM station element, e.g. "node/4053335995". */
   osm?: string;
+  /** What OSM says, as a hint for whoever checks the station next. */
+  osm_wheelchair?: StepFree;
   /** For checked stations: where and when, and anything a rider should know. */
   note?: string;
 }
