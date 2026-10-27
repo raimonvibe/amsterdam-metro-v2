@@ -26,10 +26,10 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Centraal Station": {
-      "step_free": "unknown",
-      "source": "osm",
+      "step_free": "no",
+      "source": "checked",
       "osm": "node/5424713348",
-      "osm_wheelchair": "yes"
+      "note": "GVB station page NL:Q:30009905 (CHB): niet rolstoelvriendelijk, 2026-10-27; recheck that this is the metro stop"
     },
     "Amsterdam, De Pijp": {
       "step_free": "yes",
