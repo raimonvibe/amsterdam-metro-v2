@@ -11,6 +11,7 @@ import {
 } from "../data/accessibility";
 import { useLang, useT } from "../i18n";
 import { delayLabel } from "../format";
+import { CopyTerm } from "../components/CopyTerm";
 import { Place } from "../components/Place";
 import { pollWhileVisible } from "../poll";
 import { Station } from "../types";
@@ -227,6 +228,7 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
             {txt.noConnection}
           </p>
         )}
+        {props.avoidStairs && upcoming.length > 0 && <LiftSearch journeys={upcoming} />}
         <ol className="space-y-2">
           {upcoming.map((j, i) => {
             const isChosen = upcoming.length > 1 && j === chosen;
@@ -316,33 +318,13 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
   );
 }
 
-/** The stations on a journey that may need stairs, and where to check the
- *  lifts. A step-free journey still gets the lift link: step-free by design
- *  is only step-free today while every lift on it works. */
+/** The stations on a journey that may need stairs. Where to check the lifts
+ *  is said once above the list (LiftSearch), not on every option. */
 function StairsWarning({ journey }: { journey: Journey }) {
   const txt = useTravelT();
-  const t = useT();
   const lang = useLang();
   const risks = stairsOn(journey);
-  // What to type on GVB's page for each station used, and what an empty
-  // result there means: the page says "0 resultaten" for a station with no
-  // fault, and lists only today's faults under "Nu".
-  const hint = (
-    <span className="mt-0.5 block">
-      {txt.liftSearchHint(stationsUsed(journey).map((s) => `"${gvbSearch(s)}"`).join(", "))}
-    </span>
-  );
-  if (!risks.length) {
-    return (
-      <p className="mt-1 text-[11px] leading-snug text-[#5b5446] dark:text-[#a9b0c2]">
-        {txt.liftCheck}{" "}
-        <a href={GVB_LIFT_FAULTS} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-          {t.liftFaults}
-        </a>
-        {hint}
-      </p>
-    );
-  }
+  if (!risks.length) return null;
   const say = { limited: txt.accessLimited, no: txt.accessNo, unknown: txt.accessUnknown };
   const why = (name: string, state: keyof typeof say) => {
     const since = liftOutSince(name);
@@ -357,12 +339,41 @@ function StairsWarning({ journey }: { journey: Journey }) {
           <strong><Place name={r.name} /></strong> ({why(r.name, r.state)})
         </span>
       ))}
-      {" · "}
-      <a href={GVB_LIFT_FAULTS} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-        {t.liftFaults}
-      </a>
-      {hint}
     </p>
+  );
+}
+
+/** Where to check the lifts, once for all options: a step-free journey is
+ *  only step-free today while every lift on it works. GVB's lift-fault page
+ *  cannot be linked pre-filtered, so each station's search term gets its own
+ *  copy pill; one at a time, since GVB finds nothing for two names together.
+ *  And what an empty result there means: GVB says "0 resultaten" for a
+ *  station with no fault, and lists only today's faults under "Nu". */
+function LiftSearch({ journeys }: { journeys: Journey[] }) {
+  const txt = useTravelT();
+  const t = useT();
+  const terms = [...new Set(journeys.flatMap(stationsUsed).map(gvbSearch))];
+  return (
+    <div className="mb-2 rounded-md border border-[#e3dac7] p-2 text-[11px] leading-snug text-[#5b5446] dark:border-[#232b3e] dark:text-[#a9b0c2]">
+      <p>
+        {txt.liftCheck}{" "}
+        <a href={GVB_LIFT_FAULTS} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+          {t.liftFaults}
+        </a>
+      </p>
+      <p className="mt-1">{txt.liftSearchLabel}</p>
+      <ul className="mt-2 flex flex-wrap gap-x-2 gap-y-3">
+        {terms.map((term) => (
+          <li key={term}>
+            <CopyTerm
+              term={term}
+              className="border-[#d8cfbd] bg-white/60 text-[#1f3a68] hover:border-[#c8a951] dark:border-[#2a3245] dark:bg-white/5 dark:text-[#c8a951]"
+            />
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2">{txt.liftSearchMeaning}</p>
+    </div>
   );
 }
 

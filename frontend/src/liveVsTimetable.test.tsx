@@ -38,7 +38,9 @@ describe("live vs timetable on the station card", () => {
   it("warns when the live feed is down", async () => {
     serve([{ trip_id: "b", realtime: false, inMin: 2 }]);
     render(<DepartureBoard station={station} lines={[]} onClose={() => {}} live={false} />);
-    expect(await screen.findByRole("status")).toHaveTextContent("Live gegevens tijdelijk niet beschikbaar");
+    // The card has more than one status region (the lift link's "Gekopieerd" too).
+    const warning = await screen.findByText(/Live gegevens tijdelijk niet beschikbaar/);
+    expect(warning.closest('[role="status"]')).not.toBeNull();
   });
 
   it("tells screen readers a followable timetable row is planned", async () => {

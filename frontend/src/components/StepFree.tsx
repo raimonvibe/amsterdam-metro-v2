@@ -1,4 +1,5 @@
-import { Accessibility, Copy } from "lucide-react";
+import { Accessibility, Check, Copy } from "lucide-react";
+import { CopyStatus, useCopy } from "./CopyTerm";
 import { useLang, useT } from "../i18n";
 import { GVB_LIFT_FAULTS, StepFree as State, gvbSearch, liftOutSince, shortDate, stepFree } from "../data/accessibility";
 
@@ -28,6 +29,7 @@ export function StepFree({ station, className = "" }: { station: string; classNa
   const state = stepFree(station);
   const liftOut = liftOutSince(station);
   const term = gvbSearch(station);
+  const { state: copy, copy: copyTerm } = useCopy(term);
   const label: Record<State, string> = {
     yes: txt.stepFreeYes,
     limited: txt.stepFreeLimited,
@@ -50,13 +52,21 @@ export function StepFree({ station, className = "" }: { station: string; classNa
         // Puts the search term on the clipboard, to paste into GVB's search
         // box (a link cannot fill it in). The link opens GVB either way; if
         // the clipboard is missing (no HTTPS) or refused, the term is still
-        // in the link text, so there is nothing to report.
-        onClick={() => void navigator.clipboard?.writeText(term).catch(() => {})}
+        // in the link text, so only a success is shown. The hover text never
+        // shows on a phone, hence the visible "Gekopieerd".
+        onClick={copyTerm}
         className="inline-flex items-center gap-1 underline decoration-gray-400 underline-offset-2 hover:text-gray-900 dark:hover:text-gray-100"
       >
         {txt.liftFaultsSearch(term)}
         <Copy size={10} className="shrink-0" aria-hidden />
       </a>
+      {copy === "copied" && (
+        <span aria-hidden className="inline-flex items-center gap-0.5 font-semibold text-emerald-700 dark:text-emerald-400">
+          <Check size={10} className="shrink-0" />
+          {txt.copied}
+        </span>
+      )}
+      <CopyStatus state={copy === "copied" ? "copied" : "idle"} term={term} />
     </p>
   );
 }

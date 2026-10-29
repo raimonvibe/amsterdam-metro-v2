@@ -24,7 +24,8 @@ Tests in [`frontend/src/components/StepFree.test.tsx`](../frontend/src/component
 - Station cards on the map and on the travel page: "Rolstoeltoegankelijk" / "Niet rolstoeltoegankelijk", or "Lift buiten gebruik (GVB, 29 okt)" for a station marked `lift_out`. Always with a link to GVB's lift faults that says what to search for there: `Liftstoringen bij GVB: zoek "Diemen Zuid"`.
 - The date is the day of the last lift check (`lift_check`), never today's date. More than 10 days after it (a missed weekly check), the lift line is no longer shown and the card falls back to the plain state and the link. The app never says a lift works, only that one was seen broken.
 - A ♿ after step-free stations in the map's station picker, the travel page's station list and search.
-- The journey planner's "Zonder trappen" option: names the stations on a journey (start, changes, end) that are not step-free, says which have a lift out (with the check date), and adds one line with the GVB search terms for the stations used and what "0 resultaten" means.
+- The journey planner's "Zonder trappen" option: names the stations on a journey (start, changes, end) that are not step-free and says which have a lift out (with the check date). Once above the options: the link to GVB's lift faults, a copy pill per GVB search term for the stations used, and what "0 resultaten" means.
+- The station card's lift link also copies its search term, and says "Gekopieerd" next to it (hover text does not show on a phone).
 
 ## Sources
 
@@ -41,6 +42,7 @@ Tested by hand on 2026-10-29:
 - GVB's lift-fault page has a search box ("Vul een lijnnummer of halte in") that filters as you type, but the search never appears in the URL, and `?searchValue=…` is ignored. A pre-filtered link is not possible.
 - GVB's station pages show some lift faults (Weesperplein's) but not all: Diemen Zuid's page (`NL:S:30009542`) showed "Rolstoelvriendelijk" and no fault while the fault list had its lift broken. **Never use a station page as the lift status.**
 - The search only matches text GVB writes: "Station Diemen Zuid" finds nothing, "Diemen Zuid" finds the fault. A wrong term looks exactly like "no fault" ("0 resultaten"). Hence `gvb_search` per station, kept short.
+- One station per search: "Weesperplein" found its fault, "Weesperplein Bullewijk" gave "0 resultaten" (2026-10-29). Never copy or suggest several names in one term; the planner gives each its own pill.
 - First-time visitors get GVB's cookie banner over the page first; the choice is theirs.
 - No open live feed covers GVB's metro lifts yet. ProRail's train-station lifts are in NDOV (SIRI-FM) since January 2025; city operators were "working on it" in May 2026 ([DOVA](https://dova.nu/nieuws/toegankelijkheidsinformatie-het-ov-wordt-steeds-completer)). Once GVB's lifts are in it, the backend can read that instead.
 
@@ -151,5 +153,6 @@ Newest first. One line per check, even when nothing changed.
 
 | Date | Kind | Result | By |
 |---|---|---|---|
+| 2026-10-29 | search test | GVB's lift-fault search: "Weesperplein" → 1 resultaat (lift exit Stadstimmertuin, updated 28 Oct 20:07), still listed; "Weesperplein Bullewijk" → 0 resultaten. Not a full lift check; data unchanged. | maintainer + Claude |
 | 2026-10-29 | lift faults | Bullewijk's lift no longer listed; station page still Rolstoelvriendelijk (metro 50/54) → yes. New fault at Weesperplein (lift street–hall, exit Stadstimmertuin) → no. Diemen Zuid and Lelylaan still listed → stay no. Centraal Station also has a lift fault (already no). Escalator faults (Noorderpark, Rokin, Vijzelgracht, Zuid, Rietlandpark) don't change step-free. Still 26 step-free. | maintainer + Claude |
 | 2026-10-27 | full | First check of all 39 stations on GVB's pages. 26 step-free, 13 not (9 "niet rolstoelvriendelijk", 3 lift out of service, Duivendrecht unchecked). OSM had 7 wrong. | maintainer + Claude |
