@@ -108,15 +108,18 @@ describe("StepFree", () => {
     expect(screen.getByRole("link", { name: /^Liftstoringen bij GVB: zoek "Diemen Zuid"/ })).toBeInTheDocument();
   });
 
-  it("copies the bare search term when the link is clicked, and survives a refused clipboard", () => {
+  it("copies the bare search term when the link is clicked, and survives a refused clipboard", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
     try {
       render(<StepFree station="Diemen, Station Diemen Zuid" />);
       const link = screen.getByRole("link", { name: /Diemen Zuid/ });
       expect(link).toHaveAttribute("title", "kopieert zoekterm");
-      fireEvent.click(link);
+      await act(async () => fireEvent.click(link));
       expect(writeText).toHaveBeenCalledWith("Diemen Zuid");
+      // Hover text never shows on a phone: the card says it copied.
+      expect(screen.getByText("Gekopieerd")).toBeInTheDocument();
+      expect(screen.getByRole("status")).toHaveTextContent('"Diemen Zuid" gekopieerd');
 
       writeText.mockRejectedValueOnce(new DOMException("denied", "NotAllowedError"));
       expect(() => fireEvent.click(link)).not.toThrow();

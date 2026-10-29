@@ -2,7 +2,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { STATIONS } from "../test/fixtures";
-import { LIFT_CHECK, shortDate } from "../data/accessibility";
+import { LIFT_CHECK, gvbSearch, shortDate } from "../data/accessibility";
 import { AnimatedTrain } from "../types";
 import { JourneyPlanner, JourneyPlannerProps, fastestIndex, routeKeyOf, stairsOn } from "./JourneyPlanner";
 import { routeStretches } from "./LineDiagram";
@@ -447,9 +447,12 @@ describe("JourneyPlanner", () => {
     expect(await screen.findByText("zonder trappen")).toBeInTheDocument();
     expect(screen.queryByText(/Niet zeker zonder trappen/)).not.toBeInTheDocument();
     // Step-free by design is only step-free today while the lifts work.
-    const lifts = screen.getByText(/zolang de liften werken/).closest("p")!;
+    const lifts = screen.getByText(/zolang de liften werken/).closest("div")!;
     expect(within(lifts).getByRole("link", { name: "Liftstoringen bij GVB" })).toBeInTheDocument();
-    expect(lifts).toHaveTextContent('Zoek op GVB: "De Pijp", "Waterlooplein", "Nieuwmarkt". 0 resultaten = nu geen storing');
+    for (const term of ["De Pijp", "Waterlooplein", "Nieuwmarkt"]) {
+      expect(within(lifts).getByRole("button", { name: `Kopieer "${term}"` })).toBeInTheDocument();
+    }
+    expect(lifts).toHaveTextContent("0 resultaten = nu geen storing");
     await userEvent.click(screen.getByRole("checkbox", { name: /Zonder trappen/ }));
     expect(onAvoidStairs).toHaveBeenCalledWith(false);
   });
@@ -460,8 +463,28 @@ describe("JourneyPlanner", () => {
     renderPlanner([j], vi.fn(), { avoidStairs: true, onAvoidStairs: vi.fn() });
     const warning = (await screen.findByText(/Niet zeker zonder trappen/)).closest("p")!;
     expect(warning).toHaveTextContent("Strandvliet (niet toegankelijk)");
-    expect(within(warning).getByRole("link", { name: "Liftstoringen bij GVB" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Liftstoringen bij GVB" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: 'Kopieer "Strandvliet"' })).toBeInTheDocument();
     expect(screen.queryByText("zonder trappen")).not.toBeInTheDocument();
+  });
+
+  it("with avoid stairs on, says where to check the lifts once, with one copy pill per station", async () => {
+    renderPlanner([journey(3, 30, 1), journey(10, 30, 1), journey(17, 30, 0)], vi.fn(), { avoidStairs: true, onAvoidStairs: vi.fn() });
+    await screen.findAllByText(/Niet zeker zonder trappen/);
+    expect(screen.getAllByText(/zolang de liften werken/)).toHaveLength(1);
+    expect(screen.getAllByRole("link", { name: "Liftstoringen bij GVB" })).toHaveLength(1);
+    // Each station once across all options, never two names in one pill.
+    const pills = screen.getAllByRole("button", { name: /^Kopieer / });
+    expect(pills.map((b) => b.getAttribute("aria-label"))).toEqual(
+      ["Amsterdam, Noord", CS.name, "Amsterdam, Gein"].map((n) => `Kopieer "${gvbSearch(n)}"`),
+    );
+  });
+
+  it("with avoid stairs off, shows no lift search", async () => {
+    renderPlanner([journey(3, 30, 1)]);
+    await screen.findAllByText(/richting/);
+    expect(screen.queryByText(/zolang de liften werken/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Kopieer / })).not.toBeInTheDocument();
   });
 
   it("with avoid stairs on, says a lift is out at a station, with the date of the check", async () => {
@@ -472,7 +495,7 @@ describe("JourneyPlanner", () => {
       renderPlanner([j], vi.fn(), { avoidStairs: true, onAvoidStairs: vi.fn() });
       const warning = (await screen.findByText(/Niet zeker zonder trappen/)).closest("p")!;
       expect(warning).toHaveTextContent(`Weesperplein (lift buiten gebruik, ${shortDate(LIFT_CHECK, "nl")})`);
-      expect(warning).toHaveTextContent('"Weesperplein"');
+      expect(screen.getByRole("button", { name: 'Kopieer "Weesperplein"' })).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }
