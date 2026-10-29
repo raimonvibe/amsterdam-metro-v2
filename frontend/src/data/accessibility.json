@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-27",
+  "updated": "2026-10-29",
   "stations": {
     "Amsterdam, Amstelstation": {
       "step_free": "yes",
@@ -14,10 +14,10 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Bullewijk": {
-      "step_free": "no",
+      "step_free": "yes",
       "source": "checked",
       "osm": "node/4046388677",
-      "note": "GVB station page (CHB) says accessible, 2026-10-27, but its only lift has been reported broken since Nov 2023; set back to yes once GVB's lift faults no longer list it"
+      "note": "GVB station page (CHB): Rolstoelvriendelijk, metro 50/54; lift no longer in GVB's lift faults, 2026-10-29"
     },
     "Amsterdam, Burg. De Vlugtlaan": {
       "step_free": "yes",
@@ -206,10 +206,10 @@
       "note": "GVB station page (CHB), 2026-10-27"
     },
     "Amsterdam, Weesperplein": {
-      "step_free": "yes",
+      "step_free": "no",
       "source": "checked",
       "osm": "way/268998785",
-      "note": "GVB station page (CHB), 2026-10-27"
+      "note": "GVB station page (CHB) says accessible, 2026-10-27, but GVB's lift faults list the lift between station hall and street at exit Stadstimmertuin as broken (duration unknown), 2026-10-29; set back to yes once they no longer list it"
     },
     "Amsterdam, Wibautstraat": {
       "step_free": "yes",

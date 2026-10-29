@@ -84,7 +84,7 @@ As of the last full check, **2026-10-27**: 26 step-free, 13 not.
 |---|---|---|---|
 | Amstelstation | ✅ step-free | GVB: Rolstoelvriendelijk | search on GVB |
 | Amstelveenseweg | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:Q:30007343](https://www.gvb.nl/reisinformatie/halte/NL:Q:30007343) |
-| Bullewijk | ❌ not step-free | lift out of service (GVB lift faults, since Nov 2023) | [NL:S:30009524](https://www.gvb.nl/reisinformatie/halte/NL:S:30009524) |
+| Bullewijk | ✅ step-free | GVB: Rolstoelvriendelijk; lift fault gone 2026-10-29 | [NL:S:30009524](https://www.gvb.nl/reisinformatie/halte/NL:S:30009524) |
 | Burg. De Vlugtlaan | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:Q:30003205](https://www.gvb.nl/reisinformatie/halte/NL:Q:30003205) |
 | Centraal Station | ❌ not step-free | GVB: niet rolstoelvriendelijk; **recheck that this code is the metro stop** | [NL:Q:30009905](https://www.gvb.nl/reisinformatie/halte/NL:Q:30009905) |
 | De Pijp | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:S:30009581](https://www.gvb.nl/reisinformatie/halte/NL:S:30009581) |
@@ -119,7 +119,7 @@ As of the last full check, **2026-10-27**: 26 step-free, 13 not.
 | Verrijn Stuartweg | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:S:30009544](https://www.gvb.nl/reisinformatie/halte/NL:S:30009544) |
 | Vijzelgracht | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:Q:30009579](https://www.gvb.nl/reisinformatie/halte/NL:Q:30009579) |
 | Waterlooplein | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:S:30009508](https://www.gvb.nl/reisinformatie/halte/NL:S:30009508) |
-| Weesperplein | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:S:30009510](https://www.gvb.nl/reisinformatie/halte/NL:S:30009510) |
+| Weesperplein | ❌ not step-free | lift out of service (GVB lift faults, exit Stadstimmertuin, since 2026-10-28) | [NL:S:30009510](https://www.gvb.nl/reisinformatie/halte/NL:S:30009510) |
 | Wibautstraat | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:S:30009512](https://www.gvb.nl/reisinformatie/halte/NL:S:30009512) |
 
 Keep this table in step with `accessibility.json` when a station changes.
@@ -129,7 +129,7 @@ Keep this table in step with `accessibility.json` when a station changes.
 - **Duivendrecht**: not checked yet, so "no". Find its metro stop on GVB's site.
 - **Centraal Station**: checked via `NL:Q:30009905`, which may be the ferry stop rather than the metro. Recheck on a page that lists lines 51–54.
 - **Amstelstation**: has no GVB code here yet; add it at the next check.
-- **Bullewijk, Diemen Zuid, Lelylaan**: set back to "yes" once GVB's lift faults no longer list their metro lift.
+- **Weesperplein, Diemen Zuid, Lelylaan**: set back to "yes" once GVB's lift faults no longer list their lift.
 
 ## Check log
 
@@ -137,4 +137,5 @@ Newest first. One line per check, even when nothing changed.
 
 | Date | Kind | Result | By |
 |---|---|---|---|
+| 2026-10-29 | lift faults | Bullewijk's lift no longer listed; station page still Rolstoelvriendelijk (metro 50/54) → yes. New fault at Weesperplein (lift street–hall, exit Stadstimmertuin) → no. Diemen Zuid and Lelylaan still listed → stay no. Centraal Station also has a lift fault (already no). Escalator faults (Noorderpark, Rokin, Vijzelgracht, Zuid, Rietlandpark) don't change step-free. Still 26 step-free. | maintainer + Claude |
 | 2026-10-27 | full | First check of all 39 stations on GVB's pages. 26 step-free, 13 not (9 "niet rolstoelvriendelijk", 3 lift out of service, Duivendrecht unchecked). OSM had 7 wrong. | maintainer + Claude |
