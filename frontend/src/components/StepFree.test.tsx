@@ -1,11 +1,25 @@
 import { act, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { setLang } from "../i18n";
 import accessibility from "../data/accessibility.json";
-import { GVB_LIFT_FAULTS, stepFree } from "../data/accessibility";
+import {
+  GVB_LIFT_FAULTS,
+  LIFT_CHECK,
+  LIFT_CHECK_MAX_DAYS,
+  gvbSearch,
+  liftOutSince,
+  shortDate,
+  stepFree,
+} from "../data/accessibility";
 import { StepFree, StepFreeMark } from "./StepFree";
 
-afterEach(() => act(() => setLang("nl", { persist: false })));
+afterEach(() => {
+  act(() => setLang("nl", { persist: false }));
+  vi.useRealTimers();
+});
+
+const DAY = 86_400_000;
+const checkedAt = Date.parse(`${LIFT_CHECK}T00:00:00Z`);
 
 describe("accessibility.json", () => {
   it("gives every station a known state and source", () => {
@@ -25,6 +39,47 @@ describe("accessibility.json", () => {
   });
 });
 
+describe("accessibility.json lift data", () => {
+  it("dates the last lift check", () => {
+    expect(LIFT_CHECK).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(Number.isNaN(Date.parse(LIFT_CHECK))).toBe(false);
+  });
+
+  it("gives every station a GVB search term without the city", () => {
+    for (const [name, e] of Object.entries(accessibility.stations)) {
+      expect(e.gvb_search, name).toBeTruthy();
+      expect(e.gvb_search, name).not.toMatch(/^(Amsterdam|Diemen|Duivendrecht),/);
+    }
+  });
+
+  it("marks a lift out only on a station that is not step-free for it", () => {
+    for (const [name, e] of Object.entries(accessibility.stations) as [string, { step_free: string; lift_out?: boolean }][]) {
+      if (e.lift_out) expect(e.step_free, name).toBe("no");
+    }
+  });
+});
+
+describe("gvbSearch", () => {
+  it("uses GVB's spelling, and guesses for a station it does not know", () => {
+    expect(gvbSearch("Diemen, Station Diemen Zuid")).toBe("Diemen Zuid");
+    expect(gvbSearch("Amsterdam, Weesperplein")).toBe("Weesperplein");
+    expect(gvbSearch("Nowhere, Station Atlantis")).toBe("Atlantis");
+  });
+});
+
+describe("liftOutSince", () => {
+  it("dates a known lift fault while the check is fresh, and drops it once stale", () => {
+    expect(liftOutSince("Amsterdam, Weesperplein", checkedAt + 3 * DAY)).toBe(LIFT_CHECK);
+    expect(liftOutSince("Amsterdam, Weesperplein", checkedAt + (LIFT_CHECK_MAX_DAYS + 1) * DAY)).toBeNull();
+    expect(liftOutSince("Amsterdam, De Pijp", checkedAt)).toBeNull();
+  });
+
+  it("writes the date short in both languages", () => {
+    expect(shortDate("2026-10-29", "nl")).toBe("29 okt");
+    expect(shortDate("2026-10-29", "en")).toBe("29 Oct");
+  });
+});
+
 describe("stepFree", () => {
   it("reads a station's state and calls a station it does not know not step-free", () => {
     expect(stepFree("Amsterdam, Strandvliet")).toBe("no");
@@ -37,13 +92,27 @@ describe("StepFree", () => {
   it("says the state in Dutch and English and links GVB's lift faults", () => {
     render(<StepFree station="Amsterdam, De Pijp" />);
     expect(screen.getByText("Rolstoeltoegankelijk")).toBeInTheDocument();
-    const link = screen.getByRole("link", { name: "Liftstoringen bij GVB" });
+    const link = screen.getByRole("link", { name: 'Liftstoringen bij GVB: zoek "De Pijp"' });
     expect(link).toHaveAttribute("href", GVB_LIFT_FAULTS);
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
 
     act(() => setLang("en", { persist: false }));
     expect(screen.getByText("Step-free access")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Lift faults at GVB" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: 'Lift faults at GVB: search "De Pijp"' })).toBeInTheDocument();
+  });
+
+  it("says a lift is out, with the date of the check, and GVB's search term", () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: checkedAt + DAY });
+    render(<StepFree station="Diemen, Station Diemen Zuid" />);
+    expect(screen.getByText(`Lift buiten gebruik (GVB, ${shortDate(LIFT_CHECK, "nl")})`)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: 'Liftstoringen bij GVB: zoek "Diemen Zuid"' })).toBeInTheDocument();
+  });
+
+  it("falls back to not step-free once the lift check is stale", () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: checkedAt + (LIFT_CHECK_MAX_DAYS + 1) * DAY });
+    render(<StepFree station="Diemen, Station Diemen Zuid" />);
+    expect(screen.getByText("Niet rolstoeltoegankelijk")).toBeInTheDocument();
+    expect(screen.queryByText(/Lift buiten gebruik/)).not.toBeInTheDocument();
   });
 
   it("marks only step-free stations in lists", () => {

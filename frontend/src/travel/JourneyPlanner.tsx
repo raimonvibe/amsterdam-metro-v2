@@ -1,8 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Accessibility, ArrowDownUp, Clock3, Repeat } from "lucide-react";
 import { fetchJourneys, SlowDown } from "../api";
-import { GVB_LIFT_FAULTS, StepFree as StepFreeState, stepFree } from "../data/accessibility";
-import { useT } from "../i18n";
+import {
+  GVB_LIFT_FAULTS,
+  StepFree as StepFreeState,
+  gvbSearch,
+  liftOutSince,
+  shortDate,
+  stepFree,
+} from "../data/accessibility";
+import { useLang, useT } from "../i18n";
 import { delayLabel } from "../format";
 import { Place } from "../components/Place";
 import { pollWhileVisible } from "../poll";
@@ -44,13 +51,17 @@ export interface JourneyPlannerProps {
  *  not known to be step-free, in order. Stations the train only passes
  *  through do not count: nobody leaves the platform there. */
 export function stairsOn(j: Journey): { name: string; state: Exclude<StepFreeState, "yes"> }[] {
-  const used = j.legs.length ? [j.legs[0].from, ...j.legs.map((l) => l.to)] : [];
   const out: { name: string; state: Exclude<StepFreeState, "yes"> }[] = [];
-  for (const name of new Set(used)) {
+  for (const name of stationsUsed(j)) {
     const state = stepFree(name);
     if (state !== "yes") out.push({ name, state });
   }
   return out;
+}
+
+/** The stations a rider gets on, changes at and gets off at, once each. */
+function stationsUsed(j: Journey): string[] {
+  return [...new Set(j.legs.length ? [j.legs[0].from, ...j.legs.map((l) => l.to)] : [])];
 }
 
 /** Index of the fastest option, ties to the earliest departure. */
@@ -311,7 +322,16 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
 function StairsWarning({ journey }: { journey: Journey }) {
   const txt = useTravelT();
   const t = useT();
+  const lang = useLang();
   const risks = stairsOn(journey);
+  // What to type on GVB's page for each station used, and what an empty
+  // result there means: the page says "0 resultaten" for a station with no
+  // fault, and lists only today's faults under "Nu".
+  const hint = (
+    <span className="mt-0.5 block">
+      {txt.liftSearchHint(stationsUsed(journey).map((s) => `"${gvbSearch(s)}"`).join(", "))}
+    </span>
+  );
   if (!risks.length) {
     return (
       <p className="mt-1 text-[11px] leading-snug text-[#5b5446] dark:text-[#a9b0c2]">
@@ -319,23 +339,29 @@ function StairsWarning({ journey }: { journey: Journey }) {
         <a href={GVB_LIFT_FAULTS} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
           {t.liftFaults}
         </a>
+        {hint}
       </p>
     );
   }
   const say = { limited: txt.accessLimited, no: txt.accessNo, unknown: txt.accessUnknown };
+  const why = (name: string, state: keyof typeof say) => {
+    const since = liftOutSince(name);
+    return since ? txt.accessLiftOut(shortDate(since, lang)) : say[state];
+  };
   return (
     <p className="mt-1 rounded bg-amber-50 px-1.5 py-1 text-[11px] leading-snug text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
       {txt.stairsWarning}{" "}
       {risks.map((r, k) => (
         <span key={r.name}>
           {k > 0 && ", "}
-          <strong><Place name={r.name} /></strong> ({say[r.state]})
+          <strong><Place name={r.name} /></strong> ({why(r.name, r.state)})
         </span>
       ))}
       {" · "}
       <a href={GVB_LIFT_FAULTS} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
         {t.liftFaults}
       </a>
+      {hint}
     </p>
   );
 }

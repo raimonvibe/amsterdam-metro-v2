@@ -69,6 +69,8 @@ export const en: Dict = {
   stepFreeNo: "No step-free access",
   stepFreeUnknown: "Step-free access unknown",
   liftFaults: "Lift faults at GVB",
+  liftFaultsSearch: (term: string) => `Lift faults at GVB: search "${term}"`,
+  liftOut: (date: string) => `Lift out of service (GVB, ${date})`,
   language: "Language",
   languageSwitch: "Wissel naar Nederlands",
   travelInfoLoading: "Loading travel info…",
