@@ -1,4 +1,4 @@
-import { Accessibility } from "lucide-react";
+import { Accessibility, Copy } from "lucide-react";
 import { useLang, useT } from "../i18n";
 import { GVB_LIFT_FAULTS, StepFree as State, gvbSearch, liftOutSince, shortDate, stepFree } from "../data/accessibility";
 
@@ -27,6 +27,7 @@ export function StepFree({ station, className = "" }: { station: string; classNa
   const lang = useLang();
   const state = stepFree(station);
   const liftOut = liftOutSince(station);
+  const term = gvbSearch(station);
   const label: Record<State, string> = {
     yes: txt.stepFreeYes,
     limited: txt.stepFreeLimited,
@@ -44,9 +45,17 @@ export function StepFree({ station, className = "" }: { station: string; classNa
         href={GVB_LIFT_FAULTS}
         target="_blank"
         rel="noopener noreferrer"
-        className="underline decoration-gray-400 underline-offset-2 hover:text-gray-900 dark:hover:text-gray-100"
+        title={txt.copiesTerm}
+        aria-label={`${txt.liftFaultsSearch(term)} (${txt.copiesTerm})`}
+        // Puts the search term on the clipboard, to paste into GVB's search
+        // box (a link cannot fill it in). The link opens GVB either way; if
+        // the clipboard is missing (no HTTPS) or refused, the term is still
+        // in the link text, so there is nothing to report.
+        onClick={() => void navigator.clipboard?.writeText(term).catch(() => {})}
+        className="inline-flex items-center gap-1 underline decoration-gray-400 underline-offset-2 hover:text-gray-900 dark:hover:text-gray-100"
       >
-        {txt.liftFaultsSearch(gvbSearch(station))}
+        {txt.liftFaultsSearch(term)}
+        <Copy size={10} className="shrink-0" aria-hidden />
       </a>
     </p>
   );

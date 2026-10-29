@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setLang } from "../i18n";
 import accessibility from "../data/accessibility.json";
@@ -92,20 +92,39 @@ describe("StepFree", () => {
   it("says the state in Dutch and English and links GVB's lift faults", () => {
     render(<StepFree station="Amsterdam, De Pijp" />);
     expect(screen.getByText("Rolstoeltoegankelijk")).toBeInTheDocument();
-    const link = screen.getByRole("link", { name: 'Liftstoringen bij GVB: zoek "De Pijp"' });
+    const link = screen.getByRole("link", { name: 'Liftstoringen bij GVB: zoek "De Pijp" (kopieert zoekterm)' });
     expect(link).toHaveAttribute("href", GVB_LIFT_FAULTS);
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
 
     act(() => setLang("en", { persist: false }));
     expect(screen.getByText("Step-free access")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: 'Lift faults at GVB: search "De Pijp"' })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: 'Lift faults at GVB: search "De Pijp" (copies the search term)' })).toBeInTheDocument();
   });
 
   it("says a lift is out, with the date of the check, and GVB's search term", () => {
     vi.useFakeTimers({ toFake: ["Date"], now: checkedAt + DAY });
     render(<StepFree station="Diemen, Station Diemen Zuid" />);
     expect(screen.getByText(`Lift buiten gebruik (GVB, ${shortDate(LIFT_CHECK, "nl")})`)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: 'Liftstoringen bij GVB: zoek "Diemen Zuid"' })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^Liftstoringen bij GVB: zoek "Diemen Zuid"/ })).toBeInTheDocument();
+  });
+
+  it("copies the bare search term when the link is clicked, and survives a refused clipboard", () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    try {
+      render(<StepFree station="Diemen, Station Diemen Zuid" />);
+      const link = screen.getByRole("link", { name: /Diemen Zuid/ });
+      expect(link).toHaveAttribute("title", "kopieert zoekterm");
+      fireEvent.click(link);
+      expect(writeText).toHaveBeenCalledWith("Diemen Zuid");
+
+      writeText.mockRejectedValueOnce(new DOMException("denied", "NotAllowedError"));
+      expect(() => fireEvent.click(link)).not.toThrow();
+      Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+      expect(() => fireEvent.click(link)).not.toThrow();
+    } finally {
+      Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    }
   });
 
   it("falls back to not step-free once the lift check is stale", () => {

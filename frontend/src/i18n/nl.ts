@@ -68,6 +68,7 @@ export const nl = {
   stepFreeUnknown: "Toegankelijkheid onbekend",
   liftFaults: "Liftstoringen bij GVB",
   liftFaultsSearch: (term: string) => `Liftstoringen bij GVB: zoek "${term}"`,
+  copiesTerm: "kopieert zoekterm",
   liftOut: (date: string) => `Lift buiten gebruik (GVB, ${date})`,
   language: "Taal",
   languageSwitch: "Switch to English",
