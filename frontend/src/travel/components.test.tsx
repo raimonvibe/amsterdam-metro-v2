@@ -2,6 +2,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { STATIONS } from "../test/fixtures";
+import { LIFT_CHECK, shortDate } from "../data/accessibility";
 import { AnimatedTrain } from "../types";
 import { JourneyPlanner, JourneyPlannerProps, fastestIndex, routeKeyOf, stairsOn } from "./JourneyPlanner";
 import { routeStretches } from "./LineDiagram";
@@ -448,6 +449,7 @@ describe("JourneyPlanner", () => {
     // Step-free by design is only step-free today while the lifts work.
     const lifts = screen.getByText(/zolang de liften werken/).closest("p")!;
     expect(within(lifts).getByRole("link", { name: "Liftstoringen bij GVB" })).toBeInTheDocument();
+    expect(lifts).toHaveTextContent('Zoek op GVB: "De Pijp", "Waterlooplein", "Nieuwmarkt". 0 resultaten = nu geen storing');
     await userEvent.click(screen.getByRole("checkbox", { name: /Zonder trappen/ }));
     expect(onAvoidStairs).toHaveBeenCalledWith(false);
   });
@@ -460,6 +462,20 @@ describe("JourneyPlanner", () => {
     expect(warning).toHaveTextContent("Strandvliet (niet toegankelijk)");
     expect(within(warning).getByRole("link", { name: "Liftstoringen bij GVB" })).toBeInTheDocument();
     expect(screen.queryByText("zonder trappen")).not.toBeInTheDocument();
+  });
+
+  it("with avoid stairs on, says a lift is out at a station, with the date of the check", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: Date.parse(`${LIFT_CHECK}T12:00:00Z`) });
+    try {
+      const j = journey(3, 30, 0);
+      j.legs[0] = { ...j.legs[0], to: "Amsterdam, Weesperplein" };
+      renderPlanner([j], vi.fn(), { avoidStairs: true, onAvoidStairs: vi.fn() });
+      const warning = (await screen.findByText(/Niet zeker zonder trappen/)).closest("p")!;
+      expect(warning).toHaveTextContent(`Weesperplein (lift buiten gebruik, ${shortDate(LIFT_CHECK, "nl")})`);
+      expect(warning).toHaveTextContent('"Weesperplein"');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("with only a departure station, confirms it and offers its departures", async () => {

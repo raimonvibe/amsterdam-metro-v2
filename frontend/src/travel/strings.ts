@@ -122,6 +122,9 @@ const nl = {
   accessLimited: "beperkt toegankelijk",
   accessNo: "niet toegankelijk",
   accessUnknown: "onbekend",
+  accessLiftOut: (date: string) => `lift buiten gebruik, ${date}`,
+  liftSearchHint: (terms: string) =>
+    `Zoek op GVB: ${terms}. 0 resultaten = nu geen storing; reis je later, kijk ook bij "Binnenkort".`,
   // line diagram
   lineOverview: "Lijnoverzicht",
   chooseLine: "Kies een lijn",
@@ -296,6 +299,9 @@ const en: TravelStrings = {
   accessLimited: "partly step-free",
   accessNo: "not step-free",
   accessUnknown: "unknown",
+  accessLiftOut: (date: string) => `lift out of service, ${date}`,
+  liftSearchHint: (terms: string) =>
+    `Search GVB for: ${terms}. 0 results = no fault right now; travelling later? Also check "Binnenkort" (coming up).`,
   lineOverview: "Line overview",
   chooseLine: "Choose a line",
   trainsUnderway: (n: number) => (n === 1 ? "1 train running" : `${n} trains running`),

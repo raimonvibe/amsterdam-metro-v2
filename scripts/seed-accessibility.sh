@@ -64,6 +64,9 @@ for s in sorted(stations, key=lambda s: s["name"]):
     tagged = [el for el in pool if el.get("tags", {}).get("wheelchair") in STATES]
     el = tagged[0] if tagged else (pool[0] if pool else None)
     entry = {"step_free": "no", "source": "osm"}
+    # The GVB search term is curated by hand, checked or not.
+    if kept and kept.get("gvb_search"):
+        entry["gvb_search"] = kept["gvb_search"]
     if el:
         state = STATES.get(el.get("tags", {}).get("wheelchair"), "unknown")
         # A combined station's "limited" or "no" may be about the train
@@ -75,6 +78,9 @@ for s in sorted(stations, key=lambda s: s["name"]):
     result[name] = entry
 
 doc = {"updated": datetime.date.today().isoformat(), "stations": result}
+# The date of the last lift-fault check is the maintainer's, not the seed's.
+if "lift_check" in old:
+    doc = {"updated": doc["updated"], "lift_check": old["lift_check"], "stations": result}
 with open(out, "w") as f:
     json.dump(doc, f, indent=2, ensure_ascii=False)
     f.write("\n")
