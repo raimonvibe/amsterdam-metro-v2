@@ -34,6 +34,17 @@ describe("routeHtml", () => {
     expect(travel).toContain('<meta name="robots" content="index, follow, max-image-preview:large" />');
   });
 
+  it("gives each route its own crawlable text instead of the homepage's", () => {
+    const home = INDEX.match(/<noscript>[\s\S]*?<\/noscript>/)![0];
+    for (const page of ROUTE_PAGES) {
+      const html = routeHtml(INDEX, page);
+      expect(html.match(/<noscript>/g)).toHaveLength(1);
+      expect(html).toContain(page.body);
+      expect(html).not.toContain(home);
+      expect(html).not.toContain("live 3D-metrokaart van Amsterdam</h1>");
+    }
+  });
+
   it("fails loudly when the page no longer has a tag it must rewrite", () => {
     const noCanonical = INDEX.replace(/<link rel="canonical"[^>]*>/, "");
     expect(() => routeHtml(noCanonical, ROUTE_PAGES[0])).toThrow(/canonical/);
