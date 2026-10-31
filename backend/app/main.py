@@ -1,8 +1,9 @@
 import asyncio
 import logging
 import multiprocessing
+import threading
 import time
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime
@@ -18,6 +19,7 @@ from .broadcast import DROPPED, Broadcaster
 from .config import API_DOCS, CORS_ORIGINS, GTFS_REFRESH_SECONDS
 from .gtfs_static import TZ
 from .limits import ClientCounter, RateLimiter, TTLCache, client_ip, snap_up
+from .memory import rss_mb
 from .models import StatusOut
 from .payload import Payload
 from .positions import MetroData
@@ -77,6 +79,16 @@ RATE_BURST = 300
 DEPARTURE_MINUTES_STEPS = (15, 30, 45, 60, 120, 180)
 DEPARTURE_LIMIT_STEPS = (8, 20, 60)
 JOURNEY_LIMIT_STEPS = (6, 10)
+# Threads for asyncio.to_thread: the snapshot every second, feed parsing and
+# cache misses. Python's default is min(32, CPUs + 4), and Render's 0.5-CPU
+# instance reports the host's CPUs, so it could start dozens. On Linux each
+# thread can keep its own malloc arena that is never handed back, and memory
+# crept up for days until the 512 MB instance was killed (29 Oct 2026). The
+# jobs are short and the instance has half a CPU: more threads add nothing.
+WORKER_THREADS = 4
+# How often the process logs its memory and what it holds, so a slow climb
+# shows in the logs with its cause instead of only on Render's graph.
+MEMORY_LOG_SECONDS = 600
 
 
 @dataclass(frozen=True)
@@ -238,6 +250,24 @@ async def keep_snapshot_fresh() -> None:
         await asyncio.sleep(max(0.1, SNAPSHOT_SECONDS - (time.monotonic() - started)))
 
 
+def memory_report() -> str:
+    rss = rss_mb()
+    return (
+        "Memory: %s RSS, %d threads, %d streams, caches %d departures / %d journeys / %d stations"
+        % (
+            "%.0f MB" % rss if rss is not None else "unknown",
+            threading.active_count(), len(broadcaster),
+            len(_departures_cache), len(_journey_cache), len(_station_info_cache),
+        )
+    )
+
+
+async def keep_logging_memory() -> None:
+    while True:
+        logger.info(memory_report())
+        await asyncio.sleep(MEMORY_LOG_SECONDS)
+
+
 def _metro_trip_ids() -> set:
     return static.metro.trip_ids() if static else set()
 
@@ -252,7 +282,11 @@ def _metro_alert_ids() -> tuple:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    asyncio.get_running_loop().set_default_executor(
+        ThreadPoolExecutor(max_workers=WORKER_THREADS, thread_name_prefix="worker")
+    )
     tasks = [
+        asyncio.create_task(keep_logging_memory()),
         asyncio.create_task(keep_static_fresh()),
         asyncio.create_task(keep_snapshot_fresh()),
         asyncio.create_task(realtime.poll_forever(_metro_trip_ids)),
