@@ -1,6 +1,6 @@
 {
-  "updated": "2026-10-29",
-  "lift_check": "2026-10-29",
+  "updated": "2026-11-01",
+  "lift_check": "2026-11-01",
   "stations": {
     "Amsterdam, Amstelstation": {
       "step_free": "yes",
@@ -242,12 +242,11 @@
       "gvb_search": "Waterlooplein"
     },
     "Amsterdam, Weesperplein": {
-      "step_free": "no",
+      "step_free": "yes",
       "source": "checked",
       "osm": "way/268998785",
-      "note": "GVB station page (CHB) says accessible, 2026-10-27, but GVB's lift faults list the lift between station hall and street at exit Stadstimmertuin as broken (duration unknown), 2026-10-29; set back to yes once they no longer list it",
-      "gvb_search": "Weesperplein",
-      "lift_out": true
+      "note": "GVB station page (CHB): Rolstoelvriendelijk; lift at exit Stadstimmertuin no longer in GVB's lift faults, 2026-11-01",
+      "gvb_search": "Weesperplein"
     },
     "Amsterdam, Wibautstraat": {
       "step_free": "yes",

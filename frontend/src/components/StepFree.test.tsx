@@ -69,8 +69,8 @@ describe("gvbSearch", () => {
 
 describe("liftOutSince", () => {
   it("dates a known lift fault while the check is fresh, and drops it once stale", () => {
-    expect(liftOutSince("Amsterdam, Weesperplein", checkedAt + 3 * DAY)).toBe(LIFT_CHECK);
-    expect(liftOutSince("Amsterdam, Weesperplein", checkedAt + (LIFT_CHECK_MAX_DAYS + 1) * DAY)).toBeNull();
+    expect(liftOutSince("Diemen, Station Diemen Zuid", checkedAt + 3 * DAY)).toBe(LIFT_CHECK);
+    expect(liftOutSince("Diemen, Station Diemen Zuid", checkedAt + (LIFT_CHECK_MAX_DAYS + 1) * DAY)).toBeNull();
     expect(liftOutSince("Amsterdam, De Pijp", checkedAt)).toBeNull();
   });
 
