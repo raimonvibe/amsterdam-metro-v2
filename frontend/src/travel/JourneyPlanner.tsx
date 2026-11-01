@@ -9,12 +9,12 @@ import {
   shortDate,
   stepFree,
 } from "../data/accessibility";
-import { useLang, useT } from "../i18n";
+import { locale, pick as pickText, useLang, useT } from "../i18n";
 import { delayLabel } from "../format";
 import { CopyTerm } from "../components/CopyTerm";
 import { Place } from "../components/Place";
 import { pollWhileVisible } from "../poll";
-import { Station } from "../types";
+import { ServiceAlert, Station } from "../types";
 import { SearchBox } from "./SearchBox";
 import { clock, countdown, duration } from "./time";
 import { Journey, JourneyLeg } from "./types";
@@ -45,6 +45,8 @@ export interface JourneyPlannerProps {
   /** Flag journeys through stations not known to be step-free. */
   avoidStairs?: boolean;
   onAvoidStairs?: (on: boolean) => void;
+  /** GVB's service messages; each option shows the ones that touch it. */
+  alerts?: ServiceAlert[];
   nowMs: number;
 }
 
@@ -58,6 +60,21 @@ export function stairsOn(j: Journey): { name: string; state: Exclude<StepFreeSta
     if (state !== "yes") out.push({ name, state });
   }
   return out;
+}
+
+/** The messages that concern a journey while it runs: about one of its
+ *  lines as a whole, or about a station the rider gets on or off at (on the
+ *  line they use there, when the message names lines). A message that ends
+ *  before the train leaves, or starts after it arrives, does not count. */
+export function alertsOn(j: Journey, alerts: ServiceAlert[]): ServiceAlert[] {
+  return alerts.filter((a) => {
+    if (a.end_ts != null && a.end_ts < j.departure_ts) return false;
+    if (a.start_ts != null && a.start_ts > j.arrival_ts) return false;
+    if (!a.stations.length || a.whole_line) return j.legs.some((l) => a.lines.includes(l.line));
+    return j.legs.some(
+      (l) => (a.stations.includes(l.from) || a.stations.includes(l.to)) && (!a.lines.length || a.lines.includes(l.line)),
+    );
+  });
 }
 
 /** The stations a rider gets on, changes at and gets off at, once each. */
@@ -93,6 +110,14 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
   // Counts picks, so picking again re-applies the route even if its shape
   // did not change (the visitor may have opened another line since).
   const [picks, setPicks] = useState(0);
+  // Options whose GVB messages are unfolded.
+  const [openAlerts, setOpenAlerts] = useState<Set<string>>(new Set());
+  const toggleAlerts = (id: string) =>
+    setOpenAlerts((open) => {
+      const next = new Set(open);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
 
   useEffect(() => {
     setJourneys(null);
@@ -232,6 +257,8 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
         <ol className="space-y-2">
           {upcoming.map((j, i) => {
             const isChosen = upcoming.length > 1 && j === chosen;
+            const id = journeyId(j);
+            const notices = alertsOn(j, props.alerts ?? []);
             return (
             <li
               key={`${j.departure_ts}-${j.arrival_ts}-${j.transfers}`}
@@ -272,7 +299,11 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
                     {txt.stepFreeTrip}
                   </Tag>
                 )}
+                {notices.length > 0 && (
+                  <AlertToggle count={notices.length} open={openAlerts.has(id)} controls={`alerts-${id}`} onToggle={() => toggleAlerts(id)} />
+                )}
               </div>
+              {openAlerts.has(id) && <AlertNotes id={`alerts-${id}`} alerts={notices} />}
               {props.avoidStairs && <StairsWarning journey={j} />}
               <ol className="mt-1.5 space-y-1 border-l-2 border-[#d8cfbd] pl-2 dark:border-[#2a3245]">
                 {j.legs.map((leg, k) => (
@@ -315,6 +346,41 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
         </ol>
       </div>
     </Section>
+  );
+}
+
+/** A small "!" that unfolds GVB's messages for one option. */
+function AlertToggle({ count, open, controls, onToggle }: { count: number; open: boolean; controls: string; onToggle: () => void }) {
+  const t = useT();
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      aria-controls={controls}
+      aria-label={`${t.alertsTitle}: ${t.alertsCount(count)}`}
+      title={t.alertsCount(count)}
+      className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-amber-700 text-[10px] font-bold leading-none text-white hover:bg-amber-800 dark:bg-amber-400 dark:text-[#111727] dark:hover:bg-amber-300"
+    >
+      !
+    </button>
+  );
+}
+
+/** The unfolded messages: GVB's own words and when they end, nothing more. */
+function AlertNotes({ id, alerts }: { id: string; alerts: ServiceAlert[] }) {
+  const t = useT();
+  const lang = useLang();
+  const hm = new Intl.DateTimeFormat(locale(lang), { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit" });
+  return (
+    <ul id={id} className="mt-1 space-y-0.5 text-[11px] leading-snug text-amber-800 dark:text-amber-200">
+      {alerts.map((a) => (
+        <li key={a.id} className="break-words" translate="no">
+          {pickText(a.header, lang)}
+          {a.end_ts && <> · {t.alertUntil(hm.format(new Date(a.end_ts * 1000)))}</>}
+        </li>
+      ))}
+    </ul>
   );
 }
 
