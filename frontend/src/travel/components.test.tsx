@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { STATIONS } from "../test/fixtures";
 import { LIFT_CHECK, gvbSearch, shortDate } from "../data/accessibility";
-import { AnimatedTrain } from "../types";
-import { JourneyPlanner, JourneyPlannerProps, fastestIndex, routeKeyOf, stairsOn } from "./JourneyPlanner";
+import { AnimatedTrain, ServiceAlert } from "../types";
+import { JourneyPlanner, JourneyPlannerProps, alertsOn, fastestIndex, routeKeyOf, stairsOn } from "./JourneyPlanner";
 import { routeStretches } from "./LineDiagram";
 import { SearchBox } from "./SearchBox";
 import { StationBoard, groupByDirection } from "./StationBoard";
@@ -439,6 +439,54 @@ describe("JourneyPlanner", () => {
       { name: "Nowhere, Atlantis", state: "no" },
     ]);
     expect(stairsOn(stepFreeTrip)).toEqual([]);
+  });
+
+  const alert = (id: string, a: Partial<ServiceAlert>): ServiceAlert => ({
+    id,
+    header: { nl: `Melding ${id}`, en: `Notice ${id}` },
+    lines: [],
+    stations: [],
+    effect: "SIGNIFICANT_DELAYS",
+    ...a,
+  });
+
+  it("picks the messages that touch a journey: its lines, or a station it uses on the line it uses there", () => {
+    const j = journey(3, 30, 1); // 52 Noord → CS, 54 CS → Gein
+    const all = [
+      alert("line54", { lines: ["54"] }),
+      alert("line51", { lines: ["51"] }),
+      alert("whole53", { lines: ["53", "54"], stations: ["Amsterdam, Gaasperplas"], whole_line: true }),
+      alert("csLift", { stations: [CS.name] }),
+      alert("cs51", { lines: ["51"], stations: [CS.name] }),
+      alert("passedThrough", { lines: ["54"], stations: ["Amsterdam, Waterlooplein"] }),
+      // 52 is on this journey, but not at Gein, where the rider is on the 54.
+      alert("gein52", { lines: ["52"], stations: ["Amsterdam, Gein"] }),
+      alert("gein54", { lines: ["54"], stations: ["Amsterdam, Gein"] }),
+      alert("over", { lines: ["54"], end_ts: s(2) }),
+      alert("later", { lines: ["54"], start_ts: s(40) }),
+    ];
+    expect(alertsOn(j, all).map((a) => a.id)).toEqual(["line54", "whole53", "csLift", "gein54"]);
+  });
+
+  it("marks the options a line's message touches with a ! that unfolds it", async () => {
+    const onRoute = vi.fn();
+    renderPlanner([journey(3, 30, 1), journey(8, 25, 0)], onRoute, {
+      alerts: [alert("delay54", { header: { nl: "Metro 54 rijdt met vertraging", en: "Metro 54 is delayed" }, lines: ["54"], end_ts: s(60) })],
+    });
+    await screen.findAllByText(/Overstappen op/);
+    // Only the option on the 54 gets one, folded.
+    const toggle = screen.getByRole("button", { name: "Meldingen van GVB: 1 melding" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText(/Metro 54 rijdt met vertraging/)).not.toBeInTheDocument();
+    await waitFor(() => expect(onRoute).toHaveBeenCalled());
+    const calls = onRoute.mock.calls.length;
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText(/Metro 54 rijdt met vertraging/)).toHaveTextContent("Metro 54 rijdt met vertraging · tot 13:00");
+    // Unfolding is not picking the option.
+    expect(onRoute.mock.calls.length).toBe(calls);
+    await userEvent.click(toggle);
+    expect(screen.queryByText(/Metro 54 rijdt met vertraging/)).not.toBeInTheDocument();
   });
 
   it("with avoid stairs on, marks a step-free journey; the box reports the switch", async () => {

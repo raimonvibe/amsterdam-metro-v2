@@ -486,6 +486,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
               onRoute={onRoute}
               avoidStairs={prefs.avoidStairs}
               onAvoidStairs={(on) => setPrefs({ ...prefs, avoidStairs: on })}
+              alerts={alerts}
               onShowLine={() => {
                 // Phones only (the button is hidden on wide screens), where the
                 // tab shows just this section: the top of the page is its start,
