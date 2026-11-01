@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { STATIONS } from "../test/fixtures";
@@ -542,6 +542,8 @@ describe("JourneyPlanner", () => {
     const onRoute = vi.fn();
     renderPlanner([journey(3, 30, 1), journey(8, 25, 1)], onRoute);
     await screen.findAllByText(/Overstappen op/);
+    // The route is reported from an effect, which may run after the text shows.
+    await waitFor(() => expect(onRoute.mock.calls.some(([legs]) => legs)).toBe(true));
     const reported = onRoute.mock.calls.map(([legs]) => legs).filter(Boolean);
     expect(reported).toHaveLength(1);
     expect(reported[0].map((l: { line: string }) => l.line)).toEqual(["52", "54"]);
@@ -554,7 +556,9 @@ describe("JourneyPlanner", () => {
     const onRoute = vi.fn();
     renderPlanner([journey(3, 30, 1), journey(8, 25, 0)], onRoute);
     await screen.findAllByText(/Overstappen op/);
-    expect(onRoute).toHaveBeenLastCalledWith([expect.objectContaining({ trip_id: "a3" }), expect.objectContaining({ trip_id: "b3" })]);
+    await waitFor(() =>
+      expect(onRoute).toHaveBeenLastCalledWith([expect.objectContaining({ trip_id: "a3" }), expect.objectContaining({ trip_id: "b3" })]),
+    );
     const second = screen.getByRole("button", { name: "12:08 → 12:33" });
     await userEvent.click(second);
     expect(second).toHaveAttribute("aria-pressed", "true");
