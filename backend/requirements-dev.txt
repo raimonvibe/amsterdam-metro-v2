@@ -1,5 +1,5 @@
 -r requirements.txt
-pytest>=9.1.1
+pytest>=9.2.0
 # pytest dependency, floored past PYSEC-2023-117 / PYSEC-2026-2987: OSV-Scanner
 # checks the lowest version the range allows, not what pip installs.
 pygments>=2.21.0
