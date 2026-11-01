@@ -93,7 +93,7 @@ Needs the backend running on `http://localhost:8020` (or pass its URL). It reads
 
 ## Status per station
 
-As of the last full check, **2026-10-27**: 26 step-free, 13 not.
+As of the last full check, **2026-10-27**, and the lift check of **2026-11-01**: 27 step-free, 12 not.
 
 | Station | Status | Why | GVB page |
 |---|---|---|---|
@@ -134,7 +134,7 @@ As of the last full check, **2026-10-27**: 26 step-free, 13 not.
 | Verrijn Stuartweg | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:S:30009544](https://www.gvb.nl/reisinformatie/halte/NL:S:30009544) |
 | Vijzelgracht | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:Q:30009579](https://www.gvb.nl/reisinformatie/halte/NL:Q:30009579) |
 | Waterlooplein | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:S:30009508](https://www.gvb.nl/reisinformatie/halte/NL:S:30009508) |
-| Weesperplein | ❌ not step-free | lift out of service (GVB lift faults, exit Stadstimmertuin, since 2026-10-28) | [NL:S:30009510](https://www.gvb.nl/reisinformatie/halte/NL:S:30009510) |
+| Weesperplein | ✅ step-free | GVB: Rolstoelvriendelijk; lift fault gone 2026-11-01 | [NL:S:30009510](https://www.gvb.nl/reisinformatie/halte/NL:S:30009510) |
 | Wibautstraat | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:S:30009512](https://www.gvb.nl/reisinformatie/halte/NL:S:30009512) |
 
 Keep this table in step with `accessibility.json` when a station changes.
@@ -144,7 +144,7 @@ Keep this table in step with `accessibility.json` when a station changes.
 - **Duivendrecht**: not checked yet, so "no". Find its metro stop on GVB's site.
 - **Centraal Station**: checked via `NL:Q:30009905`, which may be the ferry stop rather than the metro. Recheck on a page that lists lines 51–54.
 - **Amstelstation**: has no GVB code here yet; add it at the next check.
-- **Weesperplein, Diemen Zuid, Lelylaan**: set back to "yes" and remove `lift_out` once GVB's lift faults no longer list their lift.
+- **Diemen Zuid, Lelylaan**: set back to "yes" and remove `lift_out` once GVB's lift faults no longer list their lift.
 - **Search terms**: checked against a live fault for Weesperplein, Diemen Zuid, Lelylaan, Centraal and Station Zuid. The others are GVB's station names, shortened; confirm each when it first shows a fault.
 
 ## Check log
@@ -153,6 +153,7 @@ Newest first. One line per check, even when nothing changed.
 
 | Date | Kind | Result | By |
 |---|---|---|---|
+| 2026-11-01 | lift faults | Weesperplein's lift (exit Stadstimmertuin) no longer listed; station page still Rolstoelvriendelijk → yes. Diemen Zuid (updated 28 Oct) and Lelylaan (updated 12 Oct) still listed → stay no. Centraal Station's lift (busstation IJzijde–IJhal–metro 52) still listed (already no). Sportlaan is a tram stop. Escalator faults (Vijzelgracht, Noorderpark, Rietlandpark, Zuid) don't change step-free. Now 27 step-free. | maintainer + Claude |
 | 2026-10-29 | search test | GVB's lift-fault search: "Weesperplein" → 1 resultaat (lift exit Stadstimmertuin, updated 28 Oct 20:07), still listed; "Weesperplein Bullewijk" → 0 resultaten. Not a full lift check; data unchanged. | maintainer + Claude |
 | 2026-10-29 | lift faults | Bullewijk's lift no longer listed; station page still Rolstoelvriendelijk (metro 50/54) → yes. New fault at Weesperplein (lift street–hall, exit Stadstimmertuin) → no. Diemen Zuid and Lelylaan still listed → stay no. Centraal Station also has a lift fault (already no). Escalator faults (Noorderpark, Rokin, Vijzelgracht, Zuid, Rietlandpark) don't change step-free. Still 26 step-free. | maintainer + Claude |
 | 2026-10-27 | full | First check of all 39 stations on GVB's pages. 26 step-free, 13 not (9 "niet rolstoelvriendelijk", 3 lift out of service, Duivendrecht unchecked). OSM had 7 wrong. | maintainer + Claude |

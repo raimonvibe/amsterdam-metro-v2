@@ -491,11 +491,11 @@ describe("JourneyPlanner", () => {
     vi.useFakeTimers({ toFake: ["Date"], now: Date.parse(`${LIFT_CHECK}T12:00:00Z`) });
     try {
       const j = journey(3, 30, 0);
-      j.legs[0] = { ...j.legs[0], to: "Amsterdam, Weesperplein" };
+      j.legs[0] = { ...j.legs[0], to: "Amsterdam, Station Lelylaan" };
       renderPlanner([j], vi.fn(), { avoidStairs: true, onAvoidStairs: vi.fn() });
       const warning = (await screen.findByText(/Niet zeker zonder trappen/)).closest("p")!;
-      expect(warning).toHaveTextContent(`Weesperplein (lift buiten gebruik, ${shortDate(LIFT_CHECK, "nl")})`);
-      expect(screen.getByRole("button", { name: 'Kopieer "Weesperplein"' })).toBeInTheDocument();
+      expect(warning).toHaveTextContent(`Lelylaan (lift buiten gebruik, ${shortDate(LIFT_CHECK, "nl")})`);
+      expect(screen.getByRole("button", { name: 'Kopieer "Lelylaan"' })).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }
