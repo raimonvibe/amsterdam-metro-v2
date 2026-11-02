@@ -24,10 +24,12 @@ export function LineBadge({ id, color, small = false }: { id: string; color: str
 
 /** What a train chip shows: direction and delay, symbols and numbers only,
  *  so it fits its pill in every language (a translated "op tijd" didn't).
- *  From 100 minutes ">99′": "+125′" broke the 36 px phone chip. */
+ *  On time is "+0′", minutes late like every other chip: a number reads
+ *  the same everywhere, where a tick doesn't (in Japan ✓ can mean wrong;
+ *  ○ is right). From 100 minutes ">99′": "+125′" broke the 36 px phone chip. */
 export function trainChipText(forward: boolean, delayS: number): string {
   const min = Math.round(delayS / 60);
-  return `${forward ? "↓" : "↑"} ${delayS < 60 ? "✓" : min > 99 ? ">99′" : `+${min}′`}`;
+  return `${forward ? "↓" : "↑"} ${delayS < 60 ? "+0′" : min > 99 ? ">99′" : `+${min}′`}`;
 }
 
 /**

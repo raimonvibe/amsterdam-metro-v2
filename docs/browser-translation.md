@@ -68,8 +68,8 @@ So the layout must hold even when a number does get translated:
   pill of fixed small height (`h-3` to `h-5`) can't grow, and no
   translation fits in it. The line overview's train chip said "op tijd";
   in Arabic it ran out of its pill, and the translator even turned the
-  chip's arrow "↑" into a word («أعلى», "up"). It now shows "↓ ✓" or
-  "↑ +3′", marked `translate="no"`; the word is screen-reader text, and
+  chip's arrow "↑" into a word («أعلى», "up"). It now shows "↓ +0′" (on
+  time) or "↑ +3′", marked `translate="no"`; the word is screen-reader text, and
   the legend (Verklaring) explains the symbols. `wordsInTinyBoxes` in
   `translationAudit.test.tsx` fails on any word in such a box. One `TrainChip` (`travel/ui.tsx`) draws the chips, the key under the
   overview (phones and tablets) and the legend (desktop). From 100
@@ -258,10 +258,20 @@ is unaffected. Planned, for every language at once:
 
 **In Arabic, the line overview's "on time" chips didn't fit their
 card. Other languages? A general fix?** The chips have a fixed size, so
-no language fits; the fix is no words in them at all (above): a ✓ for
+no language fits; the fix is no words in them at all (above): +0′ for
 on time, minutes for late. Checked every other tiny box on the travel
 page, map sidebar, station card and train popup with the new audit test:
 none holds words.
+
+**Why a tick (✓) for "on time", and does that work in Japan? (Waarom
+een vinkje?)** It was the shortest sign for "on time" that needs no
+words. But a tick isn't universal: in Japan ✓ can mark something wrong
+(○ is right), and elsewhere it reads as "checked", not "on time". Now
+an on-time chip says "+0′": minutes late, like every other chip. A
+number reads the same in every language and culture, and the column
+scans as one scale (+0′, +3′, >99′). Deutsche Bahn shows "+0" the same
+way. The fill (on time) or outline (late) still tells them apart at a
+glance.
 
 ## Not done, on purpose
 
