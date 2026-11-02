@@ -7,8 +7,8 @@ import type { Station } from "./types";
 // The camera rules live in App; the map, sidebar, data and travel page are
 // stand-ins that expose just the props and callbacks those rules run through.
 let mapProps: Record<string, any> = {};
+vi.mock("./components/hover", () => ({ NO_HOVER: false }));
 vi.mock("./components/MetroMap", () => ({
-  NO_HOVER: false,
   MetroMap: (props: Record<string, any>) => {
     mapProps = props;
     return <div data-testid="map" />;

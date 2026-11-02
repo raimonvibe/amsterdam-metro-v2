@@ -113,6 +113,13 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
                 geen identificatie; wij ontvangen deze niet.
               </li>
               <li>
+                <strong>3D-weergave (localStorage):</strong> Kiest u in het menu &quot;Volledig&quot;
+                of &quot;Licht&quot;, dan bewaart uw browser die keuze. Bij &quot;Auto&quot; (de
+                standaard) wordt niets bewaard: de app kijkt dan in uw browser hoe vlot de kaart
+                tekent en kiest zelf. Die meting blijft op uw apparaat en wordt niet verstuurd of
+                bewaard.
+              </li>
+              <li>
                 <strong>Reisinformatie-instellingen (localStorage):</strong> Op de pagina
                 Reisinformatie bewaart uw browser uw favoriete stations, de laatst bekeken stations
                 (maximaal zes) en uw weergave-instellingen (tijdvenster, vervallen ritten tonen,
@@ -169,7 +176,7 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
                 kortetermijnserverlogs om de dienst betrouwbaar en veilig te houden.
               </li>
               <li>
-                <strong>Kaartstijl, taal en het aanbod van de Engelse versie onthouden</strong>{" "}
+                <strong>Kaartstijl, taal, 3D-weergave en het aanbod van de Engelse versie onthouden</strong>{" "}
                 (art. 6 lid 1 onder f AVG — gerechtvaardigd belang): functionele instellingen die
                 nodig zijn om de app te tonen zoals u hebt gekozen; u kunt ze wissen in uw
                 browserinstellingen.
@@ -234,8 +241,8 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
               Deze app plaatst zelf <strong>geen</strong> cookies en gebruikt geen tracking of
               analytics. (Het netwerk van onze hostingprovider kan bij verdacht verkeer een
               technisch beveiligingscookie zetten; dat valt buiten de app.) Wat in uw browser wordt bewaard, staat in sectie 3: in{" "}
-              <strong>localStorage</strong> de kaartstijl, de taal, het aanbod van de Engelse
-              versie en, op de pagina Reisinformatie, uw favorieten, recente stations en
+              <strong>localStorage</strong> de kaartstijl, de taal, de 3D-weergave, het aanbod van
+              de Engelse versie en, op de pagina Reisinformatie, uw favorieten, recente stations en
               weergave-instellingen; in <strong>sessionStorage</strong> de geplande reis. Dit zijn
               functionele instellingen, geen tracking. U kunt ze op elk moment verwijderen via uw
               browserinstellingen.
@@ -246,8 +253,8 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">7. Bewaartermijnen</h2>
             <ul className="list-disc space-y-2 pl-5">
               <li>
-                <strong>localStorage (kaartstijl, taal, aanbod Engelse versie):</strong> totdat u
-                sitegegevens wist of een andere stijl of taal kiest.
+                <strong>localStorage (kaartstijl, taal, 3D-weergave, aanbod Engelse versie):</strong>{" "}
+                totdat u sitegegevens wist of een andere keuze maakt.
               </li>
               <li>
                 <strong>localStorage (reisinformatie):</strong> totdat u een favoriet verwijdert,
