@@ -21,6 +21,13 @@ afterEach(() => {
 const DAY = 86_400_000;
 const checkedAt = Date.parse(`${LIFT_CHECK}T00:00:00Z`);
 
+// A station whose lift is out at the last check. Taken from the data, not
+// named: lifts get fixed (Diemen Zuid's after three years), and a weekly
+// check shouldn't have to rewrite these tests.
+const [LIFT_OUT, liftOutEntry] = Object.entries(accessibility.stations).find(
+  ([, e]) => "lift_out" in e && e.lift_out,
+)! as [string, { gvb_search: string }];
+
 describe("accessibility.json", () => {
   it("gives every station a known state and source", () => {
     const entries = Object.entries(accessibility.stations);
@@ -69,8 +76,8 @@ describe("gvbSearch", () => {
 
 describe("liftOutSince", () => {
   it("dates a known lift fault while the check is fresh, and drops it once stale", () => {
-    expect(liftOutSince("Diemen, Station Diemen Zuid", checkedAt + 3 * DAY)).toBe(LIFT_CHECK);
-    expect(liftOutSince("Diemen, Station Diemen Zuid", checkedAt + (LIFT_CHECK_MAX_DAYS + 1) * DAY)).toBeNull();
+    expect(liftOutSince(LIFT_OUT, checkedAt + 3 * DAY)).toBe(LIFT_CHECK);
+    expect(liftOutSince(LIFT_OUT, checkedAt + (LIFT_CHECK_MAX_DAYS + 1) * DAY)).toBeNull();
     expect(liftOutSince("Amsterdam, De Pijp", checkedAt)).toBeNull();
   });
 
@@ -103,9 +110,9 @@ describe("StepFree", () => {
 
   it("says a lift is out, with the date of the check, and GVB's search term", () => {
     vi.useFakeTimers({ toFake: ["Date"], now: checkedAt + DAY });
-    render(<StepFree station="Diemen, Station Diemen Zuid" />);
+    render(<StepFree station={LIFT_OUT} />);
     expect(screen.getByText(`Lift buiten gebruik (GVB, ${shortDate(LIFT_CHECK, "nl")})`)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /^Liftstoringen bij GVB: zoek "Diemen Zuid"/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: new RegExp(`^Liftstoringen bij GVB: zoek "${liftOutEntry.gvb_search}"`) })).toBeInTheDocument();
   });
 
   it("copies the bare search term when the link is clicked, and survives a refused clipboard", async () => {
@@ -132,7 +139,7 @@ describe("StepFree", () => {
 
   it("falls back to not step-free once the lift check is stale", () => {
     vi.useFakeTimers({ toFake: ["Date"], now: checkedAt + (LIFT_CHECK_MAX_DAYS + 1) * DAY });
-    render(<StepFree station="Diemen, Station Diemen Zuid" />);
+    render(<StepFree station={LIFT_OUT} />);
     expect(screen.getByText("Niet rolstoeltoegankelijk")).toBeInTheDocument();
     expect(screen.queryByText(/Lift buiten gebruik/)).not.toBeInTheDocument();
   });
