@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { TriangleAlert } from "lucide-react";
-import { locale, pick, useLang, useT } from "../i18n";
+import { locale, pick, pickWithLang, useLang, useT } from "../i18n";
 import { ServiceAlert } from "../types";
-import { Place } from "./Place";
+import { formatPlaceName } from "../format";
+import { NO_TRANSLATE } from "./Num";
 import { onColor } from "../contrast";
 
 /** Messages that concern a station: about the station itself, or about a
@@ -65,8 +66,11 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
   return (
     <ul className={`space-y-1.5 ${className}`} aria-label={txt.alertsTitle}>
       {alerts.map((a) => {
-        const header = pick(a.header, lang);
-        const description = a.description ? pick(a.description, lang) : null;
+        // GVB's words: translatable like the rest of the page (a visitor
+        // reading it in Ukrainian needs the message most), marked with the
+        // language they are in, since English falls back to GVB's Dutch.
+        const header = pickWithLang(a.header, lang);
+        const description = a.description ? pickWithLang(a.description, lang) : null;
         if (compact) {
           // One quiet row: the message itself, cut to two lines.
           return (
@@ -75,8 +79,8 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
               className="flex items-start gap-1.5 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] leading-snug text-amber-950 dark:bg-amber-950/40 dark:text-amber-100"
             >
               <TriangleAlert size={12} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
-              <p className="line-clamp-2 min-w-0 break-words" translate="no" title={header}>
-                {header}
+              <p className="line-clamp-2 min-w-0 break-words" title={header.text}>
+                <span lang={header.lang}>{header.text}</span>
                 {a.end_ts && <span className="text-amber-700 dark:text-amber-300"> · {txt.alertUntil(hm.format(new Date(a.end_ts * 1000)))}</span>}
               </p>
             </li>
@@ -117,16 +121,12 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
                   </span>
                 )}
               </div>
-              {/* GVB's own words, already in the chosen language: no browser translation. */}
-              <p className="break-words" translate="no">{header}</p>
+              <p className="break-words" lang={header.lang}>{header.text}</p>
               {a.stations.length > 0 && (
+                // Names and their commas in one untranslated run: a translator
+                // drops the spaces in a lone ", " between two names.
                 <p className={`mt-0.5 text-[11px] text-amber-800 dark:text-amber-200 ${a.whole_line ? "hidden sm:block" : ""}`}>
-                  {a.stations.map((s, i) => (
-                    <span key={s}>
-                      {i > 0 && ", "}
-                      <Place name={s} />
-                    </span>
-                  ))}
+                  <span {...NO_TRANSLATE}>{a.stations.map((s) => formatPlaceName(s)).join(", ")}</span>
                 </p>
               )}
               {description && (
@@ -134,7 +134,7 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
                   <summary className="cursor-pointer text-[11px] font-medium text-amber-800 dark:text-amber-200">
                     {txt.alertMore}
                   </summary>
-                  <p className="mt-1 whitespace-pre-line break-words" translate="no">{description}</p>
+                  <p className="mt-1 whitespace-pre-line break-words" lang={description.lang}>{description.text}</p>
                 </details>
               )}
             </div>

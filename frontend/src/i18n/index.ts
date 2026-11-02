@@ -109,3 +109,9 @@ export function locale(lang: Lang = current): string {
 export function pick(text: { nl: string; en?: string | null }, lang: Lang = current): string {
   return (lang === "en" && text.en) || text.nl;
 }
+
+/** `pick`, and the language the picked text is in: for `lang` on its element,
+ *  so a translator knows what it is translating from. */
+export function pickWithLang(text: { nl: string; en?: string | null }, lang: Lang = current): { text: string; lang: Lang } {
+  return lang === "en" && text.en ? { text: text.en, lang: "en" } : { text: text.nl, lang: "nl" };
+}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Globe, X } from "lucide-react";
-import { browserReadsDutch, savedLang, setLang, useLang } from "../i18n";
+import { browserReadsDutch, savedLang, useLang } from "../i18n";
+import { switchLang } from "../i18n/translated";
 import { pageOfPath, pagePath } from "../i18n/paths";
 
 const DISMISSED_KEY = "metro-lang-hint";
@@ -49,7 +50,7 @@ export function EnglishHint({ sidebarOpen }: { sidebarOpen: boolean }) {
         onClick={(e) => {
           if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
           e.preventDefault();
-          setLang("en");
+          switchLang("en");
         }}
         className="flex min-h-11 items-center gap-1.5 rounded-l-full pl-3.5 pr-1 hover:text-[#4363D8] dark:hover:text-blue-300"
       >

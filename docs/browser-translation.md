@@ -24,6 +24,11 @@ in Amsterdam.
   follows the same rules.
 - A sentence with a number in it ("1 more departure") stays translatable: it
   is words.
+- GVB's service messages are words too, and the one thing a visitor in
+  another language needs most. They are translatable and carry `lang` for
+  the language they are in (`pickWithLang`): GVB often writes Dutch only,
+  and the English page then shows that Dutch. Their station lists are one
+  untranslated run, commas included.
 
 `frontend/src/translationAudit.test.tsx` enforces this. It renders the
 travel page, the map sidebar, a station's card and a train's popup, in Dutch
@@ -96,6 +101,62 @@ default left 2× headroom. Now 10 s (~4× the worst full-run time, still far
 below a hang), in one documented constant (`src/test/timeouts.ts`). If
 the tests creep towards it, the page should get cheaper to render instead.
 
+## When the translator rewrites the page under React
+
+A translator doesn't change text in place. Chrome swaps each text node for
+`<font>` elements holding the translation and removes the original; Firefox
+detaches and re-appends; Edge and the Google Translate extension wrap in
+`<font>` too. React keeps references to the originals
+([React #11538](https://github.com/facebook/react/issues/11538), open since
+2017, no fix in React). Three effects, and what we do about each, all in
+`frontend/src/i18n/translated.ts`:
+
+- **The EN/NL button seemed to do nothing.** It switched in place, so React
+  wrote the English into text nodes the translator had removed, and the
+  page kept showing the translated Dutch. Now the button checks whether the
+  page is translated (`pageTranslated`: Chrome's `translated-ltr`/`-rtl`
+  class on `<html>`, Firefox's `<html lang>` that isn't ours, Edge's
+  `<font>`). If it is, it saves the choice and reloads on the other
+  language's URL: a clean page, built in that language. Untranslated, it
+  still switches in place, without reloading the map.
+- **Crashes.** Removing or inserting beside a node the translator took out
+  throws `NotFoundError`, and React 19 then tears the tree down.
+  `guardTranslatorDom()` (called in `main.tsx`) turns only those throwing
+  calls into a no-op or an append, the workaround from the React issue.
+- **Frozen text.** React writes an element's *only* text through
+  `textContent`, which clears the translator's `<font>`, so that updates
+  fine. Text *beside* other nodes is written into the removed node and
+  freezes. So live text gets an element of its own (the planner's message
+  sits in its own `<span>`); numbers and times are `translate="no"` anyway.
+
+`frontend/src/i18n/translated.test.tsx` acts out what the translators do
+to the DOM and checks each of these.
+
+**What the site can't change:** the browser decides whether to translate.
+After the reload on `/en/…` the page is English with `lang="en"`. A
+browser told to "always translate English" will translate it again; that
+is the visitor's setting, in the browser's translate menu.
+
+## Questions asked (2 Nov 2026, second round)
+
+**Why does a translated page (Ukrainian) show GVB's fault message in
+Dutch?** It was marked `translate="no"` on the idea that it was "already
+in the chosen language". That only holds for Dutch and English readers,
+and on the English page GVB's Dutch fallback wasn't translated either.
+Now it's translatable and marked with its real language. A
+search of every `translate="no"` in the code found no other words behind
+it; the rest are numbers, line badges, station names and the EN/NL code.
+
+**Why don't the EN and NL buttons bring the site back to English or Dutch
+on a translated page?** See "When the translator rewrites the page under
+React" above: the switch went into text the translator had removed. It now
+reloads into the chosen language when the page is translated. This applies
+to every language the browser translates into, not only Ukrainian.
+
+**Why were spaces missing in "CS,De Pijp,…"?** The ", " between two
+untranslated names was a lone translatable text node, and the translator
+trimmed it. Names and commas are now one untranslated run.
+
 ## Not done, on purpose
 
 - No `translate="no"` on the whole page: that would take the explanations
@@ -104,6 +165,11 @@ the tests creep towards it, the page should get cheaper to render instead.
   keep up to date.
 
 ## Sources
+
+- [React #11538: Make React resilient to DOM mutations from Google Translate](https://github.com/facebook/react/issues/11538), [PR #13341](https://github.com/facebook/react/pull/13341)
+- [translation-resilience](https://cdn.jsdelivr.net/npm/translation-resilience@0.5.0/README.md): how Chrome, Firefox and Edge rewrite the DOM and how to detect each
+- [Suga: Google Translate compatibility](https://suga.app/changelog/010-google-translate-compatibility)
+- [ctrl.blog: detecting machine-translated pages](https://www.ctrl.blog/entry/detect-machine-translated-webpages/)
 
 - [MDN: translate attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/translate)
 - [W3C: Using HTML's translate attribute](https://www.w3.org/International/questions/qa-translate-flag.en.html)

@@ -9,7 +9,7 @@ import {
   shortDate,
   stepFree,
 } from "../data/accessibility";
-import { locale, pick as pickText, useLang, useT } from "../i18n";
+import { locale, pickWithLang, useLang, useT } from "../i18n";
 import { delayLabel } from "../format";
 import { CopyTerm } from "../components/CopyTerm";
 import { Place } from "../components/Place";
@@ -374,12 +374,18 @@ function AlertNotes({ id, alerts }: { id: string; alerts: ServiceAlert[] }) {
   const hm = new Intl.DateTimeFormat(locale(lang), { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit" });
   return (
     <ul id={id} className="mt-1 space-y-0.5 text-[11px] leading-snug text-amber-800 dark:text-amber-200">
-      {alerts.map((a) => (
-        <li key={a.id} className="break-words" translate="no">
-          {pickText(a.header, lang)}
-          {a.end_ts && <> · {t.alertUntil(hm.format(new Date(a.end_ts * 1000)))}</>}
-        </li>
-      ))}
+      {alerts.map((a) => {
+        // Translatable, in its own language (see AlertList). The message is
+        // its element's only text, so an update replaces what a translator
+        // put there instead of writing into a text node it removed.
+        const header = pickWithLang(a.header, lang);
+        return (
+          <li key={a.id} className="break-words">
+            <span lang={header.lang}>{header.text}</span>
+            {a.end_ts && <> · {t.alertUntil(hm.format(new Date(a.end_ts * 1000)))}</>}
+          </li>
+        );
+      })}
     </ul>
   );
 }

@@ -1,4 +1,5 @@
-import { setLang, useLang, useT } from "../i18n";
+import { useLang, useT } from "../i18n";
+import { switchLang } from "../i18n/translated";
 import { pageOfPath, pagePath } from "../i18n/paths";
 
 /** Flips between Dutch and English. A real link to this page's other-language
@@ -17,7 +18,7 @@ export function LanguageToggle({ className = "" }: { className?: string }) {
       onClick={(e) => {
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
         e.preventDefault();
-        setLang(other);
+        switchLang(other);
       }}
       title={txt.languageSwitch}
       aria-label={txt.languageSwitch}

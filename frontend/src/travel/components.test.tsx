@@ -482,7 +482,7 @@ describe("JourneyPlanner", () => {
     const calls = onRoute.mock.calls.length;
     await userEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByText(/Metro 54 rijdt met vertraging/)).toHaveTextContent("Metro 54 rijdt met vertraging · tot 13:00");
+    expect(screen.getByText(/Metro 54 rijdt met vertraging/).closest("li")).toHaveTextContent("Metro 54 rijdt met vertraging · tot 13:00");
     // Unfolding is not picking the option.
     expect(onRoute.mock.calls.length).toBe(calls);
     await userEvent.click(toggle);
