@@ -9,7 +9,7 @@ import { Departure, Line, ServiceAlert, Station } from "../types";
 import { AlertList, alertsFor } from "./AlertList";
 import { StepFree } from "./StepFree";
 import { Num } from "./Num";
-import { onColor } from "../contrast";
+import { LineBadge } from "./LineBadge";
 
 interface DepartureBoardProps {
   station: Station;
@@ -128,12 +128,7 @@ export function DepartureBoard({ station, lines, alerts = [], onClose, onMore, f
                 }`}
               >
               <span className="flex min-w-0 items-center gap-2">
-                <span
-                  className="flex h-5 w-7 shrink-0 items-center justify-center rounded text-[11px] font-bold"
-                  style={{ backgroundColor: colorOf(d.line), color: onColor(colorOf(d.line)) }}
-                >
-                  {d.line}
-                </span>
+                <LineBadge id={d.line} color={colorOf(d.line)} />
                 <span className="truncate text-gray-800 dark:text-gray-200">
                   <Place name={d.headsign} />
                 </span>
@@ -154,7 +149,7 @@ export function DepartureBoard({ station, lines, alerts = [], onClose, onMore, f
                 </span>
                 {d.delay_s > 60 && (
                   <span className="ml-1 text-[11px] text-amber-600 dark:text-amber-400">
-                    +{Math.round(d.delay_s / 60)}m
+                    <Num>{`+${Math.round(d.delay_s / 60)}m`}</Num>
                   </span>
                 )}
               </span>

@@ -5,7 +5,7 @@ import { Place } from "./Place";
 import { locale, strings, useLang, useT } from "../i18n";
 import { AnimatedTrain } from "../types";
 import { Num } from "./Num";
-import { onColor } from "../contrast";
+import { LineBadge } from "./LineBadge";
 
 interface TrainPopupProps {
   train: AnimatedTrain;
@@ -166,17 +166,12 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
         </button>
       )}
       <div className={`mb-2 flex items-center gap-2 ${onClose ? "pr-8" : ""}`}>
-        <span
-          className="flex h-5 w-7 shrink-0 items-center justify-center rounded text-[11px] font-bold"
-          style={{ backgroundColor: color, color: onColor(color) }}
-        >
-          {train.line}
-        </span>
+        <LineBadge id={train.line} color={color} />
         <div className="min-w-0">
           <div className="break-words text-sm font-semibold leading-snug">→ <Place name={train.headsign ?? ""} /></div>
           {lineName && (
             <div className="break-words text-[11px] leading-snug text-gray-500 dark:text-gray-400">
-              {txt.line} {train.line} · {lineName}
+              {txt.line} <Num>{train.line}</Num> · <Place name={lineName} />
             </div>
           )}
         </div>
@@ -220,9 +215,11 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
       )}
 
       <div className="mb-2.5">
-        <div className="mb-1 flex justify-between text-[11px] text-gray-500 dark:text-gray-400">
-          <span className="tabular-nums">{new Intl.NumberFormat(locale(lang), PCT_OPTS).format(progress)}%</span>
-          {train.stops_remaining != null && <span>{txt.stopsLeft(train.stops_remaining)}</span>}
+        {/* A translated "7 stops to go" may be long: it wraps under its own
+            right edge instead of pushing out of the card. */}
+        <div className="mb-1 flex justify-between gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+          <span className="shrink-0 tabular-nums"><Num>{`${new Intl.NumberFormat(locale(lang), PCT_OPTS).format(progress)}%`}</Num></span>
+          {train.stops_remaining != null && <span className="min-w-0 break-words text-right">{txt.stopsLeft(train.stops_remaining)}</span>}
         </div>
         <div
           className="h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"
@@ -266,14 +263,16 @@ export function TrainPopup({ train, lineName, color, x, y, containerWidth, nowMs
   );
 }
 
-/** "· perron 2" after a station; nothing where the timetable has no platform. */
+/** "· perron 2" after a station; nothing where the timetable has no platform.
+ *  Wraps like the rest of the line (a translated "platform" can be long);
+ *  only the number is kept whole and untranslated. */
 function PlatformTag({ platform }: { platform?: string | null }) {
   const txt = useT();
   if (!platform) return null;
   return (
-    <span className="whitespace-nowrap font-normal text-gray-500 dark:text-gray-400">
+    <span className="font-normal text-gray-500 dark:text-gray-400">
       {" "}
-      · {txt.platform} {platform}
+      · {txt.platform} <Num>{platform}</Num>
     </span>
   );
 }

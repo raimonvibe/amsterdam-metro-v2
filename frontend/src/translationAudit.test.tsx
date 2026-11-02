@@ -1,10 +1,13 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DepartureBoard } from "./components/DepartureBoard";
 import { Sidebar } from "./components/Sidebar";
+import { TrainPopup } from "./components/TrainPopup";
 import { setLang } from "./i18n";
 import { NETWORK, STATIONS } from "./test/fixtures";
+import { PAGE_TEST_TIMEOUT } from "./test/timeouts";
 import TravelInfoPage from "./travel/TravelInfoPage";
-import { Line, Status } from "./types";
+import { AnimatedTrain, Line, Status } from "./types";
 
 vi.mock("./api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./api")>()),
@@ -12,6 +15,7 @@ vi.mock("./api", async (importOriginal) => ({
   fetchStationInfo: vi.fn(),
   fetchJourneys: vi.fn().mockResolvedValue([]),
   fetchNetwork: vi.fn(),
+  fetchDepartures: vi.fn(),
 }));
 import * as api from "./api";
 
@@ -42,8 +46,19 @@ const LINES: Line[] = NETWORK.map((l) => ({ id: l.id, name: l.name, color: l.col
 const STATUS: Status = { static_loaded: true, rt_trip_count: 120, active_trains: 35, is_live: true };
 const CS = STATIONS.find((s) => s.name === "Amsterdam, Centraal Station")!;
 
+const TRAIN: AnimatedTrain = {
+  id: "t1", line: "51", latitude: 52.34, longitude: 4.92, bearing: 0, distance_m: 0, speed_m_s: 15, shape_id: "s",
+  headsign: "Amsterdam, Centraal Station", delay_s: 180, status: "moving", prev_station: "Amsterdam, Overamstel",
+  next_station: "Amsterdam, Spaklerweg", platform: "4", next_arrival_ts: NOW + 60, prev_departure_ts: NOW - 60,
+  stops_remaining: 7, final_arrival_ts: NOW + 660, realtime: true, fetchedAt: Date.now() - 84_000,
+};
+
 beforeEach(() => {
   vi.mocked(api.fetchNetwork).mockResolvedValue(NETWORK);
+  vi.mocked(api.fetchDepartures).mockResolvedValue([
+    { trip_id: "t1", line: "51", headsign: "Amsterdam, Centraal Station", departure_ts: NOW + 60, delay_s: 0, realtime: true },
+    { trip_id: "t2", line: "54", headsign: "Amsterdam, Gein", departure_ts: NOW + 660, delay_s: 120, realtime: true },
+  ]);
   vi.mocked(api.fetchBoard).mockResolvedValue([
     {
       trip_id: "t1", line: "52", headsign: "Zuid", departure_ts: NOW + 300, delay_s: 120, realtime: true,
@@ -60,7 +75,7 @@ beforeEach(() => {
   });
 });
 
-describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: 15_000 }, (lang) => {
+describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: PAGE_TEST_TIMEOUT }, (lang) => {
   beforeEach(() => setLang(lang, { persist: false }));
 
   it("leaves every number on the travel page untranslated", async () => {
@@ -90,6 +105,21 @@ describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: 15_0
         onClose={() => {}}
         stations={STATIONS}
       />,
+    );
+    expect(untranslatedNumbers(container)).toEqual([]);
+  });
+
+  it("leaves every number on a station's card untranslated", async () => {
+    const { container } = render(
+      <DepartureBoard station={CS} lines={LINES} onClose={() => {}} followable={new Set(["t1"])} onFollow={() => {}} />,
+    );
+    await screen.findAllByText("Gein");
+    expect(untranslatedNumbers(container)).toEqual([]);
+  });
+
+  it("leaves every number in a train's popup untranslated", () => {
+    const { container } = render(
+      <TrainPopup train={TRAIN} color="#FA8C1B" lineName="CS - Isolatorweg" x={300} y={300} containerWidth={800} nowMs={Date.now()} />,
     );
     expect(untranslatedNumbers(container)).toEqual([]);
   });

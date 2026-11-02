@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NETWORK, STATIONS } from "../test/fixtures";
 import { Line } from "../types";
 import { setLang } from "../i18n";
+import { PAGE_TEST_TIMEOUT } from "../test/timeouts";
 import TravelInfoPage from "./TravelInfoPage";
 
 vi.mock("../api", () => ({
@@ -31,10 +32,7 @@ beforeEach(() => {
   vi.mocked(api.fetchNetwork).mockResolvedValue(NETWORK);
 });
 
-// The whole travel page renders in jsdom here: a few hundred ms alone, but
-// several seconds when the suite's other files run alongside on a busy
-// machine, which crossed Vitest's 5 s default now and then.
-describe("TravelInfoPage", { timeout: 15_000 }, () => {
+describe("TravelInfoPage", { timeout: PAGE_TEST_TIMEOUT }, () => {
   it("opens on Centraal Station when the link names no station", async () => {
     renderPage();
     await waitFor(() => expect(boardHeading()).toHaveTextContent("Centraal Station"));

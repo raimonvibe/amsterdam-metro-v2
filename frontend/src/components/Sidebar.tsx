@@ -2,7 +2,6 @@ import { useState } from "react";
 import { ChevronRight, Clock, Landmark, PanelLeftClose, TrainFront, TriangleAlert } from "lucide-react";
 import { AnimatedTrain, Line, ServiceAlert, Station, Status } from "../types";
 import { AlertList } from "./AlertList";
-import { onColor } from "../contrast";
 import { MapStyle } from "../theme";
 import { StyleSwitcher } from "./StyleSwitcher";
 import { locale, useLang, useT } from "../i18n";
@@ -14,6 +13,7 @@ import { stepFree } from "../data/accessibility";
 import { SocialIcons } from "./SocialIcons";
 import { Credits } from "./Credits";
 import { NO_TRANSLATE, Num } from "./Num";
+import { LineBadge } from "./LineBadge";
 
 interface SidebarProps {
   lines: Line[];
@@ -32,18 +32,6 @@ interface SidebarProps {
   stations?: Station[];
   /** Opens the station's departures, as a tap on the map would. */
   onPickStation?: (station: Station) => void;
-}
-
-function LineBadge({ id, color }: { id: string; color: string }) {
-  return (
-    <span
-      translate="no"
-      className="notranslate flex h-5 w-7 shrink-0 items-center justify-center overflow-hidden whitespace-nowrap rounded text-[11px] font-bold"
-      style={{ backgroundColor: color, color: onColor(color) }}
-    >
-      {id}
-    </span>
-  );
 }
 
 export function Sidebar({
