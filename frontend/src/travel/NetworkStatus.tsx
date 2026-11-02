@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { TriangleAlert } from "lucide-react";
 import { formatPlaceName } from "../format";
 import { AlertList } from "../components/AlertList";
 import { AnimatedTrain, Line, ServiceAlert, Status } from "../types";
@@ -19,6 +20,8 @@ export function NetworkStatus({ lines, trains, status, onLine, alerts = [] }: Ne
   const colorOf = (id: string) => lines.find((l) => l.id === id)?.color ?? "#999";
   const txt = useTravelT();
   const health = useMemo(() => lineHealth(lines.map((l) => l.id), trains), [lines, trains]);
+  // Red is for a GVB fault only; a late train or two is amber at worst.
+  const faulty = useMemo(() => new Set(alerts.flatMap((a) => a.lines)), [alerts]);
   const total = trains.length;
   const live = trains.filter((t) => t.realtime).length;
 
@@ -44,11 +47,13 @@ export function NetworkStatus({ lines, trains, status, onLine, alerts = [] }: Ne
           {health.map((h) => {
             const line = lines.find((l) => l.id === h.line);
             const pct = h.punctuality == null ? null : Math.round(h.punctuality * 100);
+            const fault = faulty.has(h.line);
             return (
               <tr key={h.line} className="border-t border-[#efe8d8] dark:border-[#1c2436]">
                 <td className="py-1">
                   <button type="button" onClick={() => onLine(h.line)} className="flex min-w-0 items-center gap-1.5 hover:underline" translate="no" title={line ? formatPlaceName(line.name) : undefined}>
                     <LineBadge id={h.line} color={line?.color ?? "#999"} small />
+                    {fault && <TriangleAlert size={12} className="shrink-0 text-[#b42335] dark:text-[#ff8a8a]" aria-label={txt.lineFault} />}
                     <span translate="no" className="hidden truncate xl:inline">{line ? formatPlaceName(line.name).split(" - ")[1] ?? "" : ""}</span>
                   </button>
                 </td>
@@ -60,7 +65,7 @@ export function NetworkStatus({ lines, trains, status, onLine, alerts = [] }: Ne
                     <span className="flex items-center gap-1.5">
                       <span className="h-1.5 flex-1 overflow-hidden rounded bg-[#efe8d8] dark:bg-[#1c2436]" aria-hidden>
                         <span
-                          className={`block h-full ${pct >= 85 ? "bg-emerald-600" : pct >= 60 ? "bg-amber-500" : "bg-[#b42335]"}`}
+                          className={`block h-full ${fault ? "bg-[#b42335]" : pct >= 85 ? "bg-emerald-600" : "bg-amber-500"}`}
                           style={{ width: `${pct}%` }}
                         />
                       </span>
