@@ -96,9 +96,9 @@ Configured in `frontend/index.html`, `frontend/public/`, and `frontend/src/seo/s
 
 - **Canonical:** `https://amsterdammetro.nl/`
 - **Title & description:** Dutch copy with GVB line keywords (M50–M54)
-- **Favicon:** `favicon.ico` at `https://amsterdammetro.nl/favicon.ico`
+- **Favicon:** `favicon.ico` at `https://amsterdammetro.nl/favicon.ico` (16/32/48/96 px)
 - **Open Graph & Twitter cards:** `social-share.png` at `https://amsterdammetro.nl/social-share.png`
-- **Add to home screen:** `apple-touch-icon` + `manifest.webmanifest` (both use `social-share.png`)
+- **Add to home screen:** `apple-touch-icon.png` (180 px) and `manifest.webmanifest` (`icon-192.png`, `icon-512.png`)
 - **JSON-LD:** `WebSite`, `WebApplication`, and `Organization` schema
 - **Sitemap:** `https://amsterdammetro.nl/sitemap.xml` (`/` and `/privacy`)
 - **Robots:** `https://amsterdammetro.nl/robots.txt`

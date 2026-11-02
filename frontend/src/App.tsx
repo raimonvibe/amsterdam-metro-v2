@@ -5,7 +5,9 @@ import { AlertAnnouncer } from "./components/AlertList";
 import { strings, useLang, useT } from "./i18n";
 import { pagePath } from "./i18n/paths";
 import { setPageMeta } from "./seo/site";
-import { MetroMap, NO_HOVER } from "./components/MetroMap";
+import { NO_HOVER } from "./components/hover";
+import { type Quality, getQualityPref, softwareGL, startQuality, useQualityPref } from "./quality";
+import { MapPoster } from "./components/MapPoster";
 import { Sidebar } from "./components/Sidebar";
 import { LiveBadge } from "./components/LiveBadge";
 import { EnglishHint } from "./components/EnglishHint";
@@ -28,6 +30,17 @@ const PrivacyPolicy = lazy(() =>
 );
 // The travel-info page is a separate chunk: map visitors never download it.
 const TravelInfoPage = lazy(() => import("./travel/TravelInfoPage"));
+// The map (MapLibre and deck.gl, most of the JavaScript) is its own chunk:
+// the menu, its text and the map's background show while it loads.
+const loadMap = () => import("./components/MetroMap");
+const MetroMap = lazy(() => loadMap().then((m) => ({ default: m.MetroMap })));
+// Without a graphics chip the live map blocks the page for 10–17 s compiling
+// its shaders: such a browser opens on a still of the 3D map (MapPoster) and
+// starts the live one on request. Only on "auto": a visitor who picked Full
+// or Light in the menu gets the live map. Everyone else starts the download
+// right away, before React renders.
+const START_WITH_POSTER = typeof window !== "undefined" && getQualityPref() === "auto" && softwareGL();
+if (!START_WITH_POSTER) void loadMap();
 
 // Require a few consecutive empty snapshots before actually clearing the
 // map: metro service does legitimately stop overnight, but a single empty
@@ -76,8 +89,6 @@ export default function App() {
       window.clearTimeout(timer);
     };
   }, [mapLost]);
-  // Followed from a list (the station card) rather than the map itself.
-  const [followedFromList, setFollowedFromList] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { showPrivacy, openPrivacy, closePrivacy } = usePrivacyRoute();
   const { showTravel, openTravel, closeTravel } = useTravelRoute();
@@ -94,6 +105,14 @@ export default function App() {
   const alerts = useAlerts();
   const txt = useT();
   const lang = useLang();
+  // How much 3D to draw (src/quality.ts). "auto" starts full on any device
+  // with a graphics chip; the map steps down to lite if it can't keep up.
+  const qualityPref = useQualityPref();
+  const [autoStart] = useState(() => startQuality("auto"));
+  const [slowDevice, setSlowDevice] = useState(false);
+  const [poster, setPoster] = useState(START_WITH_POSTER);
+  const showPoster = poster && qualityPref === "auto";
+  const quality: Quality = qualityPref === "auto" ? (slowDevice ? "lite" : autoStart) : qualityPref;
   const page = showTravel ? "/reisinfo" : showPrivacy ? "/privacy" : "/";
   useEffect(() => setPageMeta(page, lang), [page, lang]);
   // Phones: the sidebar is a drawer over the map. Left open from before the
@@ -242,6 +261,7 @@ export default function App() {
           lastUpdated={lastUpdated}
           mapStyle={mapStyle}
           onMapStyleChange={setMapStyle}
+          quality={quality}
           onOpenPrivacy={openPrivacy}
           onOpenTravel={openTravelForSelection}
           onClose={closeSidebar}
@@ -278,7 +298,15 @@ export default function App() {
           </div>
         )}
         <MapErrorBoundary key={mapKey} onReset={() => setMapKey((k) => k + 1)}>
+        {showPoster ? (
+          <MapPoster mapStyle={mapStyle} backdrop={swatch[0]} onStart={() => setPoster(false)} />
+        ) : (
+        <Suspense fallback={<div className="h-full w-full" style={{ backgroundColor: swatch[0] }} />}>
         <MetroMap
+          quality={quality}
+          watchFrames={qualityPref === "auto" && !slowDevice}
+          onSlow={() => setSlowDevice(true)}
+          onOpenTravel={openTravelForSelection}
           onContextLost={onMapContextLost}
           lines={lines}
           stations={stations}
@@ -290,11 +318,7 @@ export default function App() {
           backdropColor={swatch[0]}
           followedTrainId={followedTrainId}
           onStationHover={setHoveredStation}
-          onTrainClick={(t) => {
-            setFollowedFromList(false);
-            setFollowedTrainId(t.id);
-          }}
-          showFollowedCard={followedFromList}
+          onTrainClick={(t) => setFollowedTrainId(t.id)}
           onStationClick={(s) => {
             // Picking a station is a new choice: stop following, or the
             // follow-cam carries the map away from the station just opened.
@@ -308,6 +332,8 @@ export default function App() {
           onMapBackgroundClick={sidebarOpen ? closeSidebar : followedTrainId ? () => setFollowedTrainId(null) : undefined}
           paused={showTravel}
         />
+        </Suspense>
+        )}
         </MapErrorBoundary>
         {mapLost && (
           <div role="status" className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
@@ -327,7 +353,6 @@ export default function App() {
             followable={new Set(trains.map((t) => t.id))}
             live={status?.is_live !== false}
             onFollow={(id) => {
-              setFollowedFromList(true);
               setFollowedTrainId(id);
               setSelectedStation(null);
             }}
@@ -335,9 +360,9 @@ export default function App() {
             onMore={openTravelForSelection}
           />
         )}
-        {/* Touch screens: the followed train's popup has its own close button
-            and sits where this chip is, so the chip would only peek out
-            behind it. Desktop keeps it: there the popup ends with the hover. */}
+        {/* Phones: the followed train's card already has ✕ and sits near
+            the top-centre, so this chip would only peek out behind it.
+            Desktop keeps the chip at the top; the card is pinned to the train. */}
         {followedTrainId &&
           !NO_HOVER &&
           (() => {
