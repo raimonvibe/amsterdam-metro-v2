@@ -25,7 +25,7 @@ import { TrainPopup } from "./TrainPopup";
 import { getWebGLStatus } from "../webgl";
 import { type Quality, tooSlow } from "../quality";
 import { onIdleOrAfter } from "../mapIdle";
-import { belowLabels, hideBusinesses } from "../mapPois";
+import { belowLabels, hideBusinesses, hideRoadNumbers } from "../mapPois";
 import { carried, carryOver } from "../i18n/translated";
 import { useLang, useT, type Lang } from "../i18n";
 import { useReducedMotion } from "../hooks/useReducedMotion";
@@ -657,10 +657,12 @@ export function MetroMap({
     }, belowLabels(map));
   }, []);
 
-  // No shop, café or parking icons in any style (mapPois.ts).
+  // No shop, café or parking icons and no road numbers, in any style (mapPois.ts).
   const hidePois = useCallback(() => {
     const map = mapRef.current?.getMap();
-    if (map) hideBusinesses(map);
+    if (!map) return;
+    hideBusinesses(map);
+    hideRoadNumbers(map);
   }, []);
 
   // Screen readers: one named, focusable map (MapLibre's canvas, which takes

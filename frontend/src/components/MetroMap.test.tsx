@@ -23,9 +23,9 @@ function fakeMap() {
   const canvas = document.createElement("canvas");
   container.appendChild(canvas);
   // Draw order, bottom to top: a street-name label and Liberty's business
-  // icons, visible, as the style ships them.
-  const order = ["road_label", ...BUSINESS_LAYERS];
-  BUSINESS_LAYERS.forEach((id) => layers.set(id, { layout: { visibility: "visible" } }));
+  // icons and road numbers (A10), visible, as the style ships them.
+  const order = ["road_label", "highway_ref", ...BUSINESS_LAYERS];
+  [...BUSINESS_LAYERS, "highway_ref", "road_label"].forEach((id) => layers.set(id, { layout: { visibility: "visible" } }));
   const map = {
     layers,
     order,
@@ -59,7 +59,11 @@ function fakeMap() {
     },
     getStyle: () => ({
       sources: { openmaptiles: { type: "vector" } },
-      layers: order.map((id) => ({ id, type: id === "road_label" || id.startsWith("poi_") ? "symbol" : "fill-extrusion" })),
+      layers: order.map((id) =>
+        id === "road_label" || id === "highway_ref"
+          ? { id, type: "symbol", "source-layer": "transportation_name", layout: { "text-field": id === "highway_ref" ? "{ref}" : "{name}" } }
+          : { id, type: id.startsWith("poi_") ? "symbol" : "fill-extrusion" },
+      ),
     }),
     setSky: () => {},
     jumpTo: () => {},
@@ -177,5 +181,22 @@ describe("MetroMap business icons", () => {
     BUSINESS_LAYERS.forEach((id) => map.layers.set(id, { layout: { visibility: "visible" } })); // the new style's own
     act(() => map.fire("style.load"));
     expect(visible()).toEqual([]);
+  });
+});
+
+describe("MetroMap road numbers", () => {
+  const shown = (id: string) => map.layers.get(id)?.layout?.visibility !== "none";
+
+  it.each(["full", "lite"] as const)("are hidden at once in %s, street names stay", (quality) => {
+    renderMap(quality);
+    expect(shown("highway_ref")).toBe(false);
+    expect(shown("road_label")).toBe(true);
+  });
+
+  it("stay hidden after a style switch", () => {
+    renderMap("full");
+    map.layers.set("highway_ref", { layout: { visibility: "visible" } }); // the new style's own
+    act(() => map.fire("style.load"));
+    expect(shown("highway_ref")).toBe(false);
   });
 });
