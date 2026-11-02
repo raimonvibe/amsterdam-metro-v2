@@ -24,6 +24,7 @@ import { ChurchMarkers } from "./ChurchMarkers";
 import { TrainPopup } from "./TrainPopup";
 import { getWebGLStatus } from "../webgl";
 import { type Quality, tooSlow } from "../quality";
+import { onIdleOrAfter } from "../mapIdle";
 import { useLang, useT, type Lang } from "../i18n";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { foldedAttribution, relabelControls } from "../mapControls";
@@ -103,6 +104,9 @@ interface MetroMapProps {
 /** How long after the map is ready the frame rate is watched: the wait for
  *  the first view, the 3.2 s opening flight, and a few seconds of trains. */
 const WATCH_FRAMES_MS = 15_000;
+/** Full quality adds the 3D buildings on the map's first "idle", or after
+ *  this long if that doesn't come (a followed train keeps the camera moving). */
+export const BUILDINGS_FALLBACK_MS = 2500;
 /** Lite's animation clock: 4 updates a second. */
 const LITE_FRAME_MS = 250;
 
@@ -711,8 +715,21 @@ export function MetroMap({
     // Full: the 3D buildings follow once the first view is on screen, so the
     // map and its trains appear first. Lite: at once (they're hidden, but the
     // sky fill comes with them and lite opens tilted).
-    if (qualityRef.current === "full") map.once("idle", addBuildings);
-    else addBuildings();
+    // "idle" alone isn't enough: it needs the camera still and every tile in,
+    // and a followed train glides the camera every 0.7 s, so it may never
+    // come and the city stayed flat. Hence the timeout, as for the intro.
+    if (qualityRef.current === "full") {
+      onIdleOrAfter(map, BUILDINGS_FALLBACK_MS, () => {
+        // Not guarded by isStyleLoaded(): that also waits for every tile, the
+        // very thing a moving camera keeps from happening.
+        try {
+          addBuildings();
+        } catch {
+          // A style switch in progress ("Style is not done loading"): the
+          // style.load listener adds them when it lands.
+        }
+      });
+    } else addBuildings();
     if (!introDone.current) {
       introDone.current = true;
       if (reduceMotionRef.current || qualityRef.current === "lite") {
@@ -723,17 +740,10 @@ export function MetroMap({
         // phone (iPhone 11 Pro) spent most of the 3.2 s still building tiles,
         // buildings and layers, and showed only the start and then the end.
         // The timeout keeps the intro coming if "idle" is slow to fire.
-        let flown = false;
-        const fly = () => {
-          if (flown) return;
-          flown = true;
-          clearTimeout(fallback);
-          map.off("idle", fly);
+        onIdleOrAfter(map, 2500, () => {
           map.flyTo({ ...INTRO_END, duration: 3200, essential: true });
           map.once("moveend", () => setShowLabels(map.getZoom() >= LABEL_ZOOM));
-        };
-        const fallback = setTimeout(fly, 2500);
-        map.once("idle", fly);
+        });
       }
     }
   }, [addBuildings]);
