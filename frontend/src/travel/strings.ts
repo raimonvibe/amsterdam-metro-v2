@@ -1,4 +1,5 @@
 import { useLang, getLang, Lang } from "../i18n";
+import { PSEUDO, pseudoDict } from "../i18n/pseudo";
 
 /** Strings of the travel-info page. Kept apart from i18n/nl.ts so they stay
  *  in this page's chunk: map visitors never download them. */
@@ -352,7 +353,7 @@ const en: TravelStrings = {
   legendPlannedTag: "from the timetable: no live signal",
 };
 
-const DICTS: Record<Lang, TravelStrings> = { nl, en };
+const DICTS: Record<Lang, TravelStrings> = PSEUDO ? { nl: pseudoDict(nl), en: pseudoDict(en) } : { nl, en };
 
 /** The page's strings for the current language; re-renders on a switch. */
 export function useTravelT(): TravelStrings {

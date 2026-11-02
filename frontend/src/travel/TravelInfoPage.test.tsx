@@ -31,7 +31,10 @@ beforeEach(() => {
   vi.mocked(api.fetchNetwork).mockResolvedValue(NETWORK);
 });
 
-describe("TravelInfoPage", () => {
+// The whole travel page renders in jsdom here: a few hundred ms alone, but
+// several seconds when the suite's other files run alongside on a busy
+// machine, which crossed Vitest's 5 s default now and then.
+describe("TravelInfoPage", { timeout: 15_000 }, () => {
   it("opens on Centraal Station when the link names no station", async () => {
     renderPage();
     await waitFor(() => expect(boardHeading()).toHaveTextContent("Centraal Station"));
@@ -151,9 +154,12 @@ describe("TravelInfoPage", () => {
   });
 
   it("draws the line overview from the network", async () => {
+    // "Metro <52> · Noord - Zuid": the number sits in its own untranslated span.
+    const lineTitle = (id: string) => (_: string, el: Element | null) =>
+      !!el?.textContent?.startsWith(`Metro ${id} ·`) && ![...el.children].some((c) => c.textContent?.startsWith("Metro"));
     renderPage("/reisinfo?lijn=52");
-    expect(await screen.findByText(/Metro 52 ·/)).toBeInTheDocument();
+    expect(await screen.findByText(lineTitle("52"))).toBeInTheDocument();
     await userEvent.click(within(screen.getByRole("group", { name: "Kies een lijn" })).getByRole("button", { name: "Lijn 53" }));
-    expect(screen.getByText(/Metro 53 ·/)).toBeInTheDocument();
+    expect(screen.getByText(lineTitle("53"))).toBeInTheDocument();
   });
 });

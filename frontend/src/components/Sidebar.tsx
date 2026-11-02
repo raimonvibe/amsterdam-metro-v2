@@ -13,6 +13,7 @@ import { formatPlaceName } from "../format";
 import { stepFree } from "../data/accessibility";
 import { SocialIcons } from "./SocialIcons";
 import { Credits } from "./Credits";
+import { NO_TRANSLATE, Num } from "./Num";
 
 interface SidebarProps {
   lines: Line[];
@@ -36,7 +37,8 @@ interface SidebarProps {
 function LineBadge({ id, color }: { id: string; color: string }) {
   return (
     <span
-      className="flex h-5 w-7 shrink-0 items-center justify-center rounded text-[11px] font-bold"
+      translate="no"
+      className="notranslate flex h-5 w-7 shrink-0 items-center justify-center overflow-hidden whitespace-nowrap rounded text-[11px] font-bold"
       style={{ backgroundColor: color, color: onColor(color) }}
     >
       {id}
@@ -126,7 +128,8 @@ export function Sidebar({
             {[...stations]
               .sort((a, b) => formatPlaceName(a.name).localeCompare(formatPlaceName(b.name), "nl"))
               .map((s) => (
-                <option key={s.name} value={s.name}>
+                // Station names and line numbers stay as on the signs.
+                <option key={s.name} value={s.name} {...NO_TRANSLATE}>
                   {/* Options hold text only, so the mark is the character;
                       screen readers say "wheelchair symbol". */}
                   {formatPlaceName(s.name)}{stepFree(s.name) === "yes" ? " ♿" : ""} ({s.lines.join(", ")})
@@ -166,7 +169,7 @@ export function Sidebar({
                     <Place name={line.name} />
                   </span>
                   <span className="w-5 shrink-0 text-right text-xs tabular-nums text-gray-500 dark:text-gray-400">
-                    {count}
+                    <Num>{String(count)}</Num>
                   </span>
                 </button>
                 {lineAlerts.length > 0 && (
@@ -196,7 +199,7 @@ export function Sidebar({
           />
           <div className="min-w-0 leading-snug">
             <div className="text-base font-bold tabular-nums tracking-tight text-gray-900 dark:text-gray-50">
-              {trains.length}
+              <Num>{String(trains.length)}</Num>
             </div>
             <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
               {txt.trainsInService}
@@ -213,7 +216,7 @@ export function Sidebar({
             </span>
             <div className="min-w-0 leading-snug">
               <div className="text-base font-bold tabular-nums tracking-tight text-gray-900 dark:text-gray-50">
-                {status.rt_trip_count}
+                <Num>{String(status.rt_trip_count)}</Num>
               </div>
               <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
                 {txt.liveTripUpdates}
@@ -229,7 +232,7 @@ export function Sidebar({
             />
             <div className="min-w-0 leading-snug">
               <div className="text-base font-bold tabular-nums tracking-tight text-gray-900 dark:text-gray-50">
-                {lastUpdated.toLocaleTimeString(locale(lang))}
+                <Num>{lastUpdated.toLocaleTimeString(locale(lang))}</Num>
               </div>
               <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
                 {txt.updatedAt}

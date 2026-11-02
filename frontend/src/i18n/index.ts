@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import { nl } from "./nl";
 import { en } from "./en";
 import { langOfPath, pageOfPath, pagePath } from "./paths";
+import { PSEUDO, pseudoDict } from "./pseudo";
 
 /** UI language. The URL decides it: /en/… is English, every other path
  *  Dutch. The browser's language does not: crawlers browse as en-US (Googlebot
@@ -14,7 +15,7 @@ type Widen<T> = { [K in keyof T]: T[K] extends (...args: infer A) => string ? (.
 /** Every UI string, keyed as in nl.ts; en.ts has to supply the same keys. */
 export type Dict = Widen<typeof nl>;
 
-const DICTS: Record<Lang, Dict> = { nl, en };
+const DICTS: Record<Lang, Dict> = PSEUDO ? { nl: pseudoDict(nl), en: pseudoDict(en) } : { nl, en };
 const STORAGE_KEY = "metro-lang";
 
 /** The language picked with the language button, if any. */

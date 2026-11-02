@@ -22,7 +22,9 @@ export function LanguageToggle({ className = "" }: { className?: string }) {
       title={txt.languageSwitch}
       aria-label={txt.languageSwitch}
       lang={other}
-      className={className}
+      // A language code, not a word: a translator must leave "EN" alone.
+      translate="no"
+      className={`notranslate ${className}`}
     >
       {other.toUpperCase()}
     </a>

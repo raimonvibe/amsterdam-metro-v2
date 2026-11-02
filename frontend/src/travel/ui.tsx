@@ -8,8 +8,11 @@ export function LineBadge({ id, color, small = false }: { id: string; color: str
   const txt = useTravelT();
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded font-bold tabular-nums ${
-        small ? "h-4 min-w-6 px-1 text-[11px]" : "h-5 min-w-7 px-1 text-[11px]"
+      translate="no"
+      // notranslate: see NO_TRANSLATE. overflow-hidden/nowrap: a translator
+      // that ignores both still can't stretch the badge into a sentence.
+      className={`notranslate inline-flex shrink-0 items-center justify-center overflow-hidden whitespace-nowrap rounded font-bold tabular-nums ${
+        small ? "h-4 min-w-6 max-w-10 px-1 text-[11px]" : "h-5 min-w-7 max-w-12 px-1 text-[11px]"
       }`}
       style={{ backgroundColor: color, color: onColor(color) }}
       aria-label={txt.lineAria(id)}
