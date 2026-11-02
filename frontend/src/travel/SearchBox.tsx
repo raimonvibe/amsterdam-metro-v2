@@ -194,7 +194,10 @@ export function SearchBox({
               <Place name={value} />
             </span>
           ) : (
-            <span className="min-w-0 flex-1 truncate text-[#6b6455] dark:text-[#8b93a7]">{shownPlaceholder}</span>
+            <span data-may-cut className="min-w-0 flex-1 truncate text-[#6b6455] dark:text-[#8b93a7]">
+              {/* A hint, with a short version for narrow screens: may be cut. */}
+              {shownPlaceholder}
+            </span>
           )}
           <ChevronDown size={16} className="shrink-0 text-[#6b6455] dark:text-[#9aa2b5]" aria-hidden />
         </button>
@@ -372,7 +375,7 @@ function ResultRow({ result: r, colorOf }: { result: SearchResult; colorOf: (l: 
     return (
       <>
         <ArrowRight size={15} className="shrink-0 text-[#1f3a68] dark:text-[#c8a951]" aria-hidden />
-        <span className="min-w-0 truncate">
+        <span className="line-clamp-2 min-w-0 break-words">
           {txt.tripFrom} <strong><Place name={r.from.name} /></strong> {txt.tripTo} <strong><Place name={r.to.name} /></strong>
         </span>
       </>

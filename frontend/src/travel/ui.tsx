@@ -55,7 +55,7 @@ export function Section({
           <span className="smallcaps text-[#7b2132] dark:text-[#c8a951]" aria-hidden>
             {ROMAN[n]}.
           </span>
-          <span className="truncate">{title}</span>
+          <span className="min-w-0 break-words hyphens-auto">{title}</span>
         </h2>
         {aside}
       </header>

@@ -74,7 +74,8 @@ export function StyleSwitcher({ value, onChange }: StyleSwitcherProps) {
               className={color}
               aria-hidden
             />
-            <span className="max-w-full truncate text-[11px] font-semibold leading-tight">{labelOf(label)}</span>
+            {/* Two lines rather than "Донк…" once a browser translates it. */}
+            <span className="line-clamp-2 max-w-full text-center text-[11px] font-semibold leading-tight hyphens-auto [overflow-wrap:anywhere]">{labelOf(label)}</span>
           </button>
         );
       })}

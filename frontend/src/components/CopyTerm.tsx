@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Check, Copy, X } from "lucide-react";
 import { useT } from "../i18n";
+import { NO_TRANSLATE } from "./Num";
 
 type CopyState = "idle" | "copied" | "failed";
 
@@ -66,8 +67,10 @@ export function CopyTerm({ term, className = "" }: { term: string; className?: s
         ) : (
           <Copy size={11} className="shrink-0" aria-hidden />
         )}
-        {/* A failed copy keeps the term in view, to type in by hand. */}
-        <span aria-hidden>{state === "copied" ? txt.copied : term}</span>
+        {/* A failed copy keeps the term in view, to type in by hand. The term
+            is what GVB's search box knows: never translated ("Centraal"
+            became "Центральний", which finds nothing). */}
+        {state === "copied" ? <span aria-hidden>{txt.copied}</span> : <span aria-hidden {...NO_TRANSLATE}>{term}</span>}
       </button>
       <CopyStatus state={state} term={term} />
     </>

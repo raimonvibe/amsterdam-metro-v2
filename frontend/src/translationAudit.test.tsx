@@ -41,6 +41,28 @@ export function untranslatedNumbers(root: Element): string[] {
   return leaks;
 }
 
+/**
+ * Text a browser would translate, inside an element that cuts its text off
+ * ("truncate"): translated, it runs longer and loses its end ("Інформація
+ * про подор…"). Translatable words should wrap; only names and numbers,
+ * which aren't translated, may be cut, or text marked `data-may-cut` (an
+ * optional detail, a placeholder). See docs/browser-translation.md.
+ */
+export function cutTranslatableText(root: Element): string[] {
+  const cut: string[] = [];
+  root.querySelectorAll(".truncate").forEach((el) => {
+    if (el.closest("[data-may-cut]")) return;
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (/\p{L}/u.test(node.textContent ?? "") && !node.parentElement?.closest('[translate="no"]')) {
+        cut.push(el.textContent?.trim() ?? "");
+        return;
+      }
+    }
+  });
+  return cut;
+}
+
 const NOW = Math.floor(Date.now() / 1000);
 const LINES: Line[] = NETWORK.map((l) => ({ id: l.id, name: l.name, color: l.color, shape: [] }));
 const STATUS: Status = { static_loaded: true, rt_trip_count: 120, active_trains: 35, is_live: true };
@@ -78,7 +100,7 @@ beforeEach(() => {
 describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: PAGE_TEST_TIMEOUT }, (lang) => {
   beforeEach(() => setLang(lang, { persist: false }));
 
-  it("leaves every number on the travel page untranslated", async () => {
+  it("leaves every number on the travel page untranslated, and cuts off no words", async () => {
     window.history.replaceState({}, "", "/reisinfo?station=CS");
     const { container } = render(
       <TravelInfoPage stations={STATIONS} lines={LINES} trains={[]} status={STATUS} theme="light" onToggleTheme={() => {}} onClose={() => {}} onShowOnMap={() => {}} />,
@@ -86,9 +108,10 @@ describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: PAGE
     await waitFor(() => expect(api.fetchBoard).toHaveBeenCalled());
     await screen.findAllByText("Zuid");
     expect(untranslatedNumbers(container)).toEqual([]);
+    expect(cutTranslatableText(container)).toEqual([]);
   });
 
-  it("leaves every number in the map sidebar untranslated", () => {
+  it("leaves every number in the map sidebar untranslated, and cuts off no words", () => {
     const { container } = render(
       <Sidebar
         lines={LINES}
@@ -107,20 +130,23 @@ describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: PAGE
       />,
     );
     expect(untranslatedNumbers(container)).toEqual([]);
+    expect(cutTranslatableText(container)).toEqual([]);
   });
 
-  it("leaves every number on a station's card untranslated", async () => {
+  it("leaves every number on a station's card untranslated, and cuts off no words", async () => {
     const { container } = render(
       <DepartureBoard station={CS} lines={LINES} onClose={() => {}} followable={new Set(["t1"])} onFollow={() => {}} />,
     );
     await screen.findAllByText("Gein");
     expect(untranslatedNumbers(container)).toEqual([]);
+    expect(cutTranslatableText(container)).toEqual([]);
   });
 
-  it("leaves every number in a train's popup untranslated", () => {
+  it("leaves every number in a train's popup untranslated, and cuts off no words", () => {
     const { container } = render(
       <TrainPopup train={TRAIN} color="#FA8C1B" lineName="CS - Isolatorweg" x={300} y={300} containerWidth={800} nowMs={Date.now()} />,
     );
     expect(untranslatedNumbers(container)).toEqual([]);
+    expect(cutTranslatableText(container)).toEqual([]);
   });
 });

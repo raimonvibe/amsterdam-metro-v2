@@ -161,3 +161,16 @@ describe("StepFree", () => {
     expect(screen.getByText("Niet rolstoeltoegankelijk")).toBeInTheDocument();
   });
 });
+
+describe("GVB's search term under browser translation", () => {
+  // Translated, "Centraal" became "Центральний": GVB's search finds nothing
+  // for that, which reads as "no lift fault".
+  it("stays untranslated in the lift link; the words around it don't", () => {
+    render(<StepFree station="Amsterdam, Centraal Station" />);
+    const link = screen.getByRole("link", { name: /Liftstoringen bij GVB/ });
+    const term = [...link.querySelectorAll('[translate="no"]')].map((e) => e.textContent);
+    expect(term).toEqual([gvbSearch("Amsterdam, Centraal Station")]);
+    expect(link.closest('[translate="no"]')).toBeNull();
+  });
+});
+

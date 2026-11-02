@@ -212,7 +212,8 @@ export function StationBoard(props: StationBoardProps) {
           {info.directions.map((d) => (
             <li key={`${d.line}-${d.headsign}`} className="flex min-w-0 items-center gap-1.5 rounded bg-[#f6f1e4] px-2 py-1 dark:bg-[#151c2e]">
               <LineBadge id={d.line} color={colorOf(d.line)} small />
-              <span className="min-w-0 truncate">
+              {/* Wraps: cut, the service hours were the first thing lost. */}
+              <span className="min-w-0 break-words">
                 <span className="font-semibold">→ <Place name={d.headsign} /></span>
                 {headwayLabel(d.headway_min) && <> · {headwayLabel(d.headway_min)}</>}
                 {d.first_ts && d.last_ts && (
@@ -347,7 +348,7 @@ export function StationBoard(props: StationBoardProps) {
                   </p>
                 )}
                 <header className={`flex items-center justify-between gap-2 bg-[#1f3a68] px-2.5 py-1.5 text-white dark:bg-[#0d1322] ${mine ? "" : "rounded-t-md"}`}>
-                  <h4 className="font-academic min-w-0 truncate text-sm font-semibold">
+                  <h4 className="font-academic min-w-0 break-words text-sm font-semibold">
                     {txt.direction} <Place name={g.headsign} />
                   </h4>
                   <span className="flex shrink-0 items-center gap-1.5">
@@ -512,8 +513,9 @@ function DepartureRow({
                 <span className="sr-only">{txt.plannedSr}</span>
               </span>
             )}
-            {/* Shrinks long before the status label does, so narrow cards drop the detail first. */}
-            <span className="hidden min-w-0 shrink-[100] truncate text-[#6b6455] sm:inline dark:text-[#8b93a7]">
+            {/* Shrinks long before the status label does, so narrow cards drop
+                the detail first: the one place translated words may be cut. */}
+            <span data-may-cut className="hidden min-w-0 shrink-[100] truncate text-[#6b6455] sm:inline dark:text-[#8b93a7]">
               · {txt.stops(d.stops_remaining)} · {txt.arrShort} <Num>{clock(d.terminus_ts)}</Num>
             </span>
           </>
