@@ -89,8 +89,6 @@ export default function App() {
       window.clearTimeout(timer);
     };
   }, [mapLost]);
-  // Followed from a list (the station card) rather than the map itself.
-  const [followedFromList, setFollowedFromList] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { showPrivacy, openPrivacy, closePrivacy } = usePrivacyRoute();
   const { showTravel, openTravel, closeTravel } = useTravelRoute();
@@ -320,11 +318,7 @@ export default function App() {
           backdropColor={swatch[0]}
           followedTrainId={followedTrainId}
           onStationHover={setHoveredStation}
-          onTrainClick={(t) => {
-            setFollowedFromList(false);
-            setFollowedTrainId(t.id);
-          }}
-          showFollowedCard={followedFromList}
+          onTrainClick={(t) => setFollowedTrainId(t.id)}
           onStationClick={(s) => {
             // Picking a station is a new choice: stop following, or the
             // follow-cam carries the map away from the station just opened.
@@ -359,7 +353,6 @@ export default function App() {
             followable={new Set(trains.map((t) => t.id))}
             live={status?.is_live !== false}
             onFollow={(id) => {
-              setFollowedFromList(true);
               setFollowedTrainId(id);
               setSelectedStation(null);
             }}

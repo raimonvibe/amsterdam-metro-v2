@@ -16,8 +16,13 @@
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <!-- Updated at runtime to the chosen map style; default style (Liberty) is light. -->
     <meta name="theme-color" content="#ffffff" />
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="apple-touch-icon" href="/social-share.png" />
+    <!-- Small files sized for where they show (tab, home screen, Google's
+         result icon, which wants more than 48 px): the 1024 px share image
+         as touch icon cost every visit 189 KB. social-share.png stays the
+         og/twitter image for link previews. -->
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 96x96" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="canonical" href="https://amsterdammetro.nl/" />
     <!-- Dutch and English versions of this page (docs/english-urls.md). The
