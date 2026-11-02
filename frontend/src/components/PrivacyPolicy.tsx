@@ -33,7 +33,7 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             {txt.privacyPolicy}
           </p>
           <h1 id="privacy-title" className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
-            {o.appName}
+            {txt.appName}
           </h1>
           <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
             Laatst bijgewerkt: {PRIVACY_POLICY_VERSION} ·{" "}

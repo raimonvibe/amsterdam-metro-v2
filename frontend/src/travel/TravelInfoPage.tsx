@@ -17,7 +17,7 @@ import { clockWithSeconds } from "./time";
 import { JourneyLeg, NetworkLine } from "./types";
 import { Crest, Section } from "./ui";
 import { readParams, resolveStation, writeParams } from "./url";
-import { getLang } from "../i18n";
+import { getLang, useT } from "../i18n";
 import { pagePath } from "../i18n/paths";
 import { Num } from "../components/Num";
 import { LanguageToggle } from "../components/LanguageToggle";
@@ -52,6 +52,7 @@ const DEFAULT_STATION = "Amsterdam, Centraal Station";
 
 export default function TravelInfoPage({ stations, lines, trains, status, theme, onToggleTheme, onClose, onShowOnMap, alerts = [] }: TravelInfoPageProps) {
   const txt = useTravelT();
+  const appName = useT().appName;
   const initial = useMemo(() => readParams(window.location.search), []);
   // Back from the map the link names at most a station: pick up the trip
   // planned before, unless the link names one of its own.
@@ -302,7 +303,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
           <div className="flex min-w-0 items-center gap-2.5">
             <Crest colors={lines.map((l) => l.color)} className="h-11 w-9 shrink-0" />
             <div className="min-w-0 leading-tight">
-              <p className="smallcaps truncate text-[11px] font-semibold text-[#7b2132] dark:text-[#c8a951]">Metro Amsterdam Live</p>
+              <p className="smallcaps truncate text-[11px] font-semibold text-[#7b2132] dark:text-[#c8a951]">{appName}</p>
               <h1 className="font-academic truncate text-xl font-semibold sm:text-2xl">{txt.pageTitle}</h1>
             </div>
           </div>

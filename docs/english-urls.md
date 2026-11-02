@@ -137,8 +137,8 @@ Google has been indexing the English UI.
 - **English hint.** A browser that doesn't list Dutch gets a small
   "English ×" pill under the menu button on its first visit. No automatic
   redirect, as Google advises. Tapping it switches; × hides it for good.
-  It sits under the menu button rather than top centre, because the LIVE
-  badge widens to "Dienstregeling" when the feed is down.
+  It sits under the menu button, clear of the LIVE badge (top right) and
+  the follow chip (top centre).
 - **Built pages.** The build writes `en/`, `en/reisinfo/` and
   `en/privacy/` next to the Dutch ones, each with its own `lang`, title,
   description, canonical, `og:locale`, `<noscript>` text and the same
