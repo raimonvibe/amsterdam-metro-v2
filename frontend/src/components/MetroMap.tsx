@@ -25,6 +25,7 @@ import { TrainPopup } from "./TrainPopup";
 import { getWebGLStatus } from "../webgl";
 import { type Quality, tooSlow } from "../quality";
 import { onIdleOrAfter } from "../mapIdle";
+import { carried, carryOver } from "../i18n/translated";
 import { useLang, useT, type Lang } from "../i18n";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { foldedAttribution, relabelControls } from "../mapControls";
@@ -271,8 +272,11 @@ const ADDITIVE = {
 } as const;
 
 /** The camera where the visitor left it. Module-level, so a map rebuilt after
- *  a lost WebGL context opens on the same view instead of replaying the intro. */
-let lastView: { longitude: number; latitude: number; zoom: number; pitch: number; bearing: number } | null = null;
+ *  a lost WebGL context opens on the same view instead of replaying the intro;
+ *  carried over the reload of a language switch on a translated page too. */
+type View = { longitude: number; latitude: number; zoom: number; pitch: number; bearing: number };
+let lastView: View | null = carried<View>("mapView") ?? null;
+carryOver("mapView", () => lastView);
 
 // Straight above where the intro ends, so the flight is one smooth zoom in.
 // Started elsewhere, flyTo arcs out and back to cover the distance, which on

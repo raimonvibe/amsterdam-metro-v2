@@ -12,4 +12,5 @@ export const BROWSER_STORAGE = [
   { key: "metro-live:recent", store: "localStorage", nl: "Reisinformatie-instellingen", en: "Travel-info settings" },
   { key: "metro-live:travel-prefs", store: "localStorage", nl: "Reisinformatie-instellingen", en: "Travel-info settings" },
   { key: "metro-live:trip", store: "sessionStorage", nl: "Geplande reis", en: "Planned trip" },
+  { key: "metro-live:lang-switch", store: "sessionStorage", nl: "Taalwissel op een vertaalde pagina", en: "Language switch on a translated page" },
 ] as const;

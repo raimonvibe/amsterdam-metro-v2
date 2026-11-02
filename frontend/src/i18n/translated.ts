@@ -20,18 +20,77 @@ export function pageTranslated(doc: Document = document): boolean {
   return doc.querySelector("font") !== null;
 }
 
+const CARRY_KEY = "metro-live:lang-switch";
+const carriers = new Map<string, () => unknown>();
+
+/** What a language switch on a translated page carried over its reload.
+ *  Read once and cleared, so the next reload or visit starts as usual. */
+const carriedOver: Record<string, unknown> | null = (() => {
+  try {
+    const raw = sessionStorage.getItem(CARRY_KEY);
+    sessionStorage.removeItem(CARRY_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+})();
+
+/** Keep a piece of state across that reload: `get` is read just before it,
+ *  `carried(key)` hands the value back after. Returns the unregister. */
+export function carryOver(key: string, get: () => unknown): () => void {
+  carriers.set(key, get);
+  return () => {
+    if (carriers.get(key) === get) carriers.delete(key);
+  };
+}
+
+export function carried<T>(key: string): T | undefined {
+  return carriedOver?.[key] as T | undefined;
+}
+
 /**
  * The language button. Untranslated, it switches in place. Translated, the
  * new words would land in text nodes the translator already removed and the
  * page would keep showing the old language. So it switches (which saves the
  * choice and moves the address bar to that language's URL) and reloads: a
- * clean page, built in the new language.
+ * clean page, built in the new language. Clicking NL or EN there means "the
+ * site's own language", so the reloaded page asks not to be translated
+ * (keepSiteLanguage), and keeps the open panel and the map's view, which a
+ * plain reload loses (the panel closed, the intro flew again).
  */
 export function switchLang(lang: Lang, reload: () => void = () => window.location.reload()) {
   // Before setLang: it rewrites <html lang>, which the Firefox check reads.
   const translated = pageTranslated();
   setLang(lang);
-  if (translated) reload();
+  if (!translated) return;
+  try {
+    const carry: Record<string, unknown> = { siteLanguage: true };
+    carriers.forEach((get, key) => (carry[key] = get()));
+    sessionStorage.setItem(CARRY_KEY, JSON.stringify(carry));
+  } catch {
+    /* storage unavailable: a plain reload, translated again if the browser wants */
+  }
+  reload();
+}
+
+/**
+ * After that reload: ask browsers not to translate this page view, with
+ * every marker they read (translate="no" on <html>, the notranslate class,
+ * Google's <meta name="google" content="notranslate">). Run before the first
+ * render; translators start once the page has loaded. Only for this view:
+ * the next load is translatable again.
+ */
+export function keepSiteLanguage(doc: Document = document) {
+  if (!carried<boolean>("siteLanguage")) return;
+  const html = doc.documentElement;
+  html.setAttribute("translate", "no");
+  html.classList.add("notranslate");
+  if (!doc.querySelector('meta[name="google"][content="notranslate"]')) {
+    const meta = doc.createElement("meta");
+    meta.name = "google";
+    meta.content = "notranslate";
+    doc.head.appendChild(meta);
+  }
 }
 
 /**
