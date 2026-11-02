@@ -107,3 +107,20 @@ describe("camera: the latest explicit choice wins", () => {
     expect(mapProps).not.toHaveProperty("showFollowedCard");
   });
 });
+
+describe("language switch on a translated page", () => {
+  // The switch reloads such a page; the side panel has to come back open.
+  it("carries the open side panel over the reload", async () => {
+    const { page, switchLang } = await import("./i18n/translated");
+    const reload = vi.spyOn(page, "reload").mockImplementation(() => {});
+    render(<App />);
+    await userEvent.click(screen.getByRole("button", { name: "Menu" }));
+    document.documentElement.classList.add("translated-ltr");
+    act(() => switchLang("en"));
+    expect(reload).toHaveBeenCalledOnce();
+    expect(JSON.parse(sessionStorage.getItem("metro-live:lang-switch")!)).toMatchObject({ siteLanguage: true, sidebarOpen: true });
+    document.documentElement.classList.remove("translated-ltr");
+    sessionStorage.clear();
+    reload.mockRestore();
+  });
+});

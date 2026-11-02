@@ -58,7 +58,10 @@ export function carried<T>(key: string): T | undefined {
  * (keepSiteLanguage), and keeps the open panel and the map's view, which a
  * plain reload loses (the panel closed, the intro flew again).
  */
-export function switchLang(lang: Lang, reload: () => void = () => window.location.reload()) {
+/** The page reload, as an object tests can watch (jsdom can't reload). */
+export const page = { reload: () => window.location.reload() };
+
+export function switchLang(lang: Lang, reload: () => void = () => page.reload()) {
   // Before setLang: it rewrites <html lang>, which the Firefox check reads.
   const translated = pageTranslated();
   setLang(lang);

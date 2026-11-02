@@ -174,6 +174,39 @@ reload, and the reloaded page asks the browser not to translate it, so
 NL shows Dutch and EN English. One reload still happens: it's the only
 way to get rid of the translator's copy of the page.
 
+**The same happens with EN in the side panel, and on the travel page NL
+and EN (top right) don't bring the site back from Ukrainian. Fixed?**
+All three buttons (side panel, travel page header, the English offer on
+the map) go through one `switchLang`, so one fix covers them. What was
+seen was the live site before #192 deployed: a reload that closed the
+panel, after which the browser translated the page again.
+`src/languageSwitch.test.tsx` now clicks every button, NL→EN and EN→NL,
+on a plain page (switches in place, no reload) and on a translated one
+(reloads into that language, carries the panel, asks not to be
+translated); `App.test.tsx` checks the open panel is carried.
+
+**Did these changes cost performance?** Measured 2 Nov 2026, not
+guessed:
+
+- *Download:* the four chunks these fixes touch grew by 0.8 kB gzipped
+  in total, compared with the build right after #187 (main chunk 19.73
+  → 20.28 kB).
+- *The DOM guard* (`guardTranslatorDom`) runs on every node React inserts
+  or removes. 400,000 such calls in Chromium: 170 ms guarded against
+  182 ms native, so within noise; no measurable cost.
+- *Everything else* runs on a click (`pageTranslated`, the reload and
+  its carry-over) or once per change (the red line set in the network
+  status is memoised).
+- *Not used:* a script in `<head>` to set the no-translate markers
+  earlier. The CSP allows scripts from the site only, so it would be an
+  extra render-blocking file on every visit; the entry module runs
+  before `DOMContentLoaded`, ahead of a translator.
+
+One thing to watch: the 3D buildings and the opening flight start on
+the same moment (#187's design; #190 only added the 2.5 s fallback).
+On a slow device that's the heaviest second, while the frame-rate
+watch is judging; if Auto drops to Light too eagerly, start there.
+
 ## Not done, on purpose
 
 - No `translate="no"` on the whole page: that would take the explanations
