@@ -48,3 +48,11 @@ describe("CopyTerm", () => {
     expect(screen.getByRole("button", { name: 'Copy "Bullewijk"' })).toBeInTheDocument();
   });
 });
+
+describe("CopyTerm under browser translation", () => {
+  it("keeps the term untranslated: it is what GVB's search box knows", () => {
+    render(<CopyTerm term="Centraal" />);
+    expect(screen.getByText("Centraal")).toHaveAttribute("translate", "no");
+  });
+});
+

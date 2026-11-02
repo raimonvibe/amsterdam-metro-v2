@@ -2,6 +2,7 @@ import { Accessibility, Check, Copy } from "lucide-react";
 import { CopyStatus, useCopy } from "./CopyTerm";
 import { useLang, useT } from "../i18n";
 import { GVB_LIFT_FAULTS, StepFree as State, gvbSearch, liftOutSince, shortDate, stepFree } from "../data/accessibility";
+import { NO_TRANSLATE } from "./Num";
 
 /** A small ♿ after a station name in lists and search, for step-free
  *  stations only; limited and unknown get no mark. */
@@ -57,7 +58,11 @@ export function StepFree({ station, className = "" }: { station: string; classNa
         onClick={copyTerm}
         className="inline-flex items-center gap-1 underline decoration-gray-400 underline-offset-2 hover:text-gray-900 dark:hover:text-gray-100"
       >
-        {txt.liftFaultsSearch(term)}
+        {/* The words are translated, the term isn't: it is what GVB's search
+            box knows ("Centraal" translated to "Центральний" finds nothing). */}
+        <span>
+          {txt.liftFaultsSearchWords} "<span {...NO_TRANSLATE}>{term}</span>"
+        </span>
         <Copy size={10} className="shrink-0" aria-hidden />
       </a>
       {copy === "copied" && (

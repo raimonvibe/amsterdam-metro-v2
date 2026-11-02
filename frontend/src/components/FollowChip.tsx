@@ -21,7 +21,7 @@ export function FollowChip({ train, lines, onStop }: FollowChipProps) {
       >
         {train.line}
       </span>
-      <span className="truncate">
+      <span className="line-clamp-2 min-w-0 break-words">
         {txt.following} → <Place name={train.headsign ?? ""} />
       </span>
       <button

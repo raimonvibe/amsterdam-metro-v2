@@ -302,9 +302,11 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
         <div className="mx-auto flex max-w-[1680px] flex-wrap items-center gap-x-4 gap-y-2 px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] lg:flex-nowrap">
           <div className="flex min-w-0 items-center gap-2.5">
             <Crest colors={lines.map((l) => l.color)} className="h-11 w-9 shrink-0" />
+            {/* Wrap, never "…": translated (Ukrainian, German) both run far
+                longer than the Dutch and were cut to "Інформація про подор…". */}
             <div className="min-w-0 leading-tight">
-              <p className="smallcaps truncate text-[11px] font-semibold text-[#7b2132] dark:text-[#c8a951]">{appName}</p>
-              <h1 className="font-academic truncate text-xl font-semibold sm:text-2xl">{txt.pageTitle}</h1>
+              <p className="smallcaps break-words text-[11px] font-semibold text-[#7b2132] dark:text-[#c8a951]">{appName}</p>
+              <h1 className="font-academic break-words hyphens-auto text-xl font-semibold sm:text-2xl">{txt.pageTitle}</h1>
             </div>
           </div>
           <div className="order-last w-full lg:order-none lg:max-w-xl lg:flex-1">

@@ -57,6 +57,17 @@ So the layout must hold even when a number does get translated:
   widening the column; tab labels take up to two lines.
 - In the train popup, "· platform 4" and "7 stops to go" wrap inside the
   card instead of running out of it.
+- **Translated words wrap; they are never cut off with "…".** A
+  translation runs longer than the Dutch (Ukrainian cut the travel page's
+  title to "Інформація про подор…"). Only names and numbers, which aren't
+  translated, may be cut (`truncate`), or text marked `data-may-cut`: an
+  optional detail that gives way first, a placeholder with a short
+  version. `cutTranslatableText` in `translationAudit.test.tsx` fails on
+  any other cut text a browser would translate.
+- **GVB's search terms are never translated.** "Centraal" became
+  "Центральний" in the lift link, and GVB's search finds nothing for that,
+  which reads as "no lift fault". The link's words are translated; the
+  term (and the copy pill's term) is `translate="no"`.
 
 ## Checking a layout: `?pseudo`
 
@@ -206,6 +217,15 @@ One thing to watch: the 3D buildings and the opening flight start on
 the same moment (#187's design; #190 only added the 2.5 s fallback).
 On a slow device that's the heaviest second, while the frame-rate
 watch is judging; if Auto drops to Light too eagerly, start there.
+
+**On a phone in Ukrainian, the travel page's title was cut off
+("Інформація про подор…"). A general fix?** Every place that cut text
+with "…" was checked: the header, section titles, map style buttons,
+the follow chip, a station's directions (which lost their service hours),
+the direction headings and the search's trip suggestion now wrap (or take
+two lines). The audit test keeps it that way. Found on the same
+screenshot: the lift link's GVB search term was translated, which made it
+useless; it no longer is.
 
 ## Not done, on purpose
 

@@ -83,6 +83,7 @@ export const en: Dict = {
   stepFreeUnknown: "Step-free access unknown",
   liftFaults: "Lift faults at GVB",
   liftFaultsSearch: (term: string) => `Lift faults at GVB: search "${term}"`,
+  liftFaultsSearchWords: "Lift faults at GVB: search",
   copiesTerm: "copies the search term",
   copyTerm: (term: string) => `Copy "${term}"`,
   copied: "Copied",
