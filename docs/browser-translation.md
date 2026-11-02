@@ -64,6 +64,10 @@ So the layout must hold even when a number does get translated:
   optional detail that gives way first, a placeholder with a short
   version. `cutTranslatableText` in `translationAudit.test.tsx` fails on
   any other cut text a browser would translate.
+- **Hints inside input fields stay short.** An input's placeholder
+  can't wrap, so a long one is cut off on a phone, more so translated.
+  The phone hints (search, From/To, the station picker) are at most 22
+  characters; `travel/placeholders.test.ts` checks it.
 - **GVB's search terms are never translated.** "Centraal" became
   "Центральний" in the lift link, and GVB's search finds nothing for that,
   which reads as "no lift fault". The link's words are translated; the
@@ -226,6 +230,18 @@ the direction headings and the search's trip suggestion now wrap (or take
 two lines). The audit test keeps it that way. Found on the same
 screenshot: the lift link's GVB search term was translated, which made it
 useless; it no longer is.
+
+**Bengali on small phones, in the planner and the search: is the
+hint text cut off?** Checked at 320 px (the narrowest phones) and 375 px
+with Bengali in the search box, the planner's From/To and the station
+picker. Bengali's vowel signs above and below the line weren't clipped
+anywhere. The search and From/To hints fit whole. The station picker's
+hint, "Typ om te zoeken, of kies hieronder", was cut off even in Dutch
+(268 px in a 250 px field; Bengali needed 363). It is now "Zoek een
+station…" (137 px, Bengali about the same). Google's own translation
+proxy (`translate.goog`) can't show the site at all: the browser blocks
+its scripts and API calls there (CORS). Chrome's built-in translation
+is unaffected.
 
 ## Not done, on purpose
 

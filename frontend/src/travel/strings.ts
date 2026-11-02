@@ -161,7 +161,10 @@ const nl = {
   tryRoute: "noord naar gein",
   tryNearby: "dichtbij",
   typeToSearch: "typ om te zoeken",
-  typeOrPick: "Typ om te zoeken, of kies hieronder",
+  // An input's hint can't wrap: short enough for a 320 px phone in a
+  // longer translation (Bengali needed 363 px for the old "Typ om te
+  // zoeken, of kies hieronder"; the field has 250). The list shows the rest.
+  typeOrPick: "Zoek een station…",
   showAllStations: "Alle stations tonen",
   viaLocation: "via uw locatie",
   tripFrom: "Reis van",
@@ -336,7 +339,7 @@ const en: TravelStrings = {
   tryRoute: "noord to gein",
   tryNearby: "nearby",
   typeToSearch: "type to search",
-  typeOrPick: "Type to search, or pick below",
+  typeOrPick: "Search a station…",
   showAllStations: "Show all stations",
   viaLocation: "using your location",
   tripFrom: "Trip from",
