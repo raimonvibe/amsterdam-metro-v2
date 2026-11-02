@@ -241,7 +241,8 @@ hint, "Typ om te zoeken, of kies hieronder", was cut off even in Dutch
 station…" (137 px, Bengali about the same). Google's own translation
 proxy (`translate.goog`) can't show the site at all: the browser blocks
 its scripts and API calls there (CORS). Chrome's built-in translation
-is unaffected.
+is unaffected. Planned, for every language at once:
+[translate-proxy.md](translate-proxy.md).
 
 ## Not done, on purpose
 

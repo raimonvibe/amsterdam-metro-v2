@@ -99,6 +99,7 @@ Production domain: **https://amsterdammetro.nl** (API: **https://api.amsterdamme
 |---|---|
 | [docs/domain.md](docs/domain.md) | DNS, registrar, env vars |
 | [docs/render-deploy-plan.md](docs/render-deploy-plan.md) | Render deploy steps |
+| [docs/translate-proxy.md](docs/translate-proxy.md) | Plan: the site through Google Translate's website proxy (all languages) |
 | [docs/costs-and-specs.md](docs/costs-and-specs.md) | RAM, bandwidth, pricing |
 | [docs/legal-compliance.md](docs/legal-compliance.md) | Legal / attribution checklist |
 | [docs/position-model.md](docs/position-model.md) | How train positions are derived |
