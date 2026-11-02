@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NETWORK, STATIONS } from "../test/fixtures";
 import { Line } from "../types";
+import { setLang } from "../i18n";
 import TravelInfoPage from "./TravelInfoPage";
 
 vi.mock("../api", () => ({
@@ -35,6 +36,15 @@ describe("TravelInfoPage", () => {
     renderPage();
     await waitFor(() => expect(boardHeading()).toHaveTextContent("Centraal Station"));
     await waitFor(() => expect(window.location.search).toContain("station=CS"));
+  });
+
+  it("names the site in the page's language", async () => {
+    renderPage();
+    expect(await screen.findByText("Metro Amsterdam Live")).toBeInTheDocument();
+    cleanup();
+    setLang("en", { persist: false });
+    renderPage("/en/reisinfo");
+    expect(await screen.findByText("Amsterdam Metro Live")).toBeInTheDocument();
   });
 
   it("opens the station and trip a link names, in any spelling", async () => {

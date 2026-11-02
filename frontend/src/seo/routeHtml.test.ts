@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { Lang } from "../i18n";
 import { type Page, pagePath } from "../i18n/paths";
 import { ROUTE_PAGES, routeDir, routeHtml } from "./routeHtml";
-import { INDEXED_PAGES, PAGE_META } from "./site";
+import { IMAGE_ALT, INDEXED_PAGES, PAGE_META, SITE_NAME } from "./site";
 
 // The real entry page, so a change to its head is caught here too. Vitest
 // runs from frontend/ (the test environment is jsdom, so no file: import.meta.url).
@@ -38,6 +38,11 @@ describe("routeHtml", () => {
       expect(html).toContain(`<meta property="og:url" content="${url}" />`);
       expect(html).toContain(`<meta property="og:locale" content="${lang === "nl" ? "nl_NL" : "en_GB"}" />`);
       expect(html).toContain(`<title>${title.replace(/&/g, "&amp;")}</title>`);
+      // One brand per language: "Metro Amsterdam Live" (nl), "Amsterdam Metro Live" (en).
+      expect(title).toContain(SITE_NAME[lang]);
+      expect(html).toContain(`<meta property="og:site_name" content="${SITE_NAME[lang]}" />`);
+      expect(html).toContain(`<meta property="og:image:alt" content="${IMAGE_ALT[lang]}" />`);
+      expect(html).toContain(`<meta name="twitter:image:alt" content="${IMAGE_ALT[lang]}" />`);
       expect(html.match(/content="([^"]*)"/g)?.join("\n")).toContain(description);
     }
   });

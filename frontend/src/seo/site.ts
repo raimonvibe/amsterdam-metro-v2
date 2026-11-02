@@ -1,4 +1,6 @@
 import type { Lang } from "../i18n";
+import { en } from "../i18n/en";
+import { nl } from "../i18n/nl";
 import { type Page, PAGES, pagePath } from "../i18n/paths";
 
 /** Gedeelde SEO-teksten voor paginatitels en meta-updates, per pagina en taal. */
@@ -47,6 +49,15 @@ export const PAGE_META: Record<Page, Record<Lang, { title: string; description: 
 
 export const OG_LOCALE: Record<Lang, string> = { nl: "nl_NL", en: "en_GB" };
 
+/** The site's name per language, as the UI shows it (nl.ts/en.ts appName). */
+export const SITE_NAME: Record<Lang, string> = { nl: nl.appName, en: en.appName };
+
+/** Alt text of the social-share image. */
+export const IMAGE_ALT: Record<Lang, string> = {
+  nl: `${nl.appName} — live GVB-metrokaart van Amsterdam`,
+  en: `${en.appName} — live GVB metro map of Amsterdam`,
+};
+
 export const pageUrl = (page: Page, lang: Lang) => `${SEO.canonicalBase}${pagePath(page, lang)}`;
 
 /** hreflang alternates of a page: the same set on both language versions,
@@ -77,6 +88,9 @@ export function setPageMeta(page: Page, lang: Lang) {
   setAttr('meta[property="og:title"]', "content", title);
   setAttr('meta[property="og:description"]', "content", description);
   setAttr('meta[property="og:url"]', "content", url);
+  setAttr('meta[property="og:site_name"]', "content", SITE_NAME[lang]);
+  setAttr('meta[property="og:image:alt"]', "content", IMAGE_ALT[lang]);
+  setAttr('meta[name="twitter:image:alt"]', "content", IMAGE_ALT[lang]);
   setAttr('meta[property="og:locale"]', "content", OG_LOCALE[lang]);
   setAttr('meta[property="og:locale:alternate"]', "content", OG_LOCALE[lang === "nl" ? "en" : "nl"]);
   setAttr('meta[name="twitter:title"]', "content", title);

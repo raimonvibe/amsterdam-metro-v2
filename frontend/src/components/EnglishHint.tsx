@@ -35,9 +35,9 @@ export function EnglishHint({ sidebarOpen }: { sidebarOpen: boolean }) {
   return (
     <div
       lang="en"
-      // Under the menu button; with the sidebar open (desktop) that button is
-      // hidden, so take its place. Clear of the LIVE badge, which widens to
-      // "Dienstregeling" when the feed is down.
+      // Under the menu button, clear of the LIVE badge (top right) and the
+      // follow chip (top centre). With the sidebar open (desktop) that button
+      // is hidden, so take its place.
       className={`absolute left-[max(0.75rem,env(safe-area-inset-left))] z-20 flex items-center rounded-full bg-white/90 text-sm font-semibold text-gray-900 shadow-md backdrop-blur dark:bg-gray-950/85 dark:text-gray-100 ${
         sidebarOpen ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "top-[calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)]"
       }`}

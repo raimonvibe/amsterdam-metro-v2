@@ -1,6 +1,6 @@
 import type { Lang } from "../i18n";
 import { type Page, pagePath } from "../i18n/paths";
-import { OG_LOCALE, PAGE_META, alternates, pageUrl } from "./site";
+import { IMAGE_ALT, OG_LOCALE, PAGE_META, SITE_NAME, alternates, pageUrl } from "./site";
 
 export interface RoutePage {
   page: Page;
@@ -107,6 +107,9 @@ export function routeHtml(indexHtml: string, route: RoutePage): string {
     [/(<meta\s+property="og:title"\s+content=")[^"]*(")/g, `$1${title}$2`],
     [/(<meta\s+property="og:description"\s+content=")[^"]*(")/g, `$1${description}$2`],
     [/(<meta\s+property="og:url"\s+content=")[^"]*(")/g, `$1${url}$2`],
+    [/(<meta\s+property="og:site_name"\s+content=")[^"]*(")/g, `$1${escape(SITE_NAME[route.lang])}$2`],
+    [/(<meta\s+property="og:image:alt"\s+content=")[^"]*(")/g, `$1${escape(IMAGE_ALT[route.lang])}$2`],
+    [/(<meta\s+name="twitter:image:alt"\s+content=")[^"]*(")/g, `$1${escape(IMAGE_ALT[route.lang])}$2`],
     [/(<meta\s+property="og:locale"\s+content=")[^"]*(")/g, `$1${OG_LOCALE[route.lang]}$2`],
     [/(<meta\s+property="og:locale:alternate"\s+content=")[^"]*(")/g, `$1${OG_LOCALE[route.lang === "nl" ? "en" : "nl"]}$2`],
     [/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/g, `$1${title}$2`],
