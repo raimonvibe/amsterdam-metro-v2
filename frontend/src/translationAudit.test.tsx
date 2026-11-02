@@ -7,6 +7,7 @@ import { setLang } from "./i18n";
 import { NETWORK, STATIONS } from "./test/fixtures";
 import { PAGE_TEST_TIMEOUT } from "./test/timeouts";
 import TravelInfoPage from "./travel/TravelInfoPage";
+import { LineDiagram } from "./travel/LineDiagram";
 import { AnimatedTrain, Line, Status } from "./types";
 
 vi.mock("./api", async (importOriginal) => ({
@@ -63,6 +64,28 @@ export function cutTranslatableText(root: Element): string[] {
   return cut;
 }
 
+/**
+ * Words a browser would translate inside a box of fixed small height
+ * (h-3 to h-5: chips, badges, pills). Nothing translated fits there: the
+ * line overview's "op tijd" chip ran out of its pill in Arabic, and the
+ * translator turned its arrow into a word. Such boxes hold symbols and
+ * numbers; the words go to a screen-reader text, a title or the legend.
+ */
+export function wordsInTinyBoxes(root: Element): string[] {
+  const found: string[] = [];
+  root.querySelectorAll("*").forEach((el) => {
+    if (!/(^|\s)h-(3|3\.5|4|5)(\s|$)/.test(el.getAttribute("class") ?? "")) return;
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const parent = node.parentElement;
+      if (!/\p{L}/u.test(node.textContent ?? "") || parent?.closest('[translate="no"], .sr-only')) continue;
+      found.push(el.textContent?.trim() ?? "");
+      return;
+    }
+  });
+  return found;
+}
+
 const NOW = Math.floor(Date.now() / 1000);
 const LINES: Line[] = NETWORK.map((l) => ({ id: l.id, name: l.name, color: l.color, shape: [] }));
 const STATUS: Status = { static_loaded: true, rt_trip_count: 120, active_trains: 35, is_live: true };
@@ -109,6 +132,7 @@ describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: PAGE
     await screen.findAllByText("Zuid");
     expect(untranslatedNumbers(container)).toEqual([]);
     expect(cutTranslatableText(container)).toEqual([]);
+    expect(wordsInTinyBoxes(container)).toEqual([]);
   });
 
   it("leaves every number in the map sidebar untranslated, and cuts off no words", () => {
@@ -131,6 +155,7 @@ describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: PAGE
     );
     expect(untranslatedNumbers(container)).toEqual([]);
     expect(cutTranslatableText(container)).toEqual([]);
+    expect(wordsInTinyBoxes(container)).toEqual([]);
   });
 
   it("leaves every number on a station's card untranslated, and cuts off no words", async () => {
@@ -140,6 +165,28 @@ describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: PAGE
     await screen.findAllByText("Gein");
     expect(untranslatedNumbers(container)).toEqual([]);
     expect(cutTranslatableText(container)).toEqual([]);
+    expect(wordsInTinyBoxes(container)).toEqual([]);
+  });
+
+  it("keeps the line overview's train chips free of words", () => {
+    const at = (name: string) => `Amsterdam, ${name}`;
+    const onLine = (id: string, from: string, to: string, delay_s: number): AnimatedTrain => ({
+      ...TRAIN, id, line: "50", headsign: at("Gein"), status: "moving", delay_s,
+      prev_station: at(from), next_station: at(to), prev_departure_ts: NOW - 30, next_arrival_ts: NOW + 30,
+    });
+    const { container } = render(
+      <LineDiagram
+        network={NETWORK} lineId="50" onLine={() => {}} stations={STATIONS} colorOf={() => "#3CB44B"} current={null}
+        onStation={() => {}} nowMs={NOW * 1000}
+        trains={[onLine("a", "Isolatorweg", "Station Sloterdijk", 0), onLine("b", "Postjesweg", "Station Lelylaan", 180)]}
+      />,
+    );
+    expect(container.textContent).toContain("✓");
+    expect(container.textContent).toContain("+3′");
+    // Phones and tablets, where the page's legend isn't shown, get the key under the chips.
+    expect(screen.getByText(/✓ (op tijd of minuten te laat|on time or minutes late)/)).toBeInTheDocument();
+    expect(wordsInTinyBoxes(container)).toEqual([]);
+    expect(untranslatedNumbers(container)).toEqual([]);
   });
 
   it("leaves every number in a train's popup untranslated, and cuts off no words", () => {
@@ -148,5 +195,6 @@ describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: PAGE
     );
     expect(untranslatedNumbers(container)).toEqual([]);
     expect(cutTranslatableText(container)).toEqual([]);
+    expect(wordsInTinyBoxes(container)).toEqual([]);
   });
 });

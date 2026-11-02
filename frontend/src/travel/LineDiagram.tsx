@@ -7,7 +7,7 @@ import { JourneyLeg, NetworkLine } from "./types";
 import { LineBadge, Section, SkeletonRows, useNarrowScreen } from "./ui";
 import { useTravelT } from "./strings";
 import { onColor } from "../contrast";
-import { Num } from "../components/Num";
+import { NO_TRANSLATE, Num } from "../components/Num";
 
 /** Row height in px. Phones get two lines per station (name, then badges and
  *  travel time) so even "Station Bijlmer ArenA" fits; trains and the track are
@@ -165,11 +165,26 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
                 style={{ top: pos * rowH + rowH / 2, backgroundColor: line.color, color: onColor(line.color) }}
                 title={`${train.status === "dwelling" ? txt.standsAt : txt.runsPast} ${formatPlaceName(train.prev_station ?? "")}`}
               >
-                {forward ? "↓" : "↑"}{" "}
-                {train.delay_s >= 60 ? <Num>{`+${Math.round(train.delay_s / 60)}′`}</Num> : <span className="sr-only sm:not-sr-only">{txt.onTime}</span>}
+                {/* Symbols and numbers only: a word didn't fit this fixed chip
+                    once translated (Arabic "op tijd" ran out of it), and a
+                    translator even turned the arrow into a word ("أعلى", up).
+                    The word stays for screen readers; the legend explains. */}
+                <span {...NO_TRANSLATE} aria-hidden>
+                  {forward ? "↓" : "↑"} {train.delay_s >= 60 ? `+${Math.round(train.delay_s / 60)}′` : "✓"}
+                </span>
+                <span className="sr-only">{train.delay_s >= 60 ? txt.minutesLate(Math.round(train.delay_s / 60)) : txt.onTime}</span>
               </span>
             ))}
           </div>
+          {/* What the chips mean, where the page's legend isn't shown (it is
+              desktop-only). Wraps under the chips on a narrow phone. */}
+          {placed.length > 0 && (
+            <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-snug text-[#6b6455] lg:hidden dark:text-[#8b93a7]">
+              <span translate="no" className="notranslate inline-flex h-4 items-center rounded-full px-1.5 font-bold" style={{ backgroundColor: line.color, color: onColor(line.color) }} aria-hidden>↓ ✓</span>
+              <span translate="no" className="notranslate inline-flex h-4 items-center rounded-full px-1.5 font-bold" style={{ backgroundColor: line.color, color: onColor(line.color) }} aria-hidden>↑ +2′</span>
+              <span>{txt.chipsHint}</span>
+            </p>
+          )}
         </>
       )}
     </Section>
