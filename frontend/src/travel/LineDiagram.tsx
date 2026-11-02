@@ -7,6 +7,7 @@ import { JourneyLeg, NetworkLine } from "./types";
 import { LineBadge, Section, SkeletonRows, useNarrowScreen } from "./ui";
 import { useTravelT } from "./strings";
 import { onColor } from "../contrast";
+import { Num } from "../components/Num";
 
 /** Row height in px. Phones get two lines per station (name, then badges and
  *  travel time) so even "Station Bijlmer ArenA" fits; trains and the track are
@@ -71,7 +72,7 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
         <>
           <p className="mb-2 text-xs text-[#4a4436] dark:text-[#b9bfcc]">
             <span className="font-academic text-sm font-semibold text-[#1d2433] dark:text-[#ece6d6]">
-              Metro {line.id} · <Place name={line.name} />
+              Metro <Num>{line.id}</Num> · <Place name={line.name} />
             </span>{" "}
             · {txt.trainsUnderway(placed.length)} · {txt.runTime(minutes[minutes.length - 1])}
           </p>
@@ -145,7 +146,7 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
                         {others.map((l) => (
                           <LineBadge key={l} id={l} color={colorOf(l)} small />
                         ))}
-                        <span className="ml-auto shrink-0 text-[11px] tabular-nums text-[#6b6455] dark:text-[#8b93a7]">{minutes[i] ? `+${minutes[i]}′` : ""}</span>
+                        <span className="ml-auto shrink-0 text-[11px] tabular-nums text-[#6b6455] dark:text-[#8b93a7]"><Num>{minutes[i] ? `+${minutes[i]}′` : ""}</Num></span>
                       </span>
                     </span>
                     <span style={{ height: rowH }} />
@@ -165,7 +166,7 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
                 title={`${train.status === "dwelling" ? txt.standsAt : txt.runsPast} ${formatPlaceName(train.prev_station ?? "")}`}
               >
                 {forward ? "↓" : "↑"}{" "}
-                {train.delay_s >= 60 ? `+${Math.round(train.delay_s / 60)}′` : <span className="sr-only sm:not-sr-only">{txt.onTime}</span>}
+                {train.delay_s >= 60 ? <Num>{`+${Math.round(train.delay_s / 60)}′`}</Num> : <span className="sr-only sm:not-sr-only">{txt.onTime}</span>}
               </span>
             ))}
           </div>

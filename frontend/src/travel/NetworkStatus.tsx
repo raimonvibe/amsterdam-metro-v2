@@ -5,6 +5,7 @@ import { AnimatedTrain, Line, ServiceAlert, Status } from "../types";
 import { lineHealth, networkSummary } from "./network";
 import { LineBadge, Section } from "./ui";
 import { useTravelT } from "./strings";
+import { Num } from "../components/Num";
 
 export interface NetworkStatusProps {
   lines: Line[];
@@ -32,7 +33,7 @@ export function NetworkStatus({ lines, trains, status, onLine, alerts = [] }: Ne
       </dl>
       <table className="mt-2.5 w-full text-xs">
         <thead>
-          <tr className="smallcaps text-left text-[11px] text-[#6b6455] dark:text-[#8b93a7]">
+          <tr className="smallcaps text-left text-[11px] leading-tight hyphens-auto [overflow-wrap:anywhere] text-[#6b6455] dark:text-[#8b93a7]">
             <th className="pb-1 font-semibold">{txt.lineCol}</th>
             <th className="pb-1 text-right font-semibold">{txt.trainsCol}</th>
             <th className="pb-1 pl-2 font-semibold">{txt.punctuality}</th>
@@ -51,7 +52,7 @@ export function NetworkStatus({ lines, trains, status, onLine, alerts = [] }: Ne
                     <span translate="no" className="hidden truncate xl:inline">{line ? formatPlaceName(line.name).split(" - ")[1] ?? "" : ""}</span>
                   </button>
                 </td>
-                <td className="py-1 text-right tabular-nums">{h.trains}</td>
+                <td className="py-1 text-right tabular-nums"><Num>{String(h.trains)}</Num></td>
                 <td className="py-1 pl-2">
                   {pct == null ? (
                     <span className="text-[#6b6455] dark:text-[#8b93a7]">{txt.noLiveData}</span>
@@ -63,12 +64,12 @@ export function NetworkStatus({ lines, trains, status, onLine, alerts = [] }: Ne
                           style={{ width: `${pct}%` }}
                         />
                       </span>
-                      <span className="w-8 text-right tabular-nums">{pct}%</span>
+                      <span className="w-8 text-right tabular-nums"><Num>{`${pct}%`}</Num></span>
                     </span>
                   )}
                 </td>
                 <td className="py-1 text-right tabular-nums">
-                  {h.avgDelayS == null ? "—" : h.avgDelayS < 30 ? "0′" : `+${Math.round(h.avgDelayS / 60)}′`}
+                  <Num>{h.avgDelayS == null ? "—" : h.avgDelayS < 30 ? "0′" : `+${Math.round(h.avgDelayS / 60)}′`}</Num>
                 </td>
               </tr>
             );
@@ -85,8 +86,8 @@ export function NetworkStatus({ lines, trains, status, onLine, alerts = [] }: Ne
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded bg-[#f6f1e4] py-1.5 dark:bg-[#151c2e]">
-      <dd className="font-academic text-lg font-semibold tabular-nums leading-none">{value}</dd>
-      <dt className="smallcaps mt-0.5 text-[11px] text-[#6b6455] dark:text-[#8b93a7]">{label}</dt>
+      <dd className="truncate px-1 font-academic text-lg font-semibold tabular-nums leading-none"><Num>{String(value)}</Num></dd>
+      <dt className="smallcaps mt-0.5 px-1 text-[11px] leading-tight hyphens-auto [overflow-wrap:anywhere] text-[#6b6455] dark:text-[#8b93a7]">{label}</dt>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useT, type Dict } from "../i18n";
+import { Num } from "./Num";
 
 /** Bronvermelding en gebruikte diensten. Labels and notes are string keys. */
 
@@ -96,7 +97,7 @@ export function Credits({ onOpenPrivacy }: { onOpenPrivacy: () => void }) {
         </button>
       </p>
       <p className="mt-2 text-gray-600 dark:text-gray-300">
-        © {new Date().getFullYear()}{" "}
+        © <Num>{String(new Date().getFullYear())}</Num>{" "}
         <a href="https://amsterdammetro.nl" className={creditLink}>
           amsterdammetro.nl
         </a>

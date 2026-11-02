@@ -391,7 +391,10 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
                   }`}
                 >
                   <Icon size={17} strokeWidth={on ? 2.4 : 2} aria-hidden />
-                  <span className="max-w-full truncate">{txt.tabs[t]}</span>
+                  {/* Up to two lines, so a longer (translated) label still reads in full. */}
+                  <span className="line-clamp-2 max-w-full text-center hyphens-auto [overflow-wrap:anywhere]" title={txt.tabs[t]}>
+                    {txt.tabs[t]}
+                  </span>
                 </button>
               );
             })}
