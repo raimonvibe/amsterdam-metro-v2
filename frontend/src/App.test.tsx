@@ -98,4 +98,12 @@ describe("camera: the latest explicit choice wins", () => {
     act(() => mapProps.onStationClick(noord()));
     expect(mapProps.followedTrainId).toBeNull();
   });
+
+  it("following from the map is enough to keep the card; there is no list-only flag", async () => {
+    render(<App />);
+    await waitFor(() => expect(mapProps.stations?.length).toBeGreaterThan(0));
+    act(() => mapProps.onTrainClick({ id: "52-zuid" }));
+    expect(mapProps.followedTrainId).toBe("52-zuid");
+    expect(mapProps).not.toHaveProperty("showFollowedCard");
+  });
 });

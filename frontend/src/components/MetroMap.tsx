@@ -68,10 +68,9 @@ interface MetroMapProps {
   styleUrl: string;
   /** Basemap background of the incoming style: the colour a style switch fades through. */
   backdropColor: string;
+  /** The followed train's card stays open on every device while it's
+   *  followed; its ✕ stops following. */
   followedTrainId: string | null;
-  /** Keep the followed train's card open on any device: it was picked from a
-   *  list, so no hover will bring the card up. */
-  showFollowedCard?: boolean;
   onStationHover: (station: Station | null) => void;
   onTrainClick: (train: AnimatedTrain) => void;
   onStationClick: (station: Station) => void;
@@ -99,7 +98,8 @@ const VEIL_MAX_WAIT_MS = 1500;
  */
 const POPUP_LEAVE_PX = 40;
 
-/** Phones and tablets: no hover, so the followed train gets the popup instead. */
+/** Phones and tablets: no hover. App hides the follow chip here, because the
+ *  followed train's card already has ✕ and sits where the chip would be. */
 export const NO_HOVER =
   typeof window !== "undefined" && window.matchMedia("(hover: none)").matches;
 
@@ -401,7 +401,6 @@ export function MetroMap({
   styleUrl: targetStyleUrl,
   backdropColor,
   followedTrainId,
-  showFollowedCard = false,
   onStationHover,
   onTrainClick,
   onStationClick,
@@ -1234,7 +1233,10 @@ export function MetroMap({
   }, [hoverLeft]);
   const popupTrain =
     (!hoverLeft && hoveredTrain) ||
-    ((NO_HOVER || showFollowedCard) && followedTrainId ? positioned.find((tr) => tr.id === followedTrainId) : undefined);
+    // Following a train shows its card, on every device: on touch there is no
+    // hover to bring it up, and on desktop the train drives out from under
+    // the pointer as soon as the camera follows it.
+    (followedTrainId ? positioned.find((tr) => tr.id === followedTrainId) : undefined);
   const popupScreen = popupTrain && map ? map.project(popupTrain.center) : null;
 
   if (webglError) {
@@ -1316,7 +1318,7 @@ export function MetroMap({
           y={popupScreen.y}
           containerWidth={map?.getContainer().clientWidth ?? 0}
           nowMs={nowMs}
-          onClose={(NO_HOVER || showFollowedCard) && popupTrain.id === followedTrainId ? onStopFollow : undefined}
+          onClose={popupTrain.id === followedTrainId ? onStopFollow : undefined}
         />
       )}
       <div
