@@ -21,8 +21,11 @@ function fakeMap() {
   const container = document.createElement("div");
   const canvas = document.createElement("canvas");
   container.appendChild(canvas);
+  // Draw order, bottom to top; starts with a street-name label, as a style does.
+  const order = ["road_label"];
   const map = {
     layers,
+    order,
     on: (type: string, l: Listener) => void (listeners.get(type) ?? listeners.set(type, new Set()).get(type)!).add(l),
     once(type: string, l: Listener) {
       const wrapped: Listener = (...a) => {
@@ -40,12 +43,21 @@ function fakeMap() {
     },
     fire: (type: string) => [...(listeners.get(type) ?? [])].forEach((l) => l()),
     getLayer: (id: string) => layers.get(id),
-    addLayer: (layer: { id: string; layout?: { visibility?: string } }) => void layers.set(layer.id, layer),
+    addLayer(layer: { id: string; layout?: { visibility?: string } }, beforeId?: string) {
+      layers.set(layer.id, layer);
+      const at = beforeId ? order.indexOf(beforeId) : -1;
+      if (at < 0) order.push(layer.id);
+      else order.splice(at, 0, layer.id);
+    },
+    setLayerZoomRange: () => {},
     setLayoutProperty: (id: string, key: string, value: string) => {
       const layer = layers.get(id);
       if (layer && key === "visibility") layer.layout = { ...layer.layout, visibility: value };
     },
-    getStyle: () => ({ sources: { openmaptiles: { type: "vector" } } }),
+    getStyle: () => ({
+      sources: { openmaptiles: { type: "vector" } },
+      layers: order.map((id) => ({ id, type: id === "road_label" || id.startsWith("poi_") ? "symbol" : "fill-extrusion" })),
+    }),
     setSky: () => {},
     jumpTo: () => {},
     flyTo: () => {},
@@ -140,5 +152,28 @@ describe("MetroMap 3D buildings", () => {
   it("are there but hidden in lite", () => {
     renderMap("lite");
     expect(buildings()?.layout?.visibility).toBe("none");
+  });
+
+  it("go under the labels, so shop, café and parking icons stay in front", () => {
+    renderMap("full");
+    act(() => map.fire("idle"));
+    const at = (id: string) => map.order.indexOf(id);
+    expect(at("3d-buildings")).toBeLessThan(at("road_label"));
+    for (const poi of ["poi_r1", "poi_r7", "poi_r20"]) expect(at("3d-buildings")).toBeLessThan(at(poi));
+  });
+});
+
+describe("MetroMap points of interest", () => {
+  it.each(["full", "lite"] as const)("are on the map at once in %s", (quality) => {
+    renderMap(quality);
+    for (const poi of ["poi_r1", "poi_r7", "poi_r20"]) expect(map.layers.get(poi)).toBeDefined();
+  });
+
+  it("come back after a style switch", () => {
+    renderMap("full");
+    map.layers.clear();
+    map.order.splice(0, map.order.length, "road_label");
+    act(() => map.fire("style.load"));
+    expect(map.layers.get("poi_r1")).toBeDefined();
   });
 });
