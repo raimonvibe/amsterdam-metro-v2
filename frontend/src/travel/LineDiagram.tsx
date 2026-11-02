@@ -176,6 +176,15 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
               </span>
             ))}
           </div>
+          {/* What the chips mean, where the page's legend isn't shown (it is
+              desktop-only). Wraps under the chips on a narrow phone. */}
+          {placed.length > 0 && (
+            <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-snug text-[#6b6455] lg:hidden dark:text-[#8b93a7]">
+              <span translate="no" className="notranslate inline-flex h-4 items-center rounded-full px-1.5 font-bold" style={{ backgroundColor: line.color, color: onColor(line.color) }} aria-hidden>↓ ✓</span>
+              <span translate="no" className="notranslate inline-flex h-4 items-center rounded-full px-1.5 font-bold" style={{ backgroundColor: line.color, color: onColor(line.color) }} aria-hidden>↑ +2′</span>
+              <span>{txt.chipsHint}</span>
+            </p>
+          )}
         </>
       )}
     </Section>

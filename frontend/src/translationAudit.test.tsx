@@ -183,6 +183,8 @@ describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: PAGE
     );
     expect(container.textContent).toContain("✓");
     expect(container.textContent).toContain("+3′");
+    // Phones and tablets, where the page's legend isn't shown, get the key under the chips.
+    expect(screen.getByText(/✓ (op tijd of minuten te laat|on time or minutes late)/)).toBeInTheDocument();
     expect(wordsInTinyBoxes(container)).toEqual([]);
     expect(untranslatedNumbers(container)).toEqual([]);
   });

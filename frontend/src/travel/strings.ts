@@ -138,6 +138,7 @@ const nl = {
   onTime: "op tijd",
   minutesLate: (n: number) => `${n} min te laat`,
   legendChips: "metro in het lijnoverzicht: richting, ✓ op tijd of minuten te laat",
+  chipsHint: "richting, ✓ op tijd of minuten te laat",
   // network status
   networkStatus: "Netwerkstatus",
   inService: "in dienst",
@@ -320,6 +321,7 @@ const en: TravelStrings = {
   onTime: "on time",
   minutesLate: (n: number) => `${n} min late`,
   legendChips: "train in the line overview: direction, ✓ on time or minutes late",
+  chipsHint: "direction, ✓ on time or minutes late",
   networkStatus: "Network status",
   inService: "in service",
   liveFollowed: "tracked live",
