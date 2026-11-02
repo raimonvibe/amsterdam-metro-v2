@@ -185,7 +185,8 @@ describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: PAGE
         ]}
       />,
     );
-    expect(container.textContent).toContain("✓");
+    expect(container.textContent).toContain("+0′");
+    expect(container.textContent).not.toContain("✓"); // can mean "wrong" in Japan
     expect(container.textContent).toContain("+3′");
     // 100 minutes and more: ">99′" fits the 36 px phone chip, "+125′" didn't.
     expect(container.textContent).toContain(">99′");
@@ -198,9 +199,9 @@ describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: PAGE
         .filter((c) => c.hasAttribute("data-late") === late)
         .map((c) => c.querySelector('[translate="no"]')?.textContent);
     expect(shown(true).sort()).toEqual(["↓ +3′", "↓ >99′"]);
-    expect(shown(false)).toEqual(["↓ ✓"]);
+    expect(shown(false)).toEqual(["↓ +0′"]);
     // Phones and tablets, where the page's legend isn't shown, get the key under the chips.
-    expect(screen.getByText(/✓ (op tijd of minuten te laat|on time or minutes late)/)).toBeInTheDocument();
+    expect(screen.getByText(/\+0′ = (op tijd|on time)/)).toBeInTheDocument();
     expect(wordsInTinyBoxes(container)).toEqual([]);
     expect(untranslatedNumbers(container)).toEqual([]);
   });
