@@ -7,6 +7,7 @@ import { MapStyle } from "../theme";
 import { StyleSwitcher } from "./StyleSwitcher";
 import { locale, useLang, useT } from "../i18n";
 import { LanguageToggle } from "./LanguageToggle";
+import { pagePath } from "../i18n/paths";
 import { Place } from "./Place";
 import { formatPlaceName } from "../format";
 import { stepFree } from "../data/accessibility";
@@ -89,7 +90,7 @@ export function Sidebar({
       {/* A real link (crawlable, opens in a new tab on middle-click); a plain
           click stays in the app. */}
       <a
-        href="/reisinfo"
+        href={pagePath("/reisinfo", lang)}
         onClick={(e) => {
           if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
           e.preventDefault();

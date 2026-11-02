@@ -1242,7 +1242,13 @@ export function MetroMap({
       <div className="flex h-full min-h-0 w-full items-center justify-center bg-gray-950 p-4 text-gray-100 sm:p-8">
         <div className="max-w-lg space-y-4 text-sm leading-relaxed">
           <h2 className="text-lg font-semibold text-white">{txt.webglTitle}</h2>
-          <p>{webglError}</p>
+          <p>
+            {webglError === "unavailable"
+              ? txt.webglUnavailable
+              : webglError === "blocked"
+                ? txt.webglBlocked
+                : webglError}
+          </p>
           <p className="text-gray-400">{txt.webglHint}</p>
           <ol className="list-decimal space-y-2 pl-5 text-gray-300">
             <li>{txt.webglStep1}</li>

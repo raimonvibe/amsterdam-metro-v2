@@ -1,27 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
-import { SEO, setPageMeta } from "../seo/site";
+import { getLang } from "../i18n";
+import { pageOfPath, pagePath } from "../i18n/paths";
 
-export const TRAVEL_PATH = "/reisinfo";
+const onTravelPath = () => pageOfPath(window.location.pathname) === "/reisinfo";
 
-const onTravelPath = () => window.location.pathname.replace(/\/$/, "") === TRAVEL_PATH;
-
-/** /reisinfo as an in-app page, same pattern as /privacy: a real URL that
- *  can be shared, bookmarked and reached with the back button. */
+/** /reisinfo (or /en/reisinfo) as an in-app page, same pattern as /privacy:
+ *  a real URL that can be shared, bookmarked and reached with the back button. */
 export function useTravelRoute() {
   const [showTravel, setShowTravel] = useState(onTravelPath);
 
-  useEffect(() => {
-    if (showTravel) setPageMeta(SEO.travelTitle, SEO.travelDescription, TRAVEL_PATH);
-    else if (!window.location.pathname.startsWith("/privacy")) setPageMeta(SEO.homeTitle, SEO.homeDescription, "/");
-  }, [showTravel]);
-
   const openTravel = useCallback((query = "") => {
-    window.history.pushState({ travel: true }, "", `${TRAVEL_PATH}${query}`);
+    window.history.pushState({ travel: true }, "", `${pagePath("/reisinfo", getLang())}${query}`);
     setShowTravel(true);
   }, []);
 
   const closeTravel = useCallback(() => {
-    window.history.pushState({}, "", "/");
+    window.history.pushState({}, "", pagePath("/", getLang()));
     setShowTravel(false);
   }, []);
 

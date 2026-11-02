@@ -40,15 +40,29 @@ services:
       - key: VITE_API_URL
         value: "https://api.amsterdammetro.nl"
     routes:
-      # The build writes reisinfo/index.html and privacy/index.html with
-      # their own title, description and canonical. These two must come
-      # before the catch-all, or crawlers get the homepage's head there.
+      # The build writes an index.html per page and language (reisinfo,
+      # privacy, en, en/reisinfo, en/privacy) with its own language, title,
+      # description, canonical and hreflang. These must come before the
+      # catch-all, or crawlers get the Dutch homepage's head there.
+      # routeHtml.test.ts checks every built page has a rule here.
       - type: rewrite
         source: /reisinfo
         destination: /reisinfo/index.html
       - type: rewrite
         source: /privacy
         destination: /privacy/index.html
+      - type: rewrite
+        source: /en
+        destination: /en/index.html
+      - type: rewrite
+        source: /en/
+        destination: /en/index.html
+      - type: rewrite
+        source: /en/reisinfo
+        destination: /en/reisinfo/index.html
+      - type: rewrite
+        source: /en/privacy
+        destination: /en/privacy/index.html
       - type: rewrite
         source: /*
         destination: /index.html
@@ -58,7 +72,7 @@ services:
       - path: /assets/*
         name: Cache-Control
         value: public, max-age=31536000, immutable
-      # The entry page (served at / and the /privacy and /reisinfo SPA routes) must revalidate
+      # The entry page (served at / and every page route, Dutch and English) must revalidate
       # so a deploy is picked up immediately.
       - path: /
         name: Cache-Control
@@ -70,6 +84,18 @@ services:
         name: Cache-Control
         value: no-cache
       - path: /reisinfo
+        name: Cache-Control
+        value: no-cache
+      - path: /en
+        name: Cache-Control
+        value: no-cache
+      - path: /en/
+        name: Cache-Control
+        value: no-cache
+      - path: /en/reisinfo
+        name: Cache-Control
+        value: no-cache
+      - path: /en/privacy
         name: Cache-Control
         value: no-cache
       # Security headers (audit M1). Generated from frontend/src/securityHeaders.ts;

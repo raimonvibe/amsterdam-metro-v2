@@ -51,6 +51,8 @@ export const nl = {
   closePrivacy: "Privacybeleid sluiten",
   backendError: "Live gegevens zijn even niet bereikbaar — we proberen het automatisch opnieuw…",
   webglTitle: "3D-kaart heeft WebGL2 nodig",
+  webglUnavailable: "WebGL2 staat uit of ontbreekt in deze browser.",
+  webglBlocked: "WebGL2 wordt geblokkeerd in deze browser.",
   webglHint: "Chrome blokkeert GPU-rendering op dit apparaat. Probeer:",
   webglStep1: "Open chrome://settings/system en schakel Hardware-acceleratie in, herstart Chrome.",
   webglStep2: "Open chrome://flags/#enable-unsafe-swiftshader voor software-WebGL.",

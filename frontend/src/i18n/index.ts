@@ -1,10 +1,13 @@
 import { useSyncExternalStore } from "react";
 import { nl } from "./nl";
 import { en } from "./en";
+import { langOfPath, pageOfPath, pagePath } from "./paths";
 
-/** UI language. Dutch stays the default: the site's audience, its prerendered
- *  pages and its search snippets are Dutch. English is picked from a saved
- *  choice or a browser that does not list Dutch at all. */
+/** UI language. The URL decides it: /en/… is English, every other path
+ *  Dutch. The browser's language does not: crawlers browse as en-US (Googlebot
+ *  sends no Accept-Language), and choosing by browser had Google index the
+ *  Dutch pages in English. A choice made with the language button wins over
+ *  the URL by moving to that language's URL. See docs/english-urls.md. */
 export type Lang = "nl" | "en";
 
 type Widen<T> = { [K in keyof T]: T[K] extends (...args: infer A) => string ? (...args: A) => string : string };
@@ -14,25 +17,47 @@ export type Dict = Widen<typeof nl>;
 const DICTS: Record<Lang, Dict> = { nl, en };
 const STORAGE_KEY = "metro-lang";
 
-function detect(): Lang {
+/** The language picked with the language button, if any. */
+export function savedLang(): Lang | null {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === "nl" || saved === "en") return saved;
   } catch {
     /* storage unavailable */
   }
+  return null;
+}
+
+/** Whether the browser lists Dutch at all. Only decides whether to offer
+ *  English (EnglishHint), never which language a page is in. */
+export function browserReadsDutch(): boolean {
   const langs = typeof navigator === "undefined" ? [] : navigator.languages ?? [navigator.language];
-  if (!langs.length || langs.some((l) => l?.toLowerCase().startsWith("nl"))) return "nl";
-  return "en";
+  return !langs.length || langs.some((l) => l?.toLowerCase().startsWith("nl"));
+}
+
+function detect(): Lang {
+  if (typeof window === "undefined") return "nl";
+  return savedLang() ?? langOfPath(window.location.pathname);
 }
 
 let current: Lang = detect();
 const listeners = new Set<() => void>();
 
+/** Mark the document and put the address bar on this language's URL (same
+ *  page, query and hash; replaced, so Back doesn't flip the language). */
 function apply(lang: Lang) {
-  if (typeof document !== "undefined") document.documentElement.lang = lang;
+  if (typeof document === "undefined") return;
+  document.documentElement.lang = lang;
+  const { pathname, search, hash } = window.location;
+  if (langOfPath(pathname) !== lang) {
+    window.history.replaceState(window.history.state, "", pagePath(pageOfPath(pathname), lang) + search + hash);
+  }
 }
 apply(current);
+// Back/forward can land on an entry made before a language switch
+// (/reisinfo after switching to English there); keep the URL on the
+// language the visitor is reading.
+if (typeof window !== "undefined") window.addEventListener("popstate", () => apply(current));
 
 export function getLang(): Lang {
   return current;
@@ -48,9 +73,9 @@ export function setLang(lang: Lang, { persist = true }: { persist?: boolean } = 
       /* storage unavailable: the choice lasts until reload */
     }
   }
+  apply(lang);
   if (lang === current) return;
   current = lang;
-  apply(lang);
   listeners.forEach((l) => l());
 }
 

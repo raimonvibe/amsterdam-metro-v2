@@ -20,6 +20,11 @@
     <link rel="apple-touch-icon" href="/social-share.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="canonical" href="https://amsterdammetro.nl/" />
+    <!-- Dutch and English versions of this page (docs/english-urls.md). The
+         build and setPageMeta() rewrite these per page; see seo/routeHtml.ts. -->
+    <link rel="alternate" hreflang="nl" href="https://amsterdammetro.nl/" />
+    <link rel="alternate" hreflang="en" href="https://amsterdammetro.nl/en/" />
+    <link rel="alternate" hreflang="x-default" href="https://amsterdammetro.nl/" />
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
 
     <!-- Start the slow parts while the JS bundle downloads: connections to the
@@ -42,6 +47,7 @@
     <meta property="og:url" content="https://amsterdammetro.nl/" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="nl_NL" />
+    <meta property="og:locale:alternate" content="en_GB" />
     <meta property="og:image" content="https://amsterdammetro.nl/social-share.png" />
     <meta property="og:image:width" content="1024" />
     <meta property="og:image:height" content="1024" />
@@ -67,7 +73,7 @@
             "url": "https://amsterdammetro.nl/",
             "name": "Metro Amsterdam Live",
             "description": "Live GVB-metrolijnen op een interactieve 3D-kaart van Amsterdam met ritupdates en vertrektijden.",
-            "inLanguage": "nl-NL",
+            "inLanguage": ["nl-NL", "en-GB"],
             "publisher": { "@id": "https://amsterdammetro.nl/#organization" }
           },
           {
@@ -79,7 +85,7 @@
             "applicationCategory": "TransportApplication",
             "operatingSystem": "Any",
             "browserRequirements": "Requires JavaScript and WebGL2",
-            "inLanguage": "nl-NL",
+            "inLanguage": ["nl-NL", "en-GB"],
             "isAccessibleForFree": true,
             "offers": {
               "@type": "Offer",
@@ -109,7 +115,7 @@
         GVB-metrolijnen (M50, M51, M52, M53 en M54) op hun echte sporen, met vertragingen en
         vertrektijden per station. De kaart heeft JavaScript en WebGL nodig.
       </p>
-      <p><a href="/privacy">Privacybeleid</a></p>
+      <p><a href="/reisinfo">Reisinformatie</a> · <a href="/privacy">Privacybeleid</a> · <a href="/en/" hreflang="en" lang="en">English</a></p>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>

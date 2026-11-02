@@ -1,33 +1,24 @@
 import { useCallback, useEffect, useState } from "react";
-import { SEO, setPageMeta } from "../seo/site";
+import { getLang } from "../i18n";
+import { pageOfPath, pagePath } from "../i18n/paths";
+
+const onPrivacyPath = () => pageOfPath(window.location.pathname) === "/privacy";
 
 export function usePrivacyRoute() {
-  const [showPrivacy, setShowPrivacy] = useState(
-    () => window.location.pathname.replace(/\/$/, "") === "/privacy",
-  );
-
-  useEffect(() => {
-    if (showPrivacy) {
-      setPageMeta(SEO.privacyTitle, SEO.privacyDescription, "/privacy");
-    } else {
-      setPageMeta(SEO.homeTitle, SEO.homeDescription, "/");
-    }
-  }, [showPrivacy]);
+  const [showPrivacy, setShowPrivacy] = useState(onPrivacyPath);
 
   const openPrivacy = useCallback(() => {
-    window.history.pushState({ privacy: true }, "", "/privacy");
+    window.history.pushState({ privacy: true }, "", pagePath("/privacy", getLang()));
     setShowPrivacy(true);
   }, []);
 
   const closePrivacy = useCallback(() => {
-    window.history.pushState({}, "", "/");
+    window.history.pushState({}, "", pagePath("/", getLang()));
     setShowPrivacy(false);
   }, []);
 
   useEffect(() => {
-    const onPop = () => {
-      setShowPrivacy(window.location.pathname.replace(/\/$/, "") === "/privacy");
-    };
+    const onPop = () => setShowPrivacy(onPrivacyPath());
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
