@@ -25,7 +25,7 @@ import { TrainPopup } from "./TrainPopup";
 import { getWebGLStatus } from "../webgl";
 import { type Quality, tooSlow } from "../quality";
 import { onIdleOrAfter } from "../mapIdle";
-import { belowLabels, showPois } from "../mapPois";
+import { belowLabels, hideBusinesses } from "../mapPois";
 import { carried, carryOver } from "../i18n/translated";
 import { useLang, useT, type Lang } from "../i18n";
 import { useReducedMotion } from "../hooks/useReducedMotion";
@@ -652,15 +652,15 @@ export function MetroMap({
         ],
         "fill-extrusion-opacity": th.buildingOpacity,
       },
-      // Under the labels: on top, the buildings hid every shop, café and
-      // parking icon, and the street names, behind them.
+      // Under the labels: on top, the buildings hid the street and place
+      // names behind them.
     }, belowLabels(map));
   }, []);
 
-  // Shops, cafés, fuel, parking in every style, from street level (mapPois.ts).
-  const addPois = useCallback(() => {
+  // No shop, café or parking icons in any style (mapPois.ts).
+  const hidePois = useCallback(() => {
     const map = mapRef.current?.getMap();
-    if (map) showPois(map, themeRef.current);
+    if (map) hideBusinesses(map);
   }, []);
 
   // Screen readers: one named, focusable map (MapLibre's canvas, which takes
@@ -724,8 +724,8 @@ export function MetroMap({
     const map = mapRef.current?.getMap();
     if (!map) return;
     setMapReady(true);
-    map.on("style.load", addPois);
-    addPois();
+    map.on("style.load", hidePois);
+    hidePois();
     map.on("style.load", addBuildings);
     // Full: the 3D buildings follow once the first view is on screen, so the
     // map and its trains appear first. Lite: at once (they're hidden, but the
@@ -761,7 +761,7 @@ export function MetroMap({
         });
       }
     }
-  }, [addBuildings, addPois]);
+  }, [addBuildings, hidePois]);
 
   // A switch between full and lite after load: buildings and sharpness follow.
   // Not on the first load itself, which handleLoad sets up (buildings after

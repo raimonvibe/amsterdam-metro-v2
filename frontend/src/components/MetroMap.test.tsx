@@ -3,6 +3,7 @@ import { forwardRef, useEffect, useImperativeHandle } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MAP_STYLES } from "../theme";
 import { BUILDINGS_FALLBACK_MS, MetroMap } from "./MetroMap";
+import { BUSINESS_LAYERS } from "../mapPois";
 
 /**
  * The 3D buildings must come on every full-quality map. Since #187 they wait
@@ -21,8 +22,10 @@ function fakeMap() {
   const container = document.createElement("div");
   const canvas = document.createElement("canvas");
   container.appendChild(canvas);
-  // Draw order, bottom to top; starts with a street-name label, as a style does.
-  const order = ["road_label"];
+  // Draw order, bottom to top: a street-name label and Liberty's business
+  // icons, visible, as the style ships them.
+  const order = ["road_label", ...BUSINESS_LAYERS];
+  BUSINESS_LAYERS.forEach((id) => layers.set(id, { layout: { visibility: "visible" } }));
   const map = {
     layers,
     order,
@@ -154,26 +157,25 @@ describe("MetroMap 3D buildings", () => {
     expect(buildings()?.layout?.visibility).toBe("none");
   });
 
-  it("go under the labels, so shop, café and parking icons stay in front", () => {
+  it("go under the labels, so street names stay in front", () => {
     renderMap("full");
     act(() => map.fire("idle"));
-    const at = (id: string) => map.order.indexOf(id);
-    expect(at("3d-buildings")).toBeLessThan(at("road_label"));
-    for (const poi of ["poi_r1", "poi_r7", "poi_r20"]) expect(at("3d-buildings")).toBeLessThan(at(poi));
+    expect(map.order.indexOf("3d-buildings")).toBeLessThan(map.order.indexOf("road_label"));
   });
 });
 
-describe("MetroMap points of interest", () => {
-  it.each(["full", "lite"] as const)("are on the map at once in %s", (quality) => {
+describe("MetroMap business icons", () => {
+  const visible = () => BUSINESS_LAYERS.filter((id) => map.layers.get(id)?.layout?.visibility !== "none");
+
+  it.each(["full", "lite"] as const)("are hidden at once in %s", (quality) => {
     renderMap(quality);
-    for (const poi of ["poi_r1", "poi_r7", "poi_r20"]) expect(map.layers.get(poi)).toBeDefined();
+    expect(visible()).toEqual([]);
   });
 
-  it("come back after a style switch", () => {
+  it("stay hidden after a style switch", () => {
     renderMap("full");
-    map.layers.clear();
-    map.order.splice(0, map.order.length, "road_label");
+    BUSINESS_LAYERS.forEach((id) => map.layers.set(id, { layout: { visibility: "visible" } })); // the new style's own
     act(() => map.fire("style.load"));
-    expect(map.layers.get("poi_r1")).toBeDefined();
+    expect(visible()).toEqual([]);
   });
 });
