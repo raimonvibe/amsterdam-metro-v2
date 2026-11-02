@@ -132,6 +132,12 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
                 niet.
               </li>
               <li>
+                <strong>Taalwissel op een vertaalde pagina (sessionStorage):</strong> Laat uw
+                browser de site vertalen en kiest u NL of EN, dan laadt de pagina opnieuw. Voor
+                die ene herlaadbeurt onthoudt uw browser of het menu open was en waar de kaart
+                stond; de nieuwe pagina leest dat meteen en wist het. Wij ontvangen het niet.
+              </li>
+              <li>
                 <strong>Aanbod Engelse versie (localStorage):</strong> Staat Nederlands niet in de
                 taalinstellingen van uw browser, dan biedt de kaart eenmalig de Engelse versie aan.
                 Daarvoor leest de app alleen die taalinstelling; die wordt niet bewaard of
@@ -243,7 +249,7 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
               technisch beveiligingscookie zetten; dat valt buiten de app.) Wat in uw browser wordt bewaard, staat in sectie 3: in{" "}
               <strong>localStorage</strong> de kaartstijl, de taal, de 3D-weergave, het aanbod van
               de Engelse versie en, op de pagina Reisinformatie, uw favorieten, recente stations en
-              weergave-instellingen; in <strong>sessionStorage</strong> de geplande reis. Dit zijn
+              weergave-instellingen; in <strong>sessionStorage</strong> de geplande reis en, heel kort, een taalwissel op een vertaalde pagina. Dit zijn
               functionele instellingen, geen tracking. U kunt ze op elk moment verwijderen via uw
               browserinstellingen.
             </p>
@@ -262,6 +268,10 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
               </li>
               <li>
                 <strong>sessionStorage (geplande reis):</strong> totdat u het tabblad sluit.
+              </li>
+              <li>
+                <strong>sessionStorage (taalwissel):</strong> tot de pagina opnieuw geladen is; dan
+                gewist.
               </li>
               <li>
                 <strong>Locatie:</strong> niet bewaard; alleen gebruikt op het moment van de vraag.

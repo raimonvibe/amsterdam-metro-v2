@@ -33,6 +33,7 @@ Amsterdam Metro Live is designed to collect as little personal data as possible.
 - **3D view (localStorage):** If you choose "Full" or "Light" in the menu, your browser keeps that choice. With "Auto" (the default) nothing is kept: the app checks in your browser how smoothly the map draws and picks for you. That measurement stays on your device; it isn't sent or stored.
 - **Travel-info settings (localStorage):** On the travel-info page your browser keeps your favourite stations, the stations you viewed last (at most six) and your display settings (time window, show cancelled runs, walking time, avoid stairs). This stays in your browser; we don't receive it.
 - **Planned trip (sessionStorage):** The trip you enter in the journey planner is kept while you move between the map and the travel-info page. Your browser deletes it when you close the tab; we don't receive it.
+- **Language switch on a translated page (sessionStorage):** When your browser translates the site and you pick NL or EN, the page reloads. For that one reload your browser keeps whether the menu was open and where the map was; the new page reads it at once and deletes it. We don't receive it.
 - **English version offer (localStorage):** If Dutch isn't among your browser's language settings, the map offers the English version once. For that, the app only reads that language setting; it isn't stored or sent anywhere. If you dismiss the offer, your browser remembers that so it doesn't come back. A single setting, not an identifier; never sent to our servers.
 - **Location (only when you ask):** If you choose "Nearest station", your browser asks for permission to use your location. The nearest station is worked out in your browser; your location is not sent to our servers or anyone else, and not stored.
 - **Technical logs (hosting):** When you load the app or call our API, our hosting provider may process technical data such as your IP address, browser type, the URL requested and a timestamp in server or HTTP access logs, for security and operations.
@@ -68,7 +69,7 @@ We do not sell personal data or share it with advertisers.
 
 ## 6. Cookies and similar technologies
 
-The app itself sets **no** cookies and uses no tracking or analytics. (Our hosting provider's network may set a technical security cookie when traffic looks suspicious; that is outside the app.) What is kept in your browser is listed in section 3: in **localStorage** the map style, the language, the 3D view, the English version offer and, on the travel-info page, your favourites, recent stations and display settings; in **sessionStorage** the planned trip. These are functional settings, not tracking. You can delete them at any time in your browser settings.
+The app itself sets **no** cookies and uses no tracking or analytics. (Our hosting provider's network may set a technical security cookie when traffic looks suspicious; that is outside the app.) What is kept in your browser is listed in section 3: in **localStorage** the map style, the language, the 3D view, the English version offer and, on the travel-info page, your favourites, recent stations and display settings; in **sessionStorage** the planned trip and, briefly, a language switch on a translated page. These are functional settings, not tracking. You can delete them at any time in your browser settings.
 
 ---
 
@@ -77,6 +78,7 @@ The app itself sets **no** cookies and uses no tracking or analytics. (Our hosti
 - **localStorage (map style, language, 3D view, English version offer):** until you clear site data or make another choice
 - **localStorage (travel info):** until you remove a favourite, clear recent stations or clear site data
 - **sessionStorage (planned trip):** until you close the tab
+- **sessionStorage (language switch):** until the page has reloaded; then deleted
 - **Location:** not stored; used only at the moment you ask
 - **Hosting logs:** kept by Render according to our hosting plan (typically 7–30 days), then deleted automatically. We don't forward these logs to other services.
 

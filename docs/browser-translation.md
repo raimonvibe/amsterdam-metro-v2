@@ -119,6 +119,15 @@ detaches and re-appends; Edge and the Google Translate extension wrap in
   `<font>`). If it is, it saves the choice and reloads on the other
   language's URL: a clean page, built in that language. Untranslated, it
   still switches in place, without reloading the map.
+- **The reload closed the menu and flew the intro again, and the browser
+  translated the new page anyway.** A click on NL or EN on a translated
+  page means "the site's own language". So before reloading,
+  `switchLang` keeps the menu's open state and the map's view
+  (`carryOver`, one sessionStorage entry, `metro-live:lang-switch`), and
+  the reloaded page reads and deletes it (`carried`), and asks not to be
+  translated (`keepSiteLanguage`: `translate="no"` and `notranslate` on
+  `<html>`, `<meta name="google" content="notranslate">`). Only for that
+  page view: the next load is translatable again.
 - **Crashes.** Removing or inserting beside a node the translator took out
   throws `NotFoundError`, and React 19 then tears the tree down.
   `guardTranslatorDom()` (called in `main.tsx`) turns only those throwing
@@ -156,6 +165,14 @@ to every language the browser translates into, not only Ukrainian.
 **Why were spaces missing in "CS,De Pijp,…"?** The ", " between two
 untranslated names was a lone translatable text node, and the translator
 trimmed it. Names and commas are now one untranslated run.
+
+**On a page translated to Ukrainian, NL in the menu made the screen
+flicker, closed the menu and showed the map. Why?** The switch reloads a
+translated page (above), and a reload starts with the menu closed and the
+intro flight. It now carries the open menu and the map's view over the
+reload, and the reloaded page asks the browser not to translate it, so
+NL shows Dutch and EN English. One reload still happens: it's the only
+way to get rid of the translator's copy of the page.
 
 ## Not done, on purpose
 

@@ -7,6 +7,7 @@ import { pagePath } from "./i18n/paths";
 import { setPageMeta } from "./seo/site";
 import { NO_HOVER } from "./components/hover";
 import { type Quality, getQualityPref, softwareGL, startQuality, useQualityPref } from "./quality";
+import { carried, carryOver } from "./i18n/translated";
 import { MapPoster } from "./components/MapPoster";
 import { Sidebar } from "./components/Sidebar";
 import { LiveBadge } from "./components/LiveBadge";
@@ -101,7 +102,9 @@ export default function App() {
     setFollowedTrainId(null);
     setFocusStation({ station, nonce: Date.now() });
   };
-  const [sidebarOpen, openSidebar, closeSidebar] = useSidebarOpen();
+  // Open again after a language switch reloaded a translated page.
+  const [sidebarOpen, openSidebar, closeSidebar] = useSidebarOpen(carried<boolean>("sidebarOpen") ?? false);
+  useEffect(() => carryOver("sidebarOpen", () => sidebarOpen), [sidebarOpen]);
   const alerts = useAlerts();
   const txt = useT();
   const lang = useLang();

@@ -129,3 +129,56 @@ describe("AlertList under translation", () => {
     expect(names.textContent).toMatch(/, De Pijp$/);
   });
 });
+
+describe("a language switch on a translated page, across its reload", () => {
+  /** The module as a reloaded page loads it: fresh, reading sessionStorage. */
+  async function afterReload() {
+    vi.resetModules();
+    return import("./translated");
+  }
+
+  afterEach(() => {
+    sessionStorage.clear();
+    html.removeAttribute("translate");
+    html.classList.remove("notranslate");
+    document.querySelectorAll('meta[name="google"]').forEach((m) => m.remove());
+  });
+
+  it("keeps the open panel and the map view, and asks not to be translated again", async () => {
+    const before = await afterReload();
+    before.carryOver("sidebarOpen", () => true);
+    before.carryOver("mapView", () => ({ longitude: 4.9, latitude: 52.37, zoom: 13, pitch: 60, bearing: 0 }));
+    html.classList.add("translated-ltr");
+    const reload = vi.fn();
+    before.switchLang("nl", reload);
+    expect(reload).toHaveBeenCalledOnce();
+
+    html.classList.remove("translated-ltr"); // the reloaded page starts clean
+    const after = await afterReload();
+    expect(after.carried("sidebarOpen")).toBe(true);
+    expect(after.carried("mapView")).toMatchObject({ zoom: 13, pitch: 60 });
+    after.keepSiteLanguage();
+    expect(html).toHaveAttribute("translate", "no");
+    expect(html).toHaveClass("notranslate");
+    expect(document.querySelector('meta[name="google"][content="notranslate"]')).not.toBeNull();
+  });
+
+  it("is only for that one page view", async () => {
+    const before = await afterReload();
+    html.classList.add("translated-ltr");
+    before.switchLang("en", vi.fn());
+    html.classList.remove("translated-ltr");
+    await afterReload(); // the reload reads and clears it
+    const later = await afterReload(); // the next load: translatable again
+    expect(later.carried("siteLanguage")).toBeUndefined();
+    later.keepSiteLanguage();
+    expect(html).not.toHaveAttribute("translate");
+  });
+
+  it("carries nothing when the page wasn't translated", async () => {
+    const before = await afterReload();
+    before.carryOver("sidebarOpen", () => true);
+    before.switchLang("en", vi.fn());
+    expect(sessionStorage.length).toBe(0);
+  });
+});
