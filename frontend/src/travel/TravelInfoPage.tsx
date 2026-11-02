@@ -17,6 +17,8 @@ import { clockWithSeconds } from "./time";
 import { JourneyLeg, NetworkLine } from "./types";
 import { Crest, Section } from "./ui";
 import { readParams, resolveStation, writeParams } from "./url";
+import { getLang } from "../i18n";
+import { pagePath } from "../i18n/paths";
 import { Num } from "../components/Num";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { useTravelT } from "./strings";
@@ -105,7 +107,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
   useEffect(() => {
     if (!ready) return;
     const qs = writeParams({ station, from, to, line: lineId });
-    window.history.replaceState(window.history.state, "", `/reisinfo${qs}`);
+    window.history.replaceState(window.history.state, "", `${pagePath("/reisinfo", getLang())}${qs}`);
   }, [ready, station, from, to, lineId]);
 
   useEffect(() => {

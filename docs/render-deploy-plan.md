@@ -174,15 +174,21 @@ curl https://api.amsterdammetro.nl/api/status
 
 Render static sites do **not** read a `_redirects` file (that is a Netlify convention). Add the rule in the dashboard: **Manage → Redirects/Rewrites** → Source `/*`, Destination `/index.html`, action **Rewrite**. Without it, opening `/privacy` or `/reisinfo` directly (shared link, refresh, search engines) returns 404. Real files (`/assets/…`, `/sitemap.xml`, `/robots.txt`) are still served as-is.
 
-The build also writes `reisinfo/index.html` and `privacy/index.html`, copies of the entry page whose title, description, canonical and social tags already name that page (see `frontend/src/seo/routeHtml.ts`), so crawlers that read the HTML before running JavaScript don't see the homepage there. Add two rewrites **above** the `/*` rule, because rules run top to bottom:
+The build also writes an `index.html` for every other page and language: `reisinfo/`, `privacy/`, `en/`, `en/reisinfo/` and `en/privacy/`. Each is a copy of the entry page whose language, title, description, canonical, hreflang and social tags already name that page (see `frontend/src/seo/routeHtml.ts` and [english-urls.md](english-urls.md)), so crawlers that read the HTML before running JavaScript don't see the Dutch homepage there. Add these rewrites **above** the `/*` rule, because rules run top to bottom:
 
 | Source | Destination | Action |
 |---|---|---|
 | `/reisinfo` | `/reisinfo/index.html` | Rewrite |
 | `/privacy` | `/privacy/index.html` | Rewrite |
+| `/en` | `/en/index.html` | Rewrite |
+| `/en/` | `/en/index.html` | Rewrite |
+| `/en/reisinfo` | `/en/reisinfo/index.html` | Rewrite |
+| `/en/privacy` | `/en/privacy/index.html` | Rewrite |
 | `/*` | `/index.html` | Rewrite |
 
-Check after deploy: `curl -s https://amsterdammetro.nl/reisinfo | grep canonical` should print `…/reisinfo`, not `…/`.
+The four `/en` rules can go in **before** the English pages are deployed: until then they point at files that don't exist yet, on URLs nothing links to.
+
+Check after deploy: `curl -s https://amsterdammetro.nl/reisinfo | grep canonical` should print `…/reisinfo`, not `…/`, and `curl -s https://amsterdammetro.nl/en/reisinfo | grep -E '<html|canonical'` should print `lang="en"` and `…/en/reisinfo`.
 
 ### HTTP response headers (dashboard)
 
@@ -191,6 +197,7 @@ Render reads these only from the dashboard (**amsterdam-metro → Settings → H
 | Request path | Header | Value |
 |---|---|---|
 | `/assets/*` | `Cache-Control` | `public, max-age=31536000, immutable` |
+| `/`, `/index.html`, `/reisinfo`, `/privacy`, `/en`, `/en/`, `/en/reisinfo`, `/en/privacy` | `Cache-Control` | `no-cache` (one row per path) |
 | `/*` | `Referrer-Policy` | `strict-origin-when-cross-origin` |
 | `/*` | `Content-Security-Policy-Report-Only` | the CSP from `render.yaml` (one line; the single quotes around `'self'`, `'none'` and `'unsafe-inline'` are part of the value) |
 | `/*` | `Strict-Transport-Security` | `max-age=31536000` |

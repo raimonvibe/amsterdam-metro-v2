@@ -2,10 +2,13 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { PanelLeftOpen } from "lucide-react";
 import { useAlerts } from "./hooks/useAlerts";
 import { AlertAnnouncer } from "./components/AlertList";
-import { strings, useT } from "./i18n";
+import { strings, useLang, useT } from "./i18n";
+import { pagePath } from "./i18n/paths";
+import { setPageMeta } from "./seo/site";
 import { MetroMap, NO_HOVER } from "./components/MetroMap";
 import { Sidebar } from "./components/Sidebar";
 import { LiveBadge } from "./components/LiveBadge";
+import { EnglishHint } from "./components/EnglishHint";
 import { DepartureBoard } from "./components/DepartureBoard";
 import { FollowChip } from "./components/FollowChip";
 import { fetchLines, fetchShapes, fetchStations } from "./api";
@@ -90,6 +93,9 @@ export default function App() {
   const [sidebarOpen, openSidebar, closeSidebar] = useSidebarOpen();
   const alerts = useAlerts();
   const txt = useT();
+  const lang = useLang();
+  const page = showTravel ? "/reisinfo" : showPrivacy ? "/privacy" : "/";
+  useEffect(() => setPageMeta(page, lang), [page, lang]);
   // Phones: the sidebar is a drawer over the map. Left open from before the
   // travel page, it would be all one sees on the way back, so close it on
   // every return (page buttons and the browser's back button alike).
@@ -197,7 +203,7 @@ export default function App() {
           focused, so the map looks the same for everyone else. */}
       <nav aria-label={txt.textVersion} className="contents">
       <a
-        href="/reisinfo"
+        href={pagePath("/reisinfo", lang)}
         inert={showTravel}
         onClick={(e) => {
           e.preventDefault();
@@ -311,6 +317,7 @@ export default function App() {
           </div>
         )}
         <LiveBadge status={status} />
+        <EnglishHint sidebarOpen={sidebarOpen} />
         <AlertAnnouncer alerts={alerts} />
         {selectedStation && (
           <DepartureBoard

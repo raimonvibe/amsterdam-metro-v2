@@ -53,6 +53,8 @@ export const en: Dict = {
   closePrivacy: "Close privacy policy",
   backendError: "Live data is briefly unavailable — retrying automatically…",
   webglTitle: "The 3D map needs WebGL2",
+  webglUnavailable: "WebGL2 is disabled or unavailable in this browser.",
+  webglBlocked: "WebGL2 is blocked in this browser.",
   webglHint: "Chrome is blocking GPU rendering on this device. Try:",
   webglStep1: "Open chrome://settings/system, turn on hardware acceleration and restart Chrome.",
   webglStep2: "Open chrome://flags/#enable-unsafe-swiftshader for software WebGL.",
