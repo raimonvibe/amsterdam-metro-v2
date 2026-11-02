@@ -71,7 +71,11 @@ So the layout must hold even when a number does get translated:
   chip's arrow "↑" into a word («أعلى», "up"). It now shows "↓ ✓" or
   "↑ +3′", marked `translate="no"`; the word is screen-reader text, and
   the legend (Verklaring) explains the symbols. `wordsInTinyBoxes` in
-  `translationAudit.test.tsx` fails on any word in such a box.
+  `translationAudit.test.tsx` fails on any word in such a box. One `TrainChip` (`travel/ui.tsx`) draws the chips, the key under the
+  overview (phones and tablets) and the legend (desktop). From 100
+  minutes it shows ">99′" ("+125′" broke the 36 px phone chip). Late
+  chips are outlined, on-time ones filled, so late trains stand out on
+  every line colour and in dark mode, not by colour alone.
 - **Hints inside input fields stay short.** An input's placeholder
   can't wrap, so a long one is cut off on a phone, more so translated.
   The phone hints (search, From/To, the station picker) are at most 22
