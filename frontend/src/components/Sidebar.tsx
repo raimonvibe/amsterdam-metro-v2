@@ -4,6 +4,8 @@ import { AnimatedTrain, Line, ServiceAlert, Station, Status } from "../types";
 import { AlertList } from "./AlertList";
 import { MapStyle } from "../theme";
 import { StyleSwitcher } from "./StyleSwitcher";
+import { QualitySwitch } from "./QualitySwitch";
+import type { Quality } from "../quality";
 import { locale, useLang, useT } from "../i18n";
 import { LanguageToggle } from "./LanguageToggle";
 import { pagePath } from "../i18n/paths";
@@ -25,6 +27,8 @@ interface SidebarProps {
   lastUpdated: Date | null;
   mapStyle: MapStyle;
   onMapStyleChange: (style: MapStyle) => void;
+  /** What the map draws now (see src/quality.ts), for the 3D switch. */
+  quality?: Quality;
   onOpenPrivacy: () => void;
   onOpenTravel: () => void;
   onClose: () => void;
@@ -44,6 +48,7 @@ export function Sidebar({
   lastUpdated,
   mapStyle,
   onMapStyleChange,
+  quality = "full",
   onOpenPrivacy,
   onOpenTravel,
   onClose,
@@ -129,6 +134,7 @@ export function Sidebar({
 
       <div className="mb-4">
         <StyleSwitcher value={mapStyle} onChange={onMapStyleChange} />
+        <QualitySwitch quality={quality} />
       </div>
 
       <div className="mb-5 min-w-0 space-y-1.5">

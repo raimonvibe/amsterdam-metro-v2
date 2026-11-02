@@ -16,8 +16,8 @@ interface TrainPopupProps {
   y: number;
   containerWidth: number;
   nowMs: number;
-  /** Touch screens: the popup belongs to a followed train and gets a close
-   *  button, since there is no hover to end it. */
+  /** Followed train: a close button that stops following. Hovered trains
+   *  omit it; moving the pointer away is enough. */
   onClose?: () => void;
 }
 

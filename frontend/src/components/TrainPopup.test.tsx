@@ -71,7 +71,7 @@ describe("TrainPopup stop report", () => {
 });
 
 describe("TrainPopup close button", () => {
-  it("is only there for a followed train on touch screens, and stops following", async () => {
+  it("is only there for a followed train, and stops following", async () => {
     const onClose = vi.fn();
     const { rerender } = render(<TrainPopup train={train({})} color="#E6194B" x={300} y={300} containerWidth={800} nowMs={NOW} />);
     expect(screen.queryByRole("button", { name: "Stop met volgen" })).toBeNull();

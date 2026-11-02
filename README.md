@@ -19,7 +19,7 @@ Built in the spirit of [londonunderground.live](https://www.londonunderground.li
 - 🌐 **Dutch and English**, switchable from the menu and the travel page header
 - ⏱️ **Live delays** — see which trains are running late, straight from the same feed GVB itself uses
 - 🚉 **Click a station** for a live departure board — next 8 trains, headsign, and countdown — with a link to its full travel info
-- 🎯 **Click a train** to follow it with the camera; its card shows the next stop, delay, arrival time and **platform number**. On phones it has its own close button, and a tap on empty map stops following
+- 🎯 **Click a train** to follow it with the camera; its card shows the next stop, delay, arrival time and **platform number**, with a close button to stop. A tap on empty map stops following too
 - 💫 **Fading motion trails** behind every train, so movement reads at a glance
 - 🌗 **Five map styles**: Liberty, Bright, Licht, Donker and Fiord. Each one drives the whole light or dark look, and your pick is remembered across visits
 - 🎬 Opens with a cinematic fly-in, landing right on the busiest, most building-dense part of the network

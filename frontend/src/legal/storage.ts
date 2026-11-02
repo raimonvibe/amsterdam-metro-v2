@@ -6,6 +6,7 @@
 export const BROWSER_STORAGE = [
   { key: "metro-live:map-style", store: "localStorage", nl: "Kaartstijl", en: "Map style" },
   { key: "metro-lang", store: "localStorage", nl: "Taal", en: "Language" },
+  { key: "metro-live:3d", store: "localStorage", nl: "3D-weergave", en: "3D view" },
   { key: "metro-lang-hint", store: "localStorage", nl: "Aanbod Engelse versie", en: "English version offer" },
   { key: "metro-live:favourites", store: "localStorage", nl: "Reisinformatie-instellingen", en: "Travel-info settings" },
   { key: "metro-live:recent", store: "localStorage", nl: "Reisinformatie-instellingen", en: "Travel-info settings" },

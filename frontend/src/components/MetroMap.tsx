@@ -1,3 +1,6 @@
+// MapLibre's worker URL, before any map exists. Here rather than in main.tsx,
+// so MapLibre only loads with the map (not for the preview still).
+import "../maplibreSetup";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Map, useControl, NavigationControl } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
@@ -20,6 +23,7 @@ import { MAP_STYLES, MAP_THEME, Theme } from "../theme";
 import { ChurchMarkers } from "./ChurchMarkers";
 import { TrainPopup } from "./TrainPopup";
 import { getWebGLStatus } from "../webgl";
+import { type Quality, tooSlow } from "../quality";
 import { useLang, useT, type Lang } from "../i18n";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { foldedAttribution, relabelControls } from "../mapControls";
@@ -68,10 +72,9 @@ interface MetroMapProps {
   styleUrl: string;
   /** Basemap background of the incoming style: the colour a style switch fades through. */
   backdropColor: string;
+  /** The followed train's card stays open on every device while it's
+   *  followed; its ✕ stops following. */
   followedTrainId: string | null;
-  /** Keep the followed train's card open on any device: it was picked from a
-   *  list, so no hover will bring the card up. */
-  showFollowedCard?: boolean;
   onStationHover: (station: Station | null) => void;
   onTrainClick: (train: AnimatedTrain) => void;
   onStationClick: (station: Station) => void;
@@ -85,7 +88,23 @@ interface MetroMapProps {
   /** A map canvas lost its WebGL context (phones do this to backgrounded
    *  apps). The parent remounts the map: see App. */
   onContextLost?: () => void;
+  /** "lite" leaves out the 3D buildings, the motion trails and the opening
+   *  flight, and draws at 1 pixel per CSS pixel. See src/quality.ts. */
+  quality?: Quality;
+  /** Watch the frame rate while the map settles, and step down if it's too
+   *  slow: first to 1 pixel per CSS pixel, then `onSlow` (lite). Only while
+   *  the visitor left 3D on "auto". */
+  watchFrames?: boolean;
+  onSlow?: () => void;
+  /** No WebGL at all: the fallback offers the travel page instead. */
+  onOpenTravel?: () => void;
 }
+
+/** How long after the map is ready the frame rate is watched: the wait for
+ *  the first view, the 3.2 s opening flight, and a few seconds of trains. */
+const WATCH_FRAMES_MS = 15_000;
+/** Lite's animation clock: 4 updates a second. */
+const LITE_FRAME_MS = 250;
 
 /** Style-switch veil: quick cover, gentler reveal; reveal anyway if tiles stall. */
 const VEIL_IN_MS = 150;
@@ -99,9 +118,6 @@ const VEIL_MAX_WAIT_MS = 1500;
  */
 const POPUP_LEAVE_PX = 40;
 
-/** Phones and tablets: no hover, so the followed train gets the popup instead. */
-export const NO_HOVER =
-  typeof window !== "undefined" && window.matchMedia("(hover: none)").matches;
 
 /** Distance in px from (px, py) to the polyline `pts`. */
 function distToPolyline(px: number, py: number, pts: { x: number; y: number }[]): number {
@@ -401,7 +417,6 @@ export function MetroMap({
   styleUrl: targetStyleUrl,
   backdropColor,
   followedTrainId,
-  showFollowedCard = false,
   onStationHover,
   onTrainClick,
   onStationClick,
@@ -410,6 +425,10 @@ export function MetroMap({
   onMapBackgroundClick,
   paused = false,
   onContextLost,
+  quality = "full",
+  watchFrames = false,
+  onSlow,
+  onOpenTravel,
 }: MetroMapProps) {
   const txt = useT();
   const lang = useLang();
@@ -420,6 +439,13 @@ export function MetroMap({
   reduceMotionRef.current = reduceMotion;
   const mapRef = useRef<MapRef>(null);
   const deckPickRef = useRef(false);
+  const qualityRef = useRef(quality);
+  qualityRef.current = quality;
+  const onSlowRef = useRef(onSlow);
+  onSlowRef.current = onSlow;
+  // Lite draws at 1 pixel per CSS pixel; full at up to 2. The frame-rate
+  // watch may lower full to 1 before giving up on it.
+  const [pixelRatio, setPixelRatio] = useState(quality === "lite" ? 1 : PIXEL_RATIO);
   /** Per-line canonical lane (longest shape → offset). Shared by tracks + trains. */
   const laneRefs = useMemo(() => {
     const refs: Record<
@@ -540,13 +566,18 @@ export function MetroMap({
   const styleUrlRef = useRef(styleUrl);
   styleUrlRef.current = styleUrl;
 
-  // ~30fps animation clock for dead-reckoned train movement
+  // Animation clock for dead-reckoned train movement: ~30 fps, or 4 in lite.
+  // Every frame redraws the map, and without a graphics chip one frame costs
+  // hundreds of milliseconds: at 30 a second the page never got a moment to
+  // respond (Lighthouse gave up on it as hung). Trains move a few metres
+  // between lite frames, which reads fine at city zoom.
+  const frameMs = quality === "lite" ? LITE_FRAME_MS : 33;
   useEffect(() => {
     if (paused) return;
     let raf = 0;
     let last = 0;
     const loop = (now: number) => {
-      if (now - last > 33) {
+      if (now - last > frameMs) {
         last = now;
         setTick(now);
       }
@@ -554,7 +585,7 @@ export function MetroMap({
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [paused]);
+  }, [paused, frameMs]);
   void tick;
 
   // 3D buildings on top of the vector tiles the style already loads
@@ -593,6 +624,9 @@ export function MetroMap({
       "source-layer": "building",
       type: "fill-extrusion",
       minzoom: 13.5,
+      // Hidden in lite: MapLibre skips hidden layers when it builds tiles,
+      // so they cost nothing until switched on.
+      layout: { visibility: qualityRef.current === "full" ? "visible" : "none" },
       paint: {
         "fill-extrusion-color": th.buildingColor,
         "fill-extrusion-height": [
@@ -674,10 +708,14 @@ export function MetroMap({
     if (!map) return;
     setMapReady(true);
     map.on("style.load", addBuildings);
-    addBuildings();
+    // Full: the 3D buildings follow once the first view is on screen, so the
+    // map and its trains appear first. Lite: at once (they're hidden, but the
+    // sky fill comes with them and lite opens tilted).
+    if (qualityRef.current === "full") map.once("idle", addBuildings);
+    else addBuildings();
     if (!introDone.current) {
       introDone.current = true;
-      if (reduceMotionRef.current) {
+      if (reduceMotionRef.current || qualityRef.current === "lite") {
         map.jumpTo(INTRO_END);
         setShowLabels(map.getZoom() >= LABEL_ZOOM);
       } else {
@@ -699,6 +737,59 @@ export function MetroMap({
       }
     }
   }, [addBuildings]);
+
+  // A switch between full and lite after load: buildings and sharpness follow.
+  // Not on the first load itself, which handleLoad sets up (buildings after
+  // the first view).
+  const appliedQuality = useRef(quality);
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!map || !mapReady || appliedQuality.current === quality) return;
+    appliedQuality.current = quality;
+    if (map.getLayer("3d-buildings")) {
+      map.setLayoutProperty("3d-buildings", "visibility", quality === "full" ? "visible" : "none");
+    } else if (quality === "full") {
+      addBuildings();
+    }
+    const ratio = quality === "lite" ? 1 : PIXEL_RATIO;
+    map.setPixelRatio(ratio);
+    setPixelRatio(ratio);
+  }, [quality, mapReady, addBuildings]);
+
+  // Watch the frame rate while the map settles (first view, opening flight, a
+  // few seconds of trains). Too slow: first draw at 1 pixel per CSS pixel,
+  // then hand over to lite. Never steps back up by itself, so the map doesn't
+  // flip back and forth; the visitor can, in the menu. Nothing leaves the
+  // device: the numbers live in this effect only.
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!map || !mapReady || !watchFrames || quality !== "full") return;
+    const started = performance.now();
+    let raf = 0;
+    let last = 0;
+    let intervals: number[] = [];
+    let sharpnessLowered = false;
+    const frame = (now: number) => {
+      if (now - started > WATCH_FRAMES_MS) return;
+      // A hidden tab pauses frames; that gap says nothing about the device.
+      if (last && document.visibilityState === "visible" && now - last < 1000) intervals.push(now - last);
+      last = now;
+      if (tooSlow(intervals)) {
+        if (!sharpnessLowered && map.getPixelRatio() > 1) {
+          sharpnessLowered = true;
+          map.setPixelRatio(1);
+          setPixelRatio(1);
+          intervals = [];
+        } else {
+          onSlowRef.current?.();
+          return;
+        }
+      }
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }, [mapReady, watchFrames, quality]);
 
   const lineColor = useMemo(() => {
     const m: Record<string, [number, number, number]> = {};
@@ -1064,7 +1155,9 @@ export function MetroMap({
     // every shared edge — which shows up as a bright seam at each vertex, a
     // ladder running the length of the tail. The halo below is a single quad
     // per train and has no such self-overlap, so it can still be additive.
-    new TripsLayer({
+    // Lite leaves the trails out: a fading polyline per train, redrawn every
+    // frame, is one of the heavier layers and the trains read without it.
+    quality === "full" && new TripsLayer({
       id: "train-trail",
       data: trailData,
       getPath: (d: Trail) => d.path,
@@ -1234,9 +1327,16 @@ export function MetroMap({
   }, [hoverLeft]);
   const popupTrain =
     (!hoverLeft && hoveredTrain) ||
-    ((NO_HOVER || showFollowedCard) && followedTrainId ? positioned.find((tr) => tr.id === followedTrainId) : undefined);
+    // Following a train shows its card, on every device: on touch there is no
+    // hover to bring it up, and on desktop the train drives out from under
+    // the pointer as soon as the camera follows it.
+    (followedTrainId ? positioned.find((tr) => tr.id === followedTrainId) : undefined);
   const popupScreen = popupTrain && map ? map.project(popupTrain.center) : null;
 
+  // No WebGL at all: say so briefly, then lead to what works without it (the
+  // travel page has every departure, the planner and the lines). How to turn
+  // WebGL on is there for those who want it, folded away. Crawlers that
+  // render without WebGL read this too, so it should be useful text.
   if (webglError) {
     return (
       <div className="flex h-full min-h-0 w-full items-center justify-center bg-gray-950 p-4 text-gray-100 sm:p-8">
@@ -1247,14 +1347,30 @@ export function MetroMap({
               ? txt.webglUnavailable
               : webglError === "blocked"
                 ? txt.webglBlocked
-                : webglError}
+                : webglError}{" "}
+            {txt.webglAlternative}
           </p>
-          <p className="text-gray-400">{txt.webglHint}</p>
-          <ol className="list-decimal space-y-2 pl-5 text-gray-300">
-            <li>{txt.webglStep1}</li>
-            <li>{txt.webglStep2}</li>
-            <li>{txt.webglStep3}</li>
-          </ol>
+          {onOpenTravel && (
+            <button
+              type="button"
+              onClick={onOpenTravel}
+              className="flex min-h-11 w-full items-center gap-2.5 rounded-lg border border-[#c8a951]/50 bg-[#1f3a68] px-4 py-2.5 text-left text-white shadow-sm transition hover:bg-[#182e54]"
+            >
+              <span className="min-w-0">
+                <span className="block font-semibold">{txt.travelInfo}</span>
+                <span className="block text-xs text-blue-100/80">{txt.travelInfoHint}</span>
+              </span>
+            </button>
+          )}
+          <details className="text-gray-300">
+            <summary className="cursor-pointer text-gray-400 underline-offset-2 hover:underline">{txt.webglFixSummary}</summary>
+            <p className="mt-2 text-gray-400">{txt.webglHint}</p>
+            <ol className="mt-2 list-decimal space-y-2 pl-5">
+              <li>{txt.webglStep1}</li>
+              <li>{txt.webglStep2}</li>
+              <li>{txt.webglStep3}</li>
+            </ol>
+          </details>
         </div>
       </div>
     );
@@ -1270,7 +1386,10 @@ export function MetroMap({
         attributionControl={false}
         style={{ width: "100%", height: "100%" }}
         maxPitch={72}
-        pixelRatio={PIXEL_RATIO}
+        // Tiles fade in over 300 ms by default: more frames to draw, which a
+        // device in lite can't spare.
+        fadeDuration={quality === "lite" ? 0 : 300}
+        pixelRatio={pixelRatio}
         locale={MAP_LOCALE[lang]}
         onLoad={handleLoad}
         onMove={(e) => setShowLabels(e.viewState.zoom >= LABEL_ZOOM)}
@@ -1298,7 +1417,7 @@ export function MetroMap({
           <DeckGLOverlay
             layers={layers}
             pickingRadius={12}
-            useDevicePixels={PIXEL_RATIO}
+            useDevicePixels={pixelRatio}
             getCursor={({ isHovering, isDragging }) =>
               isDragging ? "grabbing" : isHovering ? "pointer" : "grab"
             }
@@ -1316,7 +1435,7 @@ export function MetroMap({
           y={popupScreen.y}
           containerWidth={map?.getContainer().clientWidth ?? 0}
           nowMs={nowMs}
-          onClose={(NO_HOVER || showFollowedCard) && popupTrain.id === followedTrainId ? onStopFollow : undefined}
+          onClose={popupTrain.id === followedTrainId ? onStopFollow : undefined}
         />
       )}
       <div

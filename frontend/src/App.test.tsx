@@ -7,8 +7,8 @@ import type { Station } from "./types";
 // The camera rules live in App; the map, sidebar, data and travel page are
 // stand-ins that expose just the props and callbacks those rules run through.
 let mapProps: Record<string, any> = {};
+vi.mock("./components/hover", () => ({ NO_HOVER: false }));
 vi.mock("./components/MetroMap", () => ({
-  NO_HOVER: false,
   MetroMap: (props: Record<string, any>) => {
     mapProps = props;
     return <div data-testid="map" />;
@@ -97,5 +97,13 @@ describe("camera: the latest explicit choice wins", () => {
     act(() => mapProps.onTrainClick({ id: "52-zuid" }));
     act(() => mapProps.onStationClick(noord()));
     expect(mapProps.followedTrainId).toBeNull();
+  });
+
+  it("following from the map is enough to keep the card; there is no list-only flag", async () => {
+    render(<App />);
+    await waitFor(() => expect(mapProps.stations?.length).toBeGreaterThan(0));
+    act(() => mapProps.onTrainClick({ id: "52-zuid" }));
+    expect(mapProps.followedTrainId).toBe("52-zuid");
+    expect(mapProps).not.toHaveProperty("showFollowedCard");
   });
 });
