@@ -15,7 +15,7 @@ import { nearestStations } from "./search";
 import { clearRecent, loadFavourites, loadPrefs, loadRecent, loadTrip, pushRecent, savePrefs, saveTrip, toggleFavourite, TravelPrefs } from "./storage";
 import { clockWithSeconds } from "./time";
 import { JourneyLeg, NetworkLine } from "./types";
-import { Crest, Section } from "./ui";
+import { Crest, Section, TrainChip } from "./ui";
 import { readParams, resolveStation, writeParams } from "./url";
 import { getLang, useT } from "../i18n";
 import { pagePath } from "../i18n/paths";
@@ -551,8 +551,8 @@ function Legend() {
           <span className="font-semibold text-[#b42335] dark:text-[#f08a9b]">{txt.cancelled}</span> {txt.legendCancelled}
         </li>
         <li className="flex items-center gap-1.5">
-          <span translate="no" className="notranslate inline-flex h-4 items-center gap-1 rounded-full bg-[#1f3a68] px-1.5 text-[11px] font-bold text-white" aria-hidden>↓ ✓</span>
-          <span translate="no" className="notranslate inline-flex h-4 items-center gap-1 rounded-full bg-[#1f3a68] px-1.5 text-[11px] font-bold text-white" aria-hidden>↑ +2′</span>
+          <TrainChip color="#1f3a68" forward delayS={0} className="px-1.5" />
+          <TrainChip color="#1f3a68" forward={false} delayS={120} className="px-1.5" />
           {txt.legendChips}
         </li>
         <li>{txt.legendTimes}</li>

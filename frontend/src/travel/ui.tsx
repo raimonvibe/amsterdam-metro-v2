@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { CSSProperties, ReactNode, useEffect, useState } from "react";
 import { useTravelT } from "./strings";
 import { onColor } from "../contrast";
 
@@ -18,6 +18,51 @@ export function LineBadge({ id, color, small = false }: { id: string; color: str
       aria-label={txt.lineAria(id)}
     >
       {id}
+    </span>
+  );
+}
+
+/** What a train chip shows: direction and delay, symbols and numbers only,
+ *  so it fits its pill in every language (a translated "op tijd" didn't).
+ *  From 100 minutes ">99′": "+125′" broke the 36 px phone chip. */
+export function trainChipText(forward: boolean, delayS: number): string {
+  const min = Math.round(delayS / 60);
+  return `${forward ? "↓" : "↑"} ${delayS < 60 ? "✓" : min > 99 ? ">99′" : `+${min}′`}`;
+}
+
+/**
+ * A train in the line overview, and its samples in the key and legend.
+ * On time: filled with the line's colour. Late: outlined, a light (dark)
+ * pill with a ring in the line's colour, so late trains stand out on any
+ * line, and not by colour alone. Dark text on it reads on every line,
+ * yellow 54 included, which line-coloured text would not. A thin neutral
+ * outline keeps its edge where the ring is faint (yellow on white).
+ */
+export function TrainChip({
+  color, forward, delayS, srText, className = "", style, title,
+}: {
+  color: string;
+  forward: boolean;
+  delayS: number;
+  /** What a screen reader says instead; without it the chip is hidden from them (a sample). */
+  srText?: string;
+  className?: string;
+  style?: CSSProperties;
+  title?: string;
+}) {
+  const late = delayS >= 60;
+  return (
+    <span
+      data-late={late ? "" : undefined}
+      aria-hidden={srText ? undefined : true}
+      title={title}
+      className={`inline-flex h-4 items-center justify-center whitespace-nowrap rounded-full text-[11px] font-bold ${
+        late ? "bg-white text-[#1d2433] outline outline-1 outline-black/20 dark:bg-[#111727] dark:text-white dark:outline-white/25" : ""
+      } ${className}`}
+      style={late ? { ...style, boxShadow: `inset 0 0 0 2px ${color}` } : { ...style, backgroundColor: color, color: onColor(color) }}
+    >
+      <span translate="no" className="notranslate" aria-hidden>{trainChipText(forward, delayS)}</span>
+      {srText && <span className="sr-only">{srText}</span>}
     </span>
   );
 }

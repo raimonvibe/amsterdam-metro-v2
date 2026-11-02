@@ -178,11 +178,27 @@ describe.each(["nl", "en"] as const)("browser translation (%s)", { timeout: PAGE
       <LineDiagram
         network={NETWORK} lineId="50" onLine={() => {}} stations={STATIONS} colorOf={() => "#3CB44B"} current={null}
         onStation={() => {}} nowMs={NOW * 1000}
-        trains={[onLine("a", "Isolatorweg", "Station Sloterdijk", 0), onLine("b", "Postjesweg", "Station Lelylaan", 180)]}
+        trains={[
+          onLine("a", "Isolatorweg", "Station Sloterdijk", 0),
+          onLine("b", "Postjesweg", "Station Lelylaan", 180),
+          onLine("c", "Station Zuid", "Station RAI", 125 * 60),
+        ]}
       />,
     );
     expect(container.textContent).toContain("✓");
     expect(container.textContent).toContain("+3′");
+    // 100 minutes and more: ">99′" fits the 36 px phone chip, "+125′" didn't.
+    expect(container.textContent).toContain(">99′");
+    expect(container.textContent).not.toContain("+125′");
+    expect(screen.getByText(/125 min (te laat|late)/)).toHaveClass("sr-only");
+    // Late trains are outlined, on-time ones filled: they stand out without
+    // reading every chip, and not by colour alone.
+    const shown = (late: boolean) =>
+      [...container.querySelectorAll(".absolute.rounded-full")]
+        .filter((c) => c.hasAttribute("data-late") === late)
+        .map((c) => c.querySelector('[translate="no"]')?.textContent);
+    expect(shown(true).sort()).toEqual(["↓ +3′", "↓ >99′"]);
+    expect(shown(false)).toEqual(["↓ ✓"]);
     // Phones and tablets, where the page's legend isn't shown, get the key under the chips.
     expect(screen.getByText(/✓ (op tijd of minuten te laat|on time or minutes late)/)).toBeInTheDocument();
     expect(wordsInTinyBoxes(container)).toEqual([]);

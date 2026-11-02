@@ -4,10 +4,9 @@ import { Place } from "../components/Place";
 import { AnimatedTrain, Station } from "../types";
 import { cumulativeMinutes, placeTrains } from "./diagram";
 import { JourneyLeg, NetworkLine } from "./types";
-import { LineBadge, Section, SkeletonRows, useNarrowScreen } from "./ui";
+import { LineBadge, Section, SkeletonRows, TrainChip, useNarrowScreen } from "./ui";
 import { useTravelT } from "./strings";
-import { onColor } from "../contrast";
-import { NO_TRANSLATE, Num } from "../components/Num";
+import { Num } from "../components/Num";
 
 /** Row height in px. Phones get two lines per station (name, then badges and
  *  travel time) so even "Station Bijlmer ArenA" fits; trains and the track are
@@ -156,32 +155,27 @@ export function LineDiagram({ network, lineId, onLine, trains, stations, colorOf
               })}
             </ol>
             {placed.map(({ train, pos, forward }) => (
-              <span
+              <TrainChip
                 key={train.id}
+                color={line.color}
+                forward={forward}
+                delayS={train.delay_s}
+                srText={train.delay_s >= 60 ? txt.minutesLate(Math.round(train.delay_s / 60)) : txt.onTime}
+                title={`${train.status === "dwelling" ? txt.standsAt : txt.runsPast} ${formatPlaceName(train.prev_station ?? "")}`}
                 // Phones: narrower chip columns, so station names keep their room.
-                className={`absolute z-[2] flex h-4 w-[2.25rem] -translate-y-1/2 items-center justify-center gap-0.5 rounded-full text-[11px] font-bold shadow-sm transition-[top] duration-1000 ease-linear sm:w-[4.5rem] ${
+                className={`absolute z-[2] w-[2.25rem] -translate-y-1/2 shadow-sm transition-[top] duration-1000 ease-linear sm:w-[4.5rem] ${
                   forward ? "right-[calc(2.5rem+0.375rem+0.125rem)] sm:right-[calc(4.75rem+0.375rem+0.125rem)]" : "right-0.5"
                 }`}
-                style={{ top: pos * rowH + rowH / 2, backgroundColor: line.color, color: onColor(line.color) }}
-                title={`${train.status === "dwelling" ? txt.standsAt : txt.runsPast} ${formatPlaceName(train.prev_station ?? "")}`}
-              >
-                {/* Symbols and numbers only: a word didn't fit this fixed chip
-                    once translated (Arabic "op tijd" ran out of it), and a
-                    translator even turned the arrow into a word ("أعلى", up).
-                    The word stays for screen readers; the legend explains. */}
-                <span {...NO_TRANSLATE} aria-hidden>
-                  {forward ? "↓" : "↑"} {train.delay_s >= 60 ? `+${Math.round(train.delay_s / 60)}′` : "✓"}
-                </span>
-                <span className="sr-only">{train.delay_s >= 60 ? txt.minutesLate(Math.round(train.delay_s / 60)) : txt.onTime}</span>
-              </span>
+                style={{ top: pos * rowH + rowH / 2 }}
+              />
             ))}
           </div>
           {/* What the chips mean, where the page's legend isn't shown (it is
               desktop-only). Wraps under the chips on a narrow phone. */}
           {placed.length > 0 && (
             <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-snug text-[#6b6455] lg:hidden dark:text-[#8b93a7]">
-              <span translate="no" className="notranslate inline-flex h-4 items-center rounded-full px-1.5 font-bold" style={{ backgroundColor: line.color, color: onColor(line.color) }} aria-hidden>↓ ✓</span>
-              <span translate="no" className="notranslate inline-flex h-4 items-center rounded-full px-1.5 font-bold" style={{ backgroundColor: line.color, color: onColor(line.color) }} aria-hidden>↑ +2′</span>
+              <TrainChip color={line.color} forward delayS={0} className="px-1.5" />
+              <TrainChip color={line.color} forward={false} delayS={120} className="px-1.5" />
               <span>{txt.chipsHint}</span>
             </p>
           )}
