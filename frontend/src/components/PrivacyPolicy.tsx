@@ -119,6 +119,19 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
                 looptijd, zonder trappen). Ook dit blijft in uw browser; wij ontvangen het niet.
               </li>
               <li>
+                <strong>Geplande reis (sessionStorage):</strong> De reis die u in de reisplanner
+                invult, blijft bewaard terwijl u heen en weer gaat tussen de kaart en
+                Reisinformatie. Uw browser wist dit zodra u het tabblad sluit; wij ontvangen het
+                niet.
+              </li>
+              <li>
+                <strong>Aanbod Engelse versie (localStorage):</strong> Staat Nederlands niet in de
+                taalinstellingen van uw browser, dan biedt de kaart eenmalig de Engelse versie aan.
+                Daarvoor leest de app alleen die taalinstelling; die wordt niet bewaard of
+                verstuurd. Sluit u het aanbod, dan onthoudt uw browser dat, zodat het niet
+                terugkomt. Eén instelling, geen identificatie; wij ontvangen deze niet.
+              </li>
+              <li>
                 <strong>Locatie (alleen op uw verzoek):</strong> Kiest u “Dichtstbijzijnde
                 station”, dan vraagt uw browser toestemming voor uw locatie. Het dichtstbijzijnde
                 station wordt in uw browser berekend; uw locatie wordt niet naar onze servers of
@@ -156,14 +169,16 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
                 kortetermijnserverlogs om de dienst betrouwbaar en veilig te houden.
               </li>
               <li>
-                <strong>Kaartstijl onthouden</strong> (art. 6 lid 1 onder f AVG — gerechtvaardigd
-                belang): een functionele instelling die nodig is om de app in de door u gekozen
-                stijl te tonen; u kunt dit wissen in uw browserinstellingen.
+                <strong>Kaartstijl, taal en het aanbod van de Engelse versie onthouden</strong>{" "}
+                (art. 6 lid 1 onder f AVG — gerechtvaardigd belang): functionele instellingen die
+                nodig zijn om de app te tonen zoals u hebt gekozen; u kunt ze wissen in uw
+                browserinstellingen.
               </li>
               <li>
-                <strong>Favorieten, recente stations en weergave-instellingen</strong> (art. 6 lid
-                1 onder f AVG): functionele gemakken op de pagina Reisinformatie; recente stations
-                kunt u op de pagina zelf wissen, alles via uw browserinstellingen.
+                <strong>Favorieten, recente stations, weergave-instellingen en de geplande
+                reis</strong> (art. 6 lid 1 onder f AVG): functionele gemakken op de pagina
+                Reisinformatie; recente stations kunt u op de pagina zelf wissen, alles via uw
+                browserinstellingen.
               </li>
               <li>
                 <strong>Dichtstbijzijnde station</strong> (art. 6 lid 1 onder a AVG — toestemming):
@@ -180,9 +195,11 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             <ul className="list-disc space-y-2 pl-5">
               <li>
                 <strong>Render Services, Inc.</strong> — cloudhosting voor de API-backend (en
-                statische site). Kan IP-adressen en requestmetadata in logs verwerken. Regio: EU
-                (Frankfurt) waar geconfigureerd; verwerking kan doorgang naar de Verenigde Staten
-                inhouden onder Render&apos;s{" "}
+                statische site). Kan IP-adressen en requestmetadata in logs verwerken. De servers
+                staan in Render&apos;s regio US West (Oregon, Verenigde Staten); verzoeken lopen
+                via het netwerk van Cloudflare, dat Render daarvoor gebruikt. Voor deze doorgifte
+                buiten de EU is Render gecertificeerd onder het EU-VS Data Privacy Framework, en
+                geldt Render&apos;s{" "}
                 <a
                   href="https://render.com/dpa"
                   className="underline underline-offset-2"
@@ -190,8 +207,8 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
                   rel="noopener noreferrer"
                 >
                   Data Processing Addendum
-                </a>{" "}
-                en toepasselijke waarborgen.
+                </a>
+                .
               </li>
               <li>
                 <strong>OpenFreeMap / OpenStreetMap / OpenMapTiles</strong> — kaarttegels geladen
@@ -214,10 +231,13 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
               6. Cookies en vergelijkbare technieken
             </h2>
             <p>
-              Deze app plaatst <strong>geen</strong> tracking- of advertentiecookies. De enige
-              opslag aan clientzijde is <strong>localStorage</strong> voor de kaartstijl, de taal en, op de
-              pagina Reisinformatie, voor uw favorieten, recente stations en weergave-instellingen:
-              functionele instellingen, geen tracking. U kunt dit op elk moment verwijderen via uw
+              Deze app plaatst zelf <strong>geen</strong> cookies en gebruikt geen tracking of
+              analytics. (Het netwerk van onze hostingprovider kan bij verdacht verkeer een
+              technisch beveiligingscookie zetten; dat valt buiten de app.) Wat in uw browser wordt bewaard, staat in sectie 3: in{" "}
+              <strong>localStorage</strong> de kaartstijl, de taal, het aanbod van de Engelse
+              versie en, op de pagina Reisinformatie, uw favorieten, recente stations en
+              weergave-instellingen; in <strong>sessionStorage</strong> de geplande reis. Dit zijn
+              functionele instellingen, geen tracking. U kunt ze op elk moment verwijderen via uw
               browserinstellingen.
             </p>
           </section>
@@ -226,19 +246,23 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             <h2 className="mb-2 font-semibold text-gray-900 dark:text-white">7. Bewaartermijnen</h2>
             <ul className="list-disc space-y-2 pl-5">
               <li>
-                <strong>localStorage (kaartstijl, taal):</strong> totdat u sitegegevens wist of een
-                andere stijl of taal kiest.
+                <strong>localStorage (kaartstijl, taal, aanbod Engelse versie):</strong> totdat u
+                sitegegevens wist of een andere stijl of taal kiest.
               </li>
               <li>
                 <strong>localStorage (reisinformatie):</strong> totdat u een favoriet verwijdert,
                 recente stations wist of sitegegevens wist.
               </li>
               <li>
+                <strong>sessionStorage (geplande reis):</strong> totdat u het tabblad sluit.
+              </li>
+              <li>
                 <strong>Locatie:</strong> niet bewaard; alleen gebruikt op het moment van de vraag.
               </li>
               <li>
-                <strong>Hostinglogs:</strong> bewaard door Render volgens uw hostingabonnement
-                (doorgaans 7–30 dagen), daarna automatisch verwijderd tenzij elders gestreamd.
+                <strong>Hostinglogs:</strong> bewaard door Render volgens ons hostingabonnement
+                (doorgaans 7–30 dagen), daarna automatisch verwijderd. Wij sturen deze logs niet
+                door naar andere diensten.
               </li>
             </ul>
           </section>
@@ -248,8 +272,9 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             <p>
               Als u in de Europese Economische Ruimte of het Verenigd Koninkrijk bent, heeft u
               mogelijk het recht op inzage, rectificatie, wissing, beperking of bezwaar tegen
-              verwerking van uw persoonsgegevens, en op dataportabiliteit waar van toepassing. De
-              opgeslagen kaartstijl kunt u op elk moment wissen via uw browserinstellingen.
+              verwerking van uw persoonsgegevens, en op dataportabiliteit waar van toepassing. Wat
+              in uw browser is opgeslagen (sectie 3), kunt u op elk moment zelf wissen via uw
+              browserinstellingen.
             </p>
             <p className="mt-2">
               Neem contact met ons op via{" "}
@@ -297,8 +322,7 @@ export function PrivacyPolicy({ onClose }: PrivacyPolicyProps) {
             </h2>
             <p>
               Wij kunnen dit privacybeleid van tijd tot tijd bijwerken. De datum
-              &quot;Laatst bijgewerkt&quot; bovenaan wijzigt wanneer wij dat doen. Voortgezet
-              gebruik van de app na wijzigingen geldt als acceptatie van het bijgewerkte beleid.
+              &quot;Laatst bijgewerkt&quot; bovenaan wijzigt wanneer wij dat doen.
             </p>
           </section>
 

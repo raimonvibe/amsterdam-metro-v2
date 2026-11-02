@@ -113,7 +113,7 @@ Local dev: leave unset → allows all origins.
 | Setting | Value |
 |---|---|
 | **Name** | `amsterdam-metro-api` |
-| **Region** | Frankfurt (closest to Amsterdam) |
+| **Region** | Frankfurt (closest to Amsterdam) is the intended region, but the live services run in **Oregon (US West)** (checked 2 Nov 2026: `dig api.amsterdammetro.nl` → `gcp-us-west1`). Render can't move a service between regions: moving means a new service in Frankfurt, then switching the domain. Until then the privacy policy names Oregon; change it (and `frontend/src/legal/storage.test.tsx`) when you move. |
 | **Root directory** | `backend` |
 | **Runtime** | Python 3 |
 | **Build command** | `pip install -r requirements.txt` (exact pins; ranges in `requirements.in`) |

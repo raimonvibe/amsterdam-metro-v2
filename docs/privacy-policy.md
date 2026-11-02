@@ -1,9 +1,9 @@
 # Privacy Policy — Amsterdam Metro Live
 
-**Last updated:** 2026-10-11  
+**Last updated:** 2026-11-02  
 **App URL:** https://amsterdammetro.nl
 
-The in-app version is shown at `/privacy` in the frontend. Operator details are defined in `frontend/src/legal/site.ts`.
+This is the English version of the privacy policy shown in the app at `/privacy` (in Dutch, `frontend/src/components/PrivacyPolicy.tsx`). The two say the same; if they ever differ, the Dutch version applies. Operator details are defined in `frontend/src/legal/site.ts`.
 
 ---
 
@@ -30,10 +30,14 @@ Amsterdam Metro Live is designed to collect as little personal data as possible.
 
 - **Map style (localStorage):** The chosen map style (e.g. Liberty, Dark) is stored in your browser so the app reopens in that style. A single setting, not an identifier; never sent to our servers.
 - **Language (localStorage):** If you pick Dutch or English, your browser keeps that choice so the app reopens in it. A single setting, not an identifier; never sent to our servers.
-- **Technical logs (hosting):** IP address, browser type, URL, and timestamp may be logged by our host when you use the site or API.
-- **Map and transit data:** Loaded from third-party services in your browser or by our backend (see section 5).
+- **Travel-info settings (localStorage):** On the travel-info page your browser keeps your favourite stations, the stations you viewed last (at most six) and your display settings (time window, show cancelled runs, walking time, avoid stairs). This stays in your browser; we don't receive it.
+- **Planned trip (sessionStorage):** The trip you enter in the journey planner is kept while you move between the map and the travel-info page. Your browser deletes it when you close the tab; we don't receive it.
+- **English version offer (localStorage):** If Dutch isn't among your browser's language settings, the map offers the English version once. For that, the app only reads that language setting; it isn't stored or sent anywhere. If you dismiss the offer, your browser remembers that so it doesn't come back. A single setting, not an identifier; never sent to our servers.
+- **Location (only when you ask):** If you choose "Nearest station", your browser asks for permission to use your location. The nearest station is worked out in your browser; your location is not sent to our servers or anyone else, and not stored.
+- **Technical logs (hosting):** When you load the app or call our API, our hosting provider may process technical data such as your IP address, browser type, the URL requested and a timestamp in server or HTTP access logs, for security and operations.
+- **Map and transit data:** Your browser loads map tiles and transit information directly from third parties (see section 5). They may process technical connection data under their own policies.
 
-We do not intentionally collect names, email addresses, precise location, or payment data through normal use.
+We do not knowingly collect names, email addresses, location data, payment data or other directly identifying information through normal use of the app.
 
 ---
 
@@ -41,66 +45,79 @@ We do not intentionally collect names, email addresses, precise location, or pay
 
 | Purpose | Legal basis |
 |---|---|
-| Providing the live metro map and API | Art. 6(1)(f) GDPR — legitimate interest |
-| Security and abuse prevention (server logs) | Art. 6(1)(f) GDPR |
-| Map style in localStorage | Art. 6(1)(f) GDPR — legitimate interest (functional setting needed to show the chosen style) |
+| Providing the live metro map, API and website | Art. 6(1)(f) GDPR — legitimate interest |
+| Security and abuse prevention (short-term server logs) | Art. 6(1)(f) GDPR |
+| Remembering map style, language and the English version offer | Art. 6(1)(f) GDPR — legitimate interest (functional settings to show the app as you chose); you can clear them in your browser settings |
+| Favourites, recent stations, display settings and the planned trip | Art. 6(1)(f) GDPR — functional conveniences on the travel-info page; recent stations can be cleared on the page itself, everything in your browser settings |
+| Nearest station | Art. 6(1)(a) GDPR — consent, given in your browser; processed only on your device |
 
 ---
 
-## 5. Third-party services
+## 5. Third parties (processors & recipients)
 
 | Provider | Role |
 |---|---|
-| **Render Services, Inc.** | Cloud hosting (API + static site). May log IP/request metadata. [DPA](https://render.com/dpa). |
-| **OpenFreeMap / OpenStreetMap / OpenMapTiles** | Map tiles in the browser |
-| **OVapi / openOV / NDOV** | Open transit data (server-side fetch) |
+| **Render Services, Inc.** | Cloud hosting for the API backend (and static site). May process IP addresses and request metadata in logs. The servers are in Render's US West region (Oregon, United States); requests pass through the Cloudflare network that Render uses for this. For this transfer outside the EU, Render is certified under the EU-U.S. Data Privacy Framework, and Render's [Data Processing Addendum](https://render.com/dpa) applies. |
+| **OpenFreeMap / OpenStreetMap / OpenMapTiles** | Map tiles loaded in your browser |
+| **OVapi / openOV / NDOV** | Open transit data fetched by our backend; we send them no personal data beyond ordinary HTTP requests from our server |
 
 We do not sell personal data or share it with advertisers.
 
 ---
 
-## 6. Cookies
+## 6. Cookies and similar technologies
 
-No tracking or advertising cookies. Only **localStorage** for the map style, the language and the travel-info settings: functional settings, not tracking.
+The app itself sets **no** cookies and uses no tracking or analytics. (Our hosting provider's network may set a technical security cookie when traffic looks suspicious; that is outside the app.) What is kept in your browser is listed in section 3: in **localStorage** the map style, the language, the English version offer and, on the travel-info page, your favourites, recent stations and display settings; in **sessionStorage** the planned trip. These are functional settings, not tracking. You can delete them at any time in your browser settings.
 
 ---
 
 ## 7. Retention
 
-- **localStorage:** Until cleared in browser settings
-- **Hosting logs:** Typically 7–30 days (Render plan-dependent)
+- **localStorage (map style, language, English version offer):** until you clear site data or choose another style or language
+- **localStorage (travel info):** until you remove a favourite, clear recent stations or clear site data
+- **sessionStorage (planned trip):** until you close the tab
+- **Location:** not stored; used only at the moment you ask
+- **Hosting logs:** kept by Render according to our hosting plan (typically 7–30 days), then deleted automatically. We don't forward these logs to other services.
 
 ---
 
 ## 8. Your rights
 
-EEA/UK users may request access, rectification, erasure, restriction, objection, or portability by emailing **info@raimonvibe.com**.
+If you are in the European Economic Area or the United Kingdom, you may have the right to access, rectification, erasure, restriction of or objection to processing of your personal data, and to data portability where applicable. What is stored in your browser (section 3) you can delete yourself at any time in your browser settings.
 
-Complaints: **Autoriteit Persoonsgegevens (AP)** — https://autoriteitpersoonsgegevens.nl/
+To exercise your rights, email **info@raimonvibe.com**. We reply within the legal period (usually one month under the GDPR).
+
+You have the right to lodge a complaint with the Dutch supervisory authority: **Autoriteit Persoonsgegevens (AP)** — https://autoriteitpersoonsgegevens.nl/
 
 ---
 
 ## 9. Security
 
-HTTPS, production CORS restrictions, and reputable hosting. No method is 100% secure.
+We use HTTPS, restrict CORS in production and rely on reputable hosting infrastructure. No method of transmission over the internet is 100% secure; we cannot guarantee absolute security.
 
 ---
 
 ## 10. Children
 
-Not directed at children under 16.
+The app is not directed at children under 16, and we do not knowingly collect personal data from children.
 
 ---
 
-## 11. Changes
+## 11. Changes to this policy
 
-We may update this policy; the date above will change.
+We may update this privacy policy from time to time. The "Last updated" date at the top changes when we do.
 
 ---
 
-## 12. Disclaimer
+## 12. Contact
 
-Amsterdam Metro Live is unofficial and not affiliated with GVB or the City of Amsterdam.
+Questions about this privacy policy or how we process data: Raimon — **info@raimonvibe.com** · raimonvibe · https://raimonvibe.eu
+
+---
+
+## Disclaimer
+
+Amsterdam Metro Live is an unofficial fan project. It is not affiliated with, endorsed by or operated by GVB (Gemeentelijk Vervoerbedrijf) or the City of Amsterdam.
 
 ---
 
