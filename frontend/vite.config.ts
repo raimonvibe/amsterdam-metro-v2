@@ -57,6 +57,11 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
+            // Vite's lazy-loading helper is shared by every dynamic import.
+            // Left to the groups below it landed in the deck.gl chunk, so the
+            // first lazy import fetched all of deck.gl (240 KB) with it, even
+            // for the preview still that never draws the map.
+            { name: "preload-helper", test: /preload-helper/, priority: 4 },
             { name: "maplibre", test: /node_modules[\\/](maplibre-gl|react-map-gl)[\\/]/, priority: 3 },
             { name: "deckgl", test: /node_modules[\\/](@deck\.gl|@luma\.gl|@loaders\.gl|@math\.gl|@probe\.gl)[\\/]/, priority: 2 },
             { name: "vendor", test: /node_modules[\\/]/, priority: 1 },

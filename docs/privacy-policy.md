@@ -30,6 +30,7 @@ Amsterdam Metro Live is designed to collect as little personal data as possible.
 
 - **Map style (localStorage):** The chosen map style (e.g. Liberty, Dark) is stored in your browser so the app reopens in that style. A single setting, not an identifier; never sent to our servers.
 - **Language (localStorage):** If you pick Dutch or English, your browser keeps that choice so the app reopens in it. A single setting, not an identifier; never sent to our servers.
+- **3D view (localStorage):** If you choose "Full" or "Light" in the menu, your browser keeps that choice. With "Auto" (the default) nothing is kept: the app checks in your browser how smoothly the map draws and picks for you. That measurement stays on your device; it isn't sent or stored.
 - **Travel-info settings (localStorage):** On the travel-info page your browser keeps your favourite stations, the stations you viewed last (at most six) and your display settings (time window, show cancelled runs, walking time, avoid stairs). This stays in your browser; we don't receive it.
 - **Planned trip (sessionStorage):** The trip you enter in the journey planner is kept while you move between the map and the travel-info page. Your browser deletes it when you close the tab; we don't receive it.
 - **English version offer (localStorage):** If Dutch isn't among your browser's language settings, the map offers the English version once. For that, the app only reads that language setting; it isn't stored or sent anywhere. If you dismiss the offer, your browser remembers that so it doesn't come back. A single setting, not an identifier; never sent to our servers.
@@ -47,7 +48,7 @@ We do not knowingly collect names, email addresses, location data, payment data 
 |---|---|
 | Providing the live metro map, API and website | Art. 6(1)(f) GDPR — legitimate interest |
 | Security and abuse prevention (short-term server logs) | Art. 6(1)(f) GDPR |
-| Remembering map style, language and the English version offer | Art. 6(1)(f) GDPR — legitimate interest (functional settings to show the app as you chose); you can clear them in your browser settings |
+| Remembering map style, language, 3D view and the English version offer | Art. 6(1)(f) GDPR — legitimate interest (functional settings to show the app as you chose); you can clear them in your browser settings |
 | Favourites, recent stations, display settings and the planned trip | Art. 6(1)(f) GDPR — functional conveniences on the travel-info page; recent stations can be cleared on the page itself, everything in your browser settings |
 | Nearest station | Art. 6(1)(a) GDPR — consent, given in your browser; processed only on your device |
 
@@ -67,13 +68,13 @@ We do not sell personal data or share it with advertisers.
 
 ## 6. Cookies and similar technologies
 
-The app itself sets **no** cookies and uses no tracking or analytics. (Our hosting provider's network may set a technical security cookie when traffic looks suspicious; that is outside the app.) What is kept in your browser is listed in section 3: in **localStorage** the map style, the language, the English version offer and, on the travel-info page, your favourites, recent stations and display settings; in **sessionStorage** the planned trip. These are functional settings, not tracking. You can delete them at any time in your browser settings.
+The app itself sets **no** cookies and uses no tracking or analytics. (Our hosting provider's network may set a technical security cookie when traffic looks suspicious; that is outside the app.) What is kept in your browser is listed in section 3: in **localStorage** the map style, the language, the 3D view, the English version offer and, on the travel-info page, your favourites, recent stations and display settings; in **sessionStorage** the planned trip. These are functional settings, not tracking. You can delete them at any time in your browser settings.
 
 ---
 
 ## 7. Retention
 
-- **localStorage (map style, language, English version offer):** until you clear site data or choose another style or language
+- **localStorage (map style, language, 3D view, English version offer):** until you clear site data or make another choice
 - **localStorage (travel info):** until you remove a favourite, clear recent stations or clear site data
 - **sessionStorage (planned trip):** until you close the tab
 - **Location:** not stored; used only at the moment you ask

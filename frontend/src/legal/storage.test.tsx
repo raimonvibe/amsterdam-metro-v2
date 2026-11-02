@@ -19,7 +19,7 @@ function keysInCode(dir = SRC): string[] {
     return readFileSync(path, "utf8")
       .split("\n")
       .filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line))
-      .flatMap((line) => [...line.matchAll(/"(metro-[a-z:-]+)"/g)].map((m) => m[1]));
+      .flatMap((line) => [...line.matchAll(/"(metro-[a-z0-9:-]+)"/g)].map((m) => m[1]));
   });
 }
 
