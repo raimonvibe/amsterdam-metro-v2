@@ -15,6 +15,8 @@ describe("site icons", () => {
     expect(size("favicon.ico")).toBeLessThan(30_000);
     expect(size("apple-touch-icon.png")).toBeLessThan(30_000);
     expect(size("icon-192.png")).toBeLessThan(30_000);
+    // Loaded on install, not every visit; still keep it off the 1024 px share image.
+    expect(size("icon-512.png")).toBeLessThan(80_000);
   });
 
   it("keep the favicon at /favicon.ico, with a size over 48 px for Google's result icon", () => {

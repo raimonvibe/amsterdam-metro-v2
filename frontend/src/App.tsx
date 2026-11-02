@@ -360,9 +360,9 @@ export default function App() {
             onMore={openTravelForSelection}
           />
         )}
-        {/* Touch screens: the followed train's popup has its own close button
-            and sits where this chip is, so the chip would only peek out
-            behind it. Desktop keeps it: there the popup ends with the hover. */}
+        {/* Phones: the followed train's card already has ✕ and sits near
+            the top-centre, so this chip would only peek out behind it.
+            Desktop keeps the chip at the top; the card is pinned to the train. */}
         {followedTrainId &&
           !NO_HOVER &&
           (() => {

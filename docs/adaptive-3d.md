@@ -69,9 +69,9 @@ the deck.gl chunk, so any lazy import fetched all of deck.gl). The first
 page now loads React, the translations and the app; MapLibre and deck.gl
 come with the map.
 
-Still on every visit, worth a separate fix: `favicon.ico` (135 KB),
-`social-share.png` (189 KB, as the touch icon) and the preloaded map data
-(`/api/shapes`, 190 KB) even when only the still shows.
+The favicon and the touch icon are now small files of their own.
+`social-share.png` stays the link-preview image. Still on every visit: the
+preloaded map data (`/api/shapes`, 190 KB), even when only the still shows.
 
 ## Search engines
 
