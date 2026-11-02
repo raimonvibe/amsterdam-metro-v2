@@ -550,6 +550,11 @@ function Legend() {
         <li>
           <span className="font-semibold text-[#b42335] dark:text-[#f08a9b]">{txt.cancelled}</span> {txt.legendCancelled}
         </li>
+        <li className="flex items-center gap-1.5">
+          <span translate="no" className="notranslate inline-flex h-4 items-center gap-1 rounded-full bg-[#1f3a68] px-1.5 text-[11px] font-bold text-white" aria-hidden>↓ ✓</span>
+          <span translate="no" className="notranslate inline-flex h-4 items-center gap-1 rounded-full bg-[#1f3a68] px-1.5 text-[11px] font-bold text-white" aria-hidden>↑ +2′</span>
+          {txt.legendChips}
+        </li>
         <li>{txt.legendTimes}</li>
       </ul>
     </Section>

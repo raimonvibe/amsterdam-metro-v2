@@ -64,6 +64,14 @@ So the layout must hold even when a number does get translated:
   optional detail that gives way first, a placeholder with a short
   version. `cutTranslatableText` in `translationAudit.test.tsx` fails on
   any other cut text a browser would translate.
+- **Tiny boxes hold symbols and numbers, no words.** A chip, badge or
+  pill of fixed small height (`h-3` to `h-5`) can't grow, and no
+  translation fits in it. The line overview's train chip said "op tijd";
+  in Arabic it ran out of its pill, and the translator even turned the
+  chip's arrow "↑" into a word («أعلى», "up"). It now shows "↓ ✓" or
+  "↑ +3′", marked `translate="no"`; the word is screen-reader text, and
+  the legend (Verklaring) explains the symbols. `wordsInTinyBoxes` in
+  `translationAudit.test.tsx` fails on any word in such a box.
 - **Hints inside input fields stay short.** An input's placeholder
   can't wrap, so a long one is cut off on a phone, more so translated.
   The phone hints (search, From/To, the station picker) are at most 22
@@ -243,6 +251,13 @@ proxy (`translate.goog`) can't show the site at all: the browser blocks
 its scripts and API calls there (CORS). Chrome's built-in translation
 is unaffected. Planned, for every language at once:
 [translate-proxy.md](translate-proxy.md).
+
+**In Arabic, the line overview's "on time" chips didn't fit their
+card. Other languages? A general fix?** The chips have a fixed size, so
+no language fits; the fix is no words in them at all (above): a ✓ for
+on time, minutes for late. Checked every other tiny box on the travel
+page, map sidebar, station card and train popup with the new audit test:
+none holds words.
 
 ## Not done, on purpose
 
