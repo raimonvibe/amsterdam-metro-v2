@@ -1,12 +1,12 @@
 {
-  "updated": "2026-11-01",
-  "lift_check": "2026-11-01",
+  "updated": "2026-11-02",
+  "lift_check": "2026-11-02",
   "stations": {
     "Amsterdam, Amstelstation": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/4040491812",
-      "note": "GVB station page (CHB), 2026-10-27",
+      "note": "GVB station page NL:S:30009514 (CHB, metro 51/53/54): Rolstoelvriendelijk, 2026-11-02",
       "gvb_search": "Amstel"
     },
     "Amsterdam, Amstelveenseweg": {
@@ -34,8 +34,9 @@
       "step_free": "no",
       "source": "checked",
       "osm": "node/5424713348",
-      "note": "GVB station page NL:Q:30009905 (CHB): niet rolstoelvriendelijk, 2026-10-27; recheck that this is the metro stop",
-      "gvb_search": "Centraal"
+      "note": "GVB station pages NL:S:30009500 (metro 51/53/54) and NL:S:30009575 (metro 52) (CHB): Rolstoelvriendelijk, 2026-11-02 (the earlier NL:Q:30009905 was not the metro stop). Two metro lifts in GVB's lift faults (hall Stationsplein Oost–platform 51/53/54; busstation IJzijde–IJhal–metro 52); set back to yes once neither is listed",
+      "gvb_search": "Centraal",
+      "lift_out": true
     },
     "Amsterdam, De Pijp": {
       "step_free": "yes",
@@ -129,11 +130,12 @@
       "gvb_search": "Noorderpark"
     },
     "Amsterdam, Overamstel": {
-      "step_free": "yes",
+      "step_free": "no",
       "source": "checked",
       "osm": "node/427565080",
-      "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Overamstel"
+      "note": "GVB station page (CHB): Rolstoelvriendelijk, 2026-10-27; lift street–platform towards Isolatorweg (track 2 and 4) in GVB's lift faults since 2026-11-02; set back to yes once it is no longer listed",
+      "gvb_search": "Overamstel",
+      "lift_out": true
     },
     "Amsterdam, Postjesweg": {
       "step_free": "yes",
@@ -256,12 +258,11 @@
       "gvb_search": "Wibautstraat"
     },
     "Diemen, Station Diemen Zuid": {
-      "step_free": "no",
+      "step_free": "yes",
       "source": "checked",
       "osm": "node/14140826449",
-      "note": "GVB station page (CHB) says accessible, 2026-10-27, but its lift has been reported broken since Nov 2023; set back to yes once GVB's lift faults no longer list it",
-      "gvb_search": "Diemen Zuid",
-      "lift_out": true
+      "note": "GVB station page NL:S:30009542 (CHB): Rolstoelvriendelijk; lift no longer in GVB's lift faults (listed since Nov 2023), 2026-11-02",
+      "gvb_search": "Diemen Zuid"
     },
     "Diemen, Verrijn Stuartweg": {
       "step_free": "yes",
@@ -271,11 +272,10 @@
       "gvb_search": "Stuartweg"
     },
     "Duivendrecht, Station Duivendrecht": {
-      "step_free": "no",
-      "source": "osm",
+      "step_free": "yes",
+      "source": "checked",
       "osm": "node/4041666291",
-      "osm_wheelchair": "yes",
-      "note": "Not checked on GVB's station page yet, so not step-free until it is",
+      "note": "GVB station page NL:S:30009551 (CHB, metro 50/54): Rolstoelvriendelijk, no lift fault, 2026-11-02",
       "gvb_search": "Duivendrecht"
     }
   }
