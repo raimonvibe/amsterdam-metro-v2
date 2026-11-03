@@ -8,4 +8,4 @@ certifi>=2026.10.19
 anyio>=4.15.1
 gtfs-realtime-bindings>=3.0.0
 protobuf>=7.36.2
-tzdata>=2026.5
+tzdata>=2026.6
