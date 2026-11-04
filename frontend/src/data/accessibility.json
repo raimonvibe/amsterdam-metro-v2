@@ -1,6 +1,6 @@
 {
-  "updated": "2026-11-02",
-  "lift_check": "2026-11-02",
+  "updated": "2026-11-04",
+  "lift_check": "2026-11-04",
   "stations": {
     "Amsterdam, Amstelstation": {
       "step_free": "yes",
@@ -31,12 +31,11 @@
       "gvb_search": "Vlugtlaan"
     },
     "Amsterdam, Centraal Station": {
-      "step_free": "no",
+      "step_free": "yes",
       "source": "checked",
       "osm": "node/5424713348",
-      "note": "GVB station pages NL:S:30009500 (metro 51/53/54) and NL:S:30009575 (metro 52) (CHB): Rolstoelvriendelijk, 2026-11-02 (the earlier NL:Q:30009905 was not the metro stop). Two metro lifts in GVB's lift faults (hall Stationsplein Oost–platform 51/53/54; busstation IJzijde–IJhal–metro 52); set back to yes once neither is listed",
-      "gvb_search": "Centraal",
-      "lift_out": true
+      "note": "GVB station pages NL:S:30009500 (metro 51/53/54) and NL:S:30009575 (metro 52) (CHB): Rolstoelvriendelijk, 2026-11-02 (the earlier NL:Q:30009905 was not the metro stop). Its two metro lift faults no longer listed, 2026-11-04",
+      "gvb_search": "Centraal"
     },
     "Amsterdam, De Pijp": {
       "step_free": "yes",
