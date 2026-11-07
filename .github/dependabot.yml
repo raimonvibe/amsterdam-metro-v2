@@ -10,6 +10,13 @@ updates:
       interval: weekly
       day: saturday
     open-pull-requests-limit: 10
+    groups:
+      npm-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: pip
     directory: /backend
@@ -17,6 +24,13 @@ updates:
       interval: weekly
       day: saturday
     open-pull-requests-limit: 10
+    groups:
+      pip-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: github-actions
     directory: /
@@ -24,3 +38,10 @@ updates:
       interval: weekly
       day: saturday
     open-pull-requests-limit: 5
+    groups:
+      actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
