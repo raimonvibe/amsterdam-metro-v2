@@ -6,11 +6,7 @@
   <img src="docs/demo.gif" width="320" alt="Amsterdam Metro Live on a phone: a live line 53 train near Amstelstation on the 3D map, with its card showing progress, stops left and arrival time">
 </p>
 
-![Amsterdam Metro Live — Centraal Station, Nieuwmarkt and Waterlooplein at dusk, with live trains glowing on the shared corridor](docs/screenshot3.png)
-
 Built in the spirit of [londonunderground.live](https://www.londonunderground.live/) 🇬🇧 — but for Amsterdam 🇳🇱, with five map styles 🌗 and a full travel-info page 🧭 next to the live map.
-
----
 
 ## ✨ What it does
 
@@ -27,6 +23,8 @@ Built in the spirit of [londonunderground.live](https://www.londonunderground.li
 - 💫 **Fading motion trails** behind every train, so movement reads at a glance
 - 🌗 **Five map styles**: Liberty, Bright, Licht, Donker and Fiord. Each one drives the whole light or dark look, and your pick is remembered across visits
 - 🎬 Opens with a cinematic fly-in, landing right on the busiest, most building-dense part of the network
+
+![Amsterdam Metro Live — Centraal Station, Nieuwmarkt and Waterlooplein at dusk, with live trains glowing on the shared corridor](docs/screenshot3.png)
 
 ## 🧭 Reisinformatie: the travel-info page
 
