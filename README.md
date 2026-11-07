@@ -2,6 +2,10 @@
 
 > **Live site:** [amsterdammetro.nl](https://amsterdammetro.nl) — a 3D, orbitable map of Amsterdam's GVB metro with real trains on real track geometry, in real time.
 
+<p align="center">
+  <img src="docs/demo.gif" width="320" alt="Amsterdam Metro Live on a phone: a live line 53 train near Amstelstation on the 3D map, with its card showing progress, stops left and arrival time">
+</p>
+
 ![Amsterdam Metro Live — Centraal Station, Nieuwmarkt and Waterlooplein at dusk, with live trains glowing on the shared corridor](docs/screenshot3.png)
 
 Built in the spirit of [londonunderground.live](https://www.londonunderground.live/) 🇬🇧 — but for Amsterdam 🇳🇱, with five map styles 🌗 and a full travel-info page 🧭 next to the live map.
