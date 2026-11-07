@@ -41,6 +41,8 @@ A second page at **[amsterdammetro.nl/reisinfo](https://amsterdammetro.nl/reisin
 - ⌨️ **Keyboard shortcuts** (`/`, `F`, `P`, `?`, `Esc`). Letter keys can be switched off for speech-input users (WCAG 2.1.4)
 - 📱 **Built for phones** with tabs. Going back to the map lands on the station you were viewing
 
+![Reisinformatie: departures per direction at Station Zuid, with platforms, delays and minutes to go, next to the journey planner from Station Zuid to De Pijp](docs/screenshot-reisinfo.png)
+
 ## 🧠 How it works
 
 Amsterdam's metro fleet — like London's — publishes **no GPS positions**. So instead of tracking trains directly, this app derives their position the same way [londonunderground.live](https://www.londonunderground.live/) does for the Underground:
