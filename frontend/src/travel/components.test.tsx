@@ -431,7 +431,7 @@ describe("JourneyPlanner", () => {
       { ...journey(3, 30, 1).legs[1], from: b, to: c },
     ],
   });
-  const stepFreeTrip = via("Amsterdam, De Pijp", "Amsterdam, Waterlooplein", "Amsterdam, Nieuwmarkt");
+  const stepFreeTrip = via("Amsterdam, De Pijp", "Amsterdam, Rokin", "Amsterdam, Nieuwmarkt");
 
   it("counts only the stations a rider uses as possible stairs", () => {
     expect(stairsOn(via("Amsterdam, Strandvliet", "Nowhere, Atlantis", "Amsterdam, De Pijp"))).toEqual([
@@ -497,7 +497,7 @@ describe("JourneyPlanner", () => {
     // Step-free by design is only step-free today while the lifts work.
     const lifts = screen.getByText(/zolang de liften werken/).closest("div")!;
     expect(within(lifts).getByRole("link", { name: "Liftstoringen bij GVB" })).toBeInTheDocument();
-    for (const term of ["De Pijp", "Waterlooplein", "Nieuwmarkt"]) {
+    for (const term of ["De Pijp", "Rokin", "Nieuwmarkt"]) {
       expect(within(lifts).getByRole("button", { name: `Kopieer "${term}"` })).toBeInTheDocument();
     }
     expect(lifts).toHaveTextContent("0 resultaten = nu geen storing");
@@ -539,11 +539,11 @@ describe("JourneyPlanner", () => {
     vi.useFakeTimers({ toFake: ["Date"], now: Date.parse(`${LIFT_CHECK}T12:00:00Z`) });
     try {
       const j = journey(3, 30, 0);
-      j.legs[0] = { ...j.legs[0], to: "Amsterdam, Station Lelylaan" };
+      j.legs[0] = { ...j.legs[0], to: "Amsterdam, Overamstel" };
       renderPlanner([j], vi.fn(), { avoidStairs: true, onAvoidStairs: vi.fn() });
       const warning = (await screen.findByText(/Niet zeker zonder trappen/)).closest("p")!;
-      expect(warning).toHaveTextContent(`Lelylaan (lift buiten gebruik, ${shortDate(LIFT_CHECK, "nl")})`);
-      expect(screen.getByRole("button", { name: 'Kopieer "Lelylaan"' })).toBeInTheDocument();
+      expect(warning).toHaveTextContent(`Overamstel (lift buiten gebruik, ${shortDate(LIFT_CHECK, "nl")})`);
+      expect(screen.getByRole("button", { name: 'Kopieer "Overamstel"' })).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }

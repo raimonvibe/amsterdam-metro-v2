@@ -1,6 +1,6 @@
 {
-  "updated": "2026-11-04",
-  "lift_check": "2026-11-04",
+  "updated": "2026-11-07",
+  "lift_check": "2026-11-07",
   "stations": {
     "Amsterdam, Amstelstation": {
       "step_free": "yes",
@@ -179,12 +179,11 @@
       "gvb_search": "Holendrecht"
     },
     "Amsterdam, Station Lelylaan": {
-      "step_free": "no",
+      "step_free": "yes",
       "source": "checked",
       "osm": "node/14127078780",
-      "note": "GVB station page (CHB) says accessible, 2026-10-27, but GVB's lift faults list its metro lift as out of service; set back to yes once they no longer list it",
-      "gvb_search": "Lelylaan",
-      "lift_out": true
+      "note": "GVB station page (CHB): Rolstoelvriendelijk, 2026-10-27 and 2026-11-07; lift fault gone 2026-11-07",
+      "gvb_search": "Lelylaan"
     },
     "Amsterdam, Station RAI": {
       "step_free": "yes",
@@ -236,11 +235,12 @@
       "gvb_search": "Vijzelgracht"
     },
     "Amsterdam, Waterlooplein": {
-      "step_free": "yes",
+      "step_free": "no",
       "source": "checked",
       "osm": "way/268782305",
-      "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Waterlooplein"
+      "note": "GVB station page (CHB): Rolstoelvriendelijk, 2026-10-27; lift between street and station in GVB's lift faults since 2026-11-07; set back to yes once it is no longer listed",
+      "gvb_search": "Waterlooplein",
+      "lift_out": true
     },
     "Amsterdam, Weesperplein": {
       "step_free": "yes",
