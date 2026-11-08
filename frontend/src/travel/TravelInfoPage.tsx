@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Activity, ArrowLeft, Clock, Keyboard, LucideIcon, MapPin, Moon, Route, Sun, TrainTrack } from "lucide-react";
 import { fetchNetwork } from "../api";
-import { formatPlaceName, fullPlaceName } from "../format";
+import { formatPlaceName } from "../format";
 import { Theme } from "../theme";
 import { AnimatedTrain, Line, ServiceAlert, Station, Status } from "../types";
 import { JourneyPlanner } from "./JourneyPlanner";
@@ -17,8 +17,10 @@ import { clockWithSeconds } from "./time";
 import { JourneyLeg, NetworkLine } from "./types";
 import { Crest, Section, TrainChip } from "./ui";
 import { readParams, resolveStation, writeParams } from "./url";
-import { getLang, useT } from "../i18n";
-import { pagePath } from "../i18n/paths";
+import { getLang, useLang, useT } from "../i18n";
+import { pagePath, stationPath, stationSlugOfPath } from "../i18n/paths";
+import { stationOfSlug, stationSlug } from "../data/network";
+import { setPageMeta, setStationMeta } from "../seo/site";
 import { Num } from "../components/Num";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { useTravelT } from "./strings";
@@ -53,7 +55,14 @@ const DEFAULT_STATION = "Amsterdam, Centraal Station";
 export default function TravelInfoPage({ stations, lines, trains, status, theme, onToggleTheme, onClose, onShowOnMap, alerts = [] }: TravelInfoPageProps) {
   const txt = useTravelT();
   const appName = useT().appName;
-  const initial = useMemo(() => readParams(window.location.search), []);
+  const lang = useLang();
+  // A station page's path names the station (/reisinfo/zuid); older links
+  // name it in the query (?station=Zuid), and both keep working.
+  const initial = useMemo(() => {
+    const params = readParams(window.location.search);
+    const slug = stationSlugOfPath(window.location.pathname);
+    return slug ? { ...params, station: stationOfSlug(slug) ?? slug } : params;
+  }, []);
   // Back from the map the link names at most a station: pick up the trip
   // planned before, unless the link names one of its own.
   const kept = useMemo(() => (initial.from || initial.to ? null : loadTrip()), [initial]);
@@ -107,8 +116,11 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
   // Keep the address bar shareable without adding history entries.
   useEffect(() => {
     if (!ready) return;
-    const qs = writeParams({ station, from, to, line: lineId });
-    window.history.replaceState(window.history.state, "", `${pagePath("/reisinfo", getLang())}${qs}`);
+    // The station lives in the path, the rest in the query: one address per
+    // station, whose canonical (below) ignores the query.
+    const qs = writeParams({ station: null, from, to, line: lineId });
+    const path = station ? stationPath(stationSlug(station.name), getLang()) : pagePath("/reisinfo", getLang());
+    window.history.replaceState(window.history.state, "", `${path}${qs}`);
   }, [ready, station, from, to, lineId]);
 
   useEffect(() => {
@@ -116,8 +128,9 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
   }, [ready, fromName, toName, tab]);
 
   useEffect(() => {
-    document.title = station ? txt.docTitleStation(fullPlaceName(station.name)) : txt.docTitle;
-  }, [station, txt]);
+    if (station) setStationMeta(station.name, lang);
+    else setPageMeta("/reisinfo", lang);
+  }, [station, lang]);
 
   // Tick just after each whole second, not every 1000 ms from mount: a free
   // interval drifts against the second boundary and the clocks then skip or

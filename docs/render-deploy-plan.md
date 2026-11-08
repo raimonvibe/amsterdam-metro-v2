@@ -170,11 +170,11 @@ curl https://api.amsterdammetro.nl/api/status
 
 > **Important:** Static sites bake env vars into the build. If the backend URL changes, **redeploy** the frontend.
 
-### SPA routing
+### Routing (dashboard)
 
-Render static sites do **not** read a `_redirects` file (that is a Netlify convention). Add the rule in the dashboard: **Manage → Redirects/Rewrites** → Source `/*`, Destination `/index.html`, action **Rewrite**. Without it, opening `/privacy` or `/reisinfo` directly (shared link, refresh, search engines) returns 404. Real files (`/assets/…`, `/sitemap.xml`, `/robots.txt`) are still served as-is.
+Render static sites do **not** read a `_redirects` file (that is a Netlify convention), and routing rules set in the dashboard stay there until removed by hand: a Blueprint (`render.yaml`) adds or changes rules but keeps the ones it doesn't mention. Set them in **Manage → Redirects/Rewrites**.
 
-The build also writes an `index.html` for every other page and language: `reisinfo/`, `privacy/`, `en/`, `en/reisinfo/` and `en/privacy/`. Each is a copy of the entry page whose language, title, description, canonical, hreflang and social tags already name that page (see `frontend/src/seo/routeHtml.ts` and [english-urls.md](english-urls.md)), so crawlers that read the HTML before running JavaScript don't see the Dutch homepage there. Add these rewrites **above** the `/*` rule, because rules run top to bottom:
+The build writes an `index.html` for every page and language: `reisinfo/`, `privacy/`, `en/`, `en/reisinfo/`, `en/privacy/`, and one per station (`reisinfo/zuid/`, `en/reisinfo/zuid/`, …, 39 × 2). Each is a copy of the entry page whose language, title, description, canonical, hreflang and social tags already name that page, with crawlable text of its own (see `frontend/src/seo/routeHtml.ts`, [english-urls.md](english-urls.md) and [seo-tidy-plan.md](seo-tidy-plan.md)). It also writes `sitemap.xml` and `404.html`.
 
 | Source | Destination | Action |
 |---|---|---|
@@ -184,11 +184,28 @@ The build also writes an `index.html` for every other page and language: `reisin
 | `/en/` | `/en/index.html` | Rewrite |
 | `/en/reisinfo` | `/en/reisinfo/index.html` | Rewrite |
 | `/en/privacy` | `/en/privacy/index.html` | Rewrite |
-| `/*` | `/index.html` | Rewrite |
+| `/reisinfo/:station` | `/reisinfo/:station/index.html` | Rewrite |
+| `/en/reisinfo/:station` | `/en/reisinfo/:station/index.html` | Rewrite |
 
-The four `/en` rules can go in **before** the English pages are deployed: until then they point at files that don't exist yet, on URLs nothing links to.
+**No `/*` catch-all.** Until Nov 2026 a `/*` → `/index.html` rule answered every address, including made-up ones, with the homepage and status 200: Google can treat those as real pages ("soft 404s"). Without it, Render serves `404.html` with status 404 for any address no file or rule matches ([Render community answer](https://community.render.com/t/custom-404-error-page/746); Render's own docs don't state it, so the checks below confirm it). **Delete the `/*` rule in the dashboard by hand**: deploying `render.yaml` does not remove it.
 
-Check after deploy: `curl -s https://amsterdammetro.nl/reisinfo | grep canonical` should print `…/reisinfo`, not `…/`, and `curl -s https://amsterdammetro.nl/en/reisinfo | grep -E '<html|canonical'` should print `lang="en"` and `…/en/reisinfo`.
+`npm run preview` in `frontend/` answers the same way (see `liveRouting()` in `vite.config.ts`), so all of this can be tried locally first.
+
+Check after deploy:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}
+" https://amsterdammetro.nl/reisinfo/zuid      # 200
+curl -s https://amsterdammetro.nl/reisinfo/zuid | grep -E "<title>|canonical"          # Station Zuid, …/reisinfo/zuid
+curl -s https://amsterdammetro.nl/en/reisinfo/bijlmer-arena | grep -E "<html|canonical" # lang="en", …/en/reisinfo/bijlmer-arena
+curl -s -o /dev/null -w "%{http_code}
+" https://amsterdammetro.nl/does-not-exist      # 404
+curl -s -o /dev/null -w "%{http_code}
+" https://amsterdammetro.nl/reisinfo/amstel     # 404 (the page suggests three stations)
+curl -s https://amsterdammetro.nl/sitemap.xml | grep -c "<loc>"                         # 82
+```
+
+If `/reisinfo/zuid` gives 404, the placeholder rules aren't working on Render: add the 78 station rules one by one instead (`/reisinfo/zuid` → `/reisinfo/zuid/index.html`, …; the slugs are the folder names under `dist/reisinfo/`), or ask Render support. If `/does-not-exist` gives 200, the `/*` rule is still in the dashboard.
 
 ### HTTP response headers (dashboard)
 
@@ -197,7 +214,7 @@ Render reads these only from the dashboard (**amsterdam-metro → Settings → H
 | Request path | Header | Value |
 |---|---|---|
 | `/assets/*` | `Cache-Control` | `public, max-age=31536000, immutable` |
-| `/`, `/index.html`, `/reisinfo`, `/privacy`, `/en`, `/en/`, `/en/reisinfo`, `/en/privacy` | `Cache-Control` | `no-cache` (one row per path) |
+| `/`, `/index.html`, `/reisinfo`, `/privacy`, `/en`, `/en/`, `/en/reisinfo`, `/en/privacy`, `/reisinfo/*`, `/en/reisinfo/*` | `Cache-Control` | `no-cache` (one row per path) |
 | `/*` | `Referrer-Policy` | `strict-origin-when-cross-origin` |
 | `/*` | `Content-Security-Policy-Report-Only` | the CSP from `render.yaml` (one line; the single quotes around `'self'`, `'none'` and `'unsafe-inline'` are part of the value) |
 | `/*` | `Strict-Transport-Security` | `max-age=31536000` |

@@ -3,14 +3,16 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Lang } from "../i18n";
 import { type Page, pagePath } from "../i18n/paths";
-import { ROUTE_PAGES, routeDir, routeHtml } from "./routeHtml";
+import { ROUTE_PAGES, STATION_PAGES, linesHtml, routeDir, routeHtml, sitemapXml, stationBody, stationHtml } from "./routeHtml";
+import { notFoundHtml, NICKNAMES } from "./notFound";
+import { STATION_NAMES, stationOfSlug, stationSlug } from "../data/network";
 import { IMAGE_ALT, INDEXED_PAGES, PAGE_META, SITE_NAME } from "./site";
 
 // The real entry page, so a change to its head is caught here too. Vitest
 // runs from frontend/ (the test environment is jsdom, so no file: import.meta.url).
 const INDEX = readFileSync(join(process.cwd(), "index.html"), "utf8");
 const RENDER_YAML = readFileSync(join(process.cwd(), "..", "render.yaml"), "utf8").replace(/\r\n/g, "\n");
-const SITEMAP = readFileSync(join(process.cwd(), "public", "sitemap.xml"), "utf8");
+const SITEMAP = sitemapXml();
 const BASE = "https://amsterdammetro.nl";
 
 /** The Dutch homepage is index.html itself; every other page is built. */
@@ -94,6 +96,21 @@ describe("routeHtml", () => {
     }
   });
 
+  it("gives crawlers enough words: intro plus every metro line and its stations", () => {
+    const words = (html: string) => html.replace(/<[^>]+>/g, " ").split(/\s+/).filter((w) => /\w/.test(w)).length;
+    const home = INDEX.match(/<noscript>([\s\S]*?)<\/noscript>/)![1].replace(/\r\n/g, "\n");
+    expect(home).toContain(linesHtml("nl"));
+    expect(words(home)).toBeGreaterThan(200);
+    for (const route of ROUTE_PAGES.filter((r) => !r.noindex)) {
+      expect(route.body).toContain(linesHtml(route.lang));
+      expect(words(route.body)).toBeGreaterThan(200);
+    }
+  });
+
+  it("claims no app ratings it does not have (SoftwareApplication needs a rating or review)", () => {
+    expect(INDEX).not.toMatch(/"@type":\s*"(SoftwareApplication|WebApplication|MobileApplication)"/);
+  });
+
   it("fails loudly when the page no longer has a tag it must rewrite", () => {
     const noCanonical = INDEX.replace(/<link rel="canonical"[^>]*>/, "");
     expect(() => routeHtml(noCanonical, ROUTE_PAGES[0])).toThrow(/canonical/);
@@ -106,26 +123,117 @@ describe("deploy config", () => {
   // Render's dashboard is what production reads; render.yaml mirrors it
   // (docs/render-deploy-plan.md). Without a rewrite, a built page is never
   // served and crawlers get the Dutch homepage's head at its URL.
-  it("has a rewrite for every built page, above the catch-all", () => {
-    const catchAll = RENDER_YAML.indexOf("source: /*\n");
-    expect(catchAll).toBeGreaterThan(0);
+  it("has a rewrite for every built page, and no catch-all", () => {
     for (const route of ROUTE_PAGES) {
       const dir = routeDir(route);
-      const rule = RENDER_YAML.indexOf(`source: /${dir}\n        destination: /${dir}/index.html\n`);
-      expect(rule, `rewrite for /${dir}`).toBeGreaterThan(0);
-      expect(rule).toBeLessThan(catchAll);
+      expect(RENDER_YAML, `rewrite for /${dir}`).toContain(`source: /${dir}\n        destination: /${dir}/index.html\n`);
     }
+    for (const prefix of ["", "/en"]) {
+      expect(RENDER_YAML).toContain(`source: ${prefix}/reisinfo/:station\n        destination: ${prefix}/reisinfo/:station/index.html\n`);
+    }
+    // A catch-all answers every made-up address with the homepage and 200.
+    expect(RENDER_YAML).not.toMatch(/source: \/\*\n/);
   });
 
   it("revalidates every page's HTML", () => {
     for (const route of ROUTE_PAGES) {
       expect(RENDER_YAML).toContain(`- path: /${routeDir(route)}\n        name: Cache-Control\n        value: no-cache\n`);
     }
+    for (const prefix of ["", "/en"]) {
+      expect(RENDER_YAML).toContain(`- path: ${prefix}/reisinfo/*\n        name: Cache-Control\n        value: no-cache\n`);
+    }
   });
 
   it("lists exactly the indexed pages in the sitemap, in both languages", () => {
     const locs = [...SITEMAP.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]).sort();
-    const expected = INDEXED_PAGES.flatMap((p) => [`${BASE}${pagePath(p, "nl")}`, `${BASE}${pagePath(p, "en")}`]).sort();
+    const expected = [
+      ...INDEXED_PAGES.flatMap((p) => [`${BASE}${pagePath(p, "nl")}`, `${BASE}${pagePath(p, "en")}`]),
+      ...STATION_PAGES.filter((p) => p.indexed).map((p) => `${BASE}/${p.dir}`),
+    ].sort();
     expect(locs).toEqual(expected);
+    // No lastmod: nothing records when a page changed, and a wrong date is noise.
+    expect(SITEMAP).not.toContain("<lastmod>");
+  });
+});
+
+describe("station pages", () => {
+  const html = (name: string, lang: "nl" | "en" = "nl") =>
+    stationHtml(INDEX, STATION_PAGES.find((p) => p.name === name && p.lang === lang)!);
+
+  it("gives every station one page per language, at a unique short address", () => {
+    expect(STATION_PAGES).toHaveLength(STATION_NAMES.length * 2);
+    const slugs = STATION_NAMES.map(stationSlug);
+    expect(new Set(slugs).size).toBe(slugs.length);
+    expect(slugs).toContain("zuid");
+    expect(slugs).toContain("bijlmer-arena");
+    expect(slugs).toContain("centraal-station");
+    for (const n of STATION_NAMES) expect(stationOfSlug(stationSlug(n))).toBe(n);
+  });
+
+  it("names the station in title, canonical, hreflang and breadcrumb", () => {
+    const page = html("Amsterdam, Station Zuid", "en");
+    expect(page).toContain('<html lang="en">');
+    expect(page).toContain("<title>Station Zuid — metro 50, 51, 52: departures &amp; step-free access | Amsterdam Metro Live</title>");
+    expect(page).toContain(`<link rel="canonical" href="${BASE}/en/reisinfo/zuid" />`);
+    expect(hreflangs(page)).toEqual([`nl ${BASE}/reisinfo/zuid`, `en ${BASE}/en/reisinfo/zuid`, `x-default ${BASE}/reisinfo/zuid`]);
+    expect(page).toContain('"@type":"BreadcrumbList"');
+    expect(page).toContain(`"item":"${BASE}/en/reisinfo/zuid"`);
+  });
+
+  it("says only stable facts: no live times, no lift faults", () => {
+    for (const p of STATION_PAGES) {
+      const body = stationBody(p.name, p.lang);
+      expect(body).not.toMatch(/\b\d{1,2}:\d{2}\b/);
+      expect(body).not.toMatch(/buiten gebruik \(|out of service \(|lift_out/);
+    }
+  });
+
+  it("gives each station's text its own facts, not a shared paragraph", () => {
+    const bodies = STATION_PAGES.filter((p) => p.lang === "nl").map((p) => stationBody(p.name, "nl"));
+    expect(new Set(bodies).size).toBe(bodies.length);
+    const words = (s: string) => s.replace(/<[^>]+>/g, " ").split(/\s+/).filter((w) => /\w/.test(w)).length;
+    for (const b of bodies) expect(words(b)).toBeGreaterThan(60);
+  });
+
+  it("tells GVB's rating as GVB gives it, with the station's GVB page", () => {
+    // Overamstel's lift is out, but GVB's page says Rolstoelvriendelijk.
+    const over = stationBody("Amsterdam, Overamstel", "nl");
+    expect(over).toContain("Volgens de haltepagina van GVB is Overamstel rolstoelvriendelijk");
+    expect(over).toContain('zoek "Overamstel"');
+    expect(over).toContain("https://www.gvb.nl/reisinformatie/halte/NL:Q:30009563");
+    expect(stationBody("Amsterdam, Gein", "nl")).toContain("Volgens de haltepagina van GVB is Gein niet rolstoelvriendelijk");
+    // Centraal has two metro stops on GVB's site.
+    expect(stationBody("Amsterdam, Centraal Station", "en").match(/gvb\.nl\/reisinformatie\/halte\//g)).toHaveLength(2);
+  });
+
+  it("links each direction's next station, in the page's language", () => {
+    const body = stationBody("Amsterdam, Noord", "en");
+    expect(body).toContain('towards Station Zuid: next station <a href="/en/reisinfo/noorderpark">Noorderpark</a>');
+    expect(body.match(/<li>/g)).toHaveLength(1);
+  });
+});
+
+describe("404 page", () => {
+  const page = notFoundHtml();
+
+  it("is kept out of search results and loads no app", () => {
+    expect(page).toContain('<meta name="robots" content="noindex" />');
+    expect(page).not.toContain("/src/main.tsx");
+    expect(page).toContain('<script src="/404.js"></script>');
+  });
+
+  it("links every station in both languages", () => {
+    for (const n of STATION_NAMES) {
+      expect(page).toContain(`href="/reisinfo/${stationSlug(n)}"`);
+      expect(page).toContain(`href="/en/reisinfo/${stationSlug(n)}"`);
+    }
+  });
+
+  it("only knows nicknames that point to real stations and aren't real addresses", () => {
+    for (const [nick, names] of Object.entries(NICKNAMES)) {
+      expect(stationOfSlug(nick), nick).toBeNull();
+      for (const n of names) expect(STATION_NAMES).toContain(n);
+    }
+    expect(NICKNAMES.amstel).toHaveLength(3);
   });
 });

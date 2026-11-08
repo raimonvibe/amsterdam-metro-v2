@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Globe, X } from "lucide-react";
 import { browserReadsDutch, savedLang, useLang } from "../i18n";
 import { switchLang } from "../i18n/translated";
-import { pageOfPath, pagePath } from "../i18n/paths";
+import { localizedPath } from "../i18n/paths";
 
 const DISMISSED_KEY = "metro-lang-hint";
 
@@ -44,7 +44,7 @@ export function EnglishHint({ sidebarOpen }: { sidebarOpen: boolean }) {
       }`}
     >
       <a
-        href={pagePath(pageOfPath(window.location.pathname), "en")}
+        href={localizedPath(window.location.pathname, "en")}
         hrefLang="en"
         aria-label="View this site in English"
         onClick={(e) => {

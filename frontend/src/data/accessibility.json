@@ -7,126 +7,181 @@
       "source": "checked",
       "osm": "node/4040491812",
       "note": "GVB station page NL:S:30009514 (CHB, metro 51/53/54): Rolstoelvriendelijk, 2026-11-02",
-      "gvb_search": "Amstel"
+      "gvb_search": "Amstel",
+      "gvb_stops": [
+        "NL:S:30009514"
+      ]
     },
     "Amsterdam, Amstelveenseweg": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/250222266",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Amstelveenseweg"
+      "gvb_search": "Amstelveenseweg",
+      "gvb_stops": [
+        "NL:Q:30007343"
+      ]
     },
     "Amsterdam, Bullewijk": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/4046388677",
       "note": "GVB station page (CHB): Rolstoelvriendelijk, metro 50/54; lift no longer in GVB's lift faults, 2026-10-29",
-      "gvb_search": "Bullewijk"
+      "gvb_search": "Bullewijk",
+      "gvb_stops": [
+        "NL:S:30009524"
+      ]
     },
     "Amsterdam, Burg. De Vlugtlaan": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/2237721918",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Vlugtlaan"
+      "gvb_search": "Vlugtlaan",
+      "gvb_stops": [
+        "NL:Q:30003205"
+      ]
     },
     "Amsterdam, Centraal Station": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/5424713348",
       "note": "GVB station pages NL:S:30009500 (metro 51/53/54) and NL:S:30009575 (metro 52) (CHB): Rolstoelvriendelijk, 2026-11-02 (the earlier NL:Q:30009905 was not the metro stop). Its two metro lift faults no longer listed, 2026-11-04",
-      "gvb_search": "Centraal"
+      "gvb_search": "Centraal",
+      "gvb_stops": [
+        "NL:S:30009500",
+        "NL:S:30009575"
+      ]
     },
     "Amsterdam, De Pijp": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/5737467957",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "De Pijp"
+      "gvb_search": "De Pijp",
+      "gvb_stops": [
+        "NL:S:30009581"
+      ]
     },
     "Amsterdam, Europaplein": {
       "step_free": "no",
       "source": "checked",
       "osm": "node/5737467956",
       "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27",
-      "gvb_search": "Europaplein"
+      "gvb_search": "Europaplein",
+      "gvb_stops": [
+        "NL:S:30009583"
+      ]
     },
     "Amsterdam, Gaasperplas": {
       "step_free": "no",
       "source": "checked",
       "osm": "node/4041642874",
       "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27",
-      "gvb_search": "Gaasperplas"
+      "gvb_search": "Gaasperplas",
+      "gvb_stops": [
+        "NL:S:30009550"
+      ]
     },
     "Amsterdam, Ganzenhoef": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/4041662264",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Ganzenhoef"
+      "gvb_search": "Ganzenhoef",
+      "gvb_stops": [
+        "NL:S:30009546"
+      ]
     },
     "Amsterdam, Gein": {
       "step_free": "no",
       "source": "checked",
       "osm": "node/4041640589",
       "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27",
-      "gvb_search": "Gein"
+      "gvb_search": "Gein",
+      "gvb_stops": [
+        "NL:Q:30009531"
+      ]
     },
     "Amsterdam, Heemstedestraat": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/4053335995",
       "note": "GVB station page (CHB), 2026-10-27; OpenStreetMap says limited",
-      "gvb_search": "Heemstedestraat"
+      "gvb_search": "Heemstedestraat",
+      "gvb_stops": [
+        "NL:Q:30004321"
+      ]
     },
     "Amsterdam, Henk Sneevlietweg": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/4075987791",
       "note": "GVB station page (CHB), 2026-10-27; OpenStreetMap says limited",
-      "gvb_search": "Sneevlietweg"
+      "gvb_search": "Sneevlietweg",
+      "gvb_stops": [
+        "NL:Q:30004319"
+      ]
     },
     "Amsterdam, Isolatorweg": {
       "step_free": "no",
       "source": "checked",
       "osm": "node/4077313759",
       "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27",
-      "gvb_search": "Isolatorweg"
+      "gvb_search": "Isolatorweg",
+      "gvb_stops": [
+        "NL:Q:30002297"
+      ]
     },
     "Amsterdam, Jan van Galenstraat": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/250224485",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Galenstraat"
+      "gvb_search": "Galenstraat",
+      "gvb_stops": [
+        "NL:Q:30003203"
+      ]
     },
     "Amsterdam, Kraaiennest": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/4041662265",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Kraaiennest"
+      "gvb_search": "Kraaiennest",
+      "gvb_stops": [
+        "NL:S:30009548"
+      ]
     },
     "Amsterdam, Nieuwmarkt": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/4073743506",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Nieuwmarkt"
+      "gvb_search": "Nieuwmarkt",
+      "gvb_stops": [
+        "NL:S:30009502"
+      ]
     },
     "Amsterdam, Noord": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/5737467961",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Noord"
+      "gvb_search": "Noord",
+      "gvb_stops": [
+        "NL:S:30009571"
+      ]
     },
     "Amsterdam, Noorderpark": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/5737467960",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Noorderpark"
+      "gvb_search": "Noorderpark",
+      "gvb_stops": [
+        "NL:S:30009573"
+      ]
     },
     "Amsterdam, Overamstel": {
       "step_free": "no",
@@ -134,105 +189,150 @@
       "osm": "node/427565080",
       "note": "GVB station page (CHB): Rolstoelvriendelijk, 2026-10-27; lift street–platform towards Isolatorweg (track 2 and 4) in GVB's lift faults since 2026-11-02; set back to yes once it is no longer listed",
       "gvb_search": "Overamstel",
-      "lift_out": true
+      "lift_out": true,
+      "gvb_stops": [
+        "NL:Q:30009563"
+      ]
     },
     "Amsterdam, Postjesweg": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/4077313763",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Postjesweg"
+      "gvb_search": "Postjesweg",
+      "gvb_stops": [
+        "NL:Q:30004325"
+      ]
     },
     "Amsterdam, Reigersbos": {
       "step_free": "no",
       "source": "checked",
       "osm": "node/4041640590",
       "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27",
-      "gvb_search": "Reigersbos"
+      "gvb_search": "Reigersbos",
+      "gvb_stops": [
+        "NL:Q:30009529"
+      ]
     },
     "Amsterdam, Rokin": {
       "step_free": "yes",
       "source": "checked",
       "osm": "way/266903916",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Rokin"
+      "gvb_search": "Rokin",
+      "gvb_stops": [
+        "NL:S:30009577"
+      ]
     },
     "Amsterdam, Spaklerweg": {
       "step_free": "no",
       "source": "checked",
       "osm": "node/4073693626",
       "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27",
-      "gvb_search": "Spaklerweg"
+      "gvb_search": "Spaklerweg",
+      "gvb_stops": [
+        "NL:S:30009518"
+      ]
     },
     "Amsterdam, Station Bijlmer ArenA": {
       "step_free": "no",
       "source": "checked",
       "osm": "node/4005961975",
       "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27",
-      "gvb_search": "Bijlmer"
+      "gvb_search": "Bijlmer",
+      "gvb_stops": [
+        "NL:Q:30009522"
+      ]
     },
     "Amsterdam, Station Holendrecht": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/250233810",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Holendrecht"
+      "gvb_search": "Holendrecht",
+      "gvb_stops": [
+        "NL:Q:30000171"
+      ]
     },
     "Amsterdam, Station Lelylaan": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/14127078780",
       "note": "GVB station page (CHB): Rolstoelvriendelijk, 2026-10-27 and 2026-11-07; lift fault gone 2026-11-07",
-      "gvb_search": "Lelylaan"
+      "gvb_search": "Lelylaan",
+      "gvb_stops": [
+        "NL:S:30004322"
+      ]
     },
     "Amsterdam, Station RAI": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/5360384018",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "RAI"
+      "gvb_search": "RAI",
+      "gvb_stops": [
+        "NL:Q:30007404"
+      ]
     },
     "Amsterdam, Station Sloterdijk": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/5267675296",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Sloterdijk"
+      "gvb_search": "Sloterdijk",
+      "gvb_stops": [
+        "NL:S:30002294"
+      ]
     },
     "Amsterdam, Station Zuid": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/5267675295",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Station Zuid"
+      "gvb_search": "Station Zuid",
+      "gvb_stops": [
+        "NL:S:30007408"
+      ]
     },
     "Amsterdam, Strandvliet": {
       "step_free": "no",
       "source": "checked",
       "osm": "node/4046383465",
       "note": "GVB station page (CHB): niet rolstoelvriendelijk, 2026-10-27",
-      "gvb_search": "Strandvliet"
+      "gvb_search": "Strandvliet",
+      "gvb_stops": [
+        "NL:Q:30009521"
+      ]
     },
     "Amsterdam, Van der Madeweg": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/289445435",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Madeweg"
+      "gvb_search": "Madeweg",
+      "gvb_stops": [
+        "NL:Q:30009517"
+      ]
     },
     "Amsterdam, Venserpolder": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/4041664287",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Venserpolder"
+      "gvb_search": "Venserpolder",
+      "gvb_stops": [
+        "NL:S:30009540"
+      ]
     },
     "Amsterdam, Vijzelgracht": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/5737467958",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Vijzelgracht"
+      "gvb_search": "Vijzelgracht",
+      "gvb_stops": [
+        "NL:Q:30009579"
+      ]
     },
     "Amsterdam, Waterlooplein": {
       "step_free": "no",
@@ -240,42 +340,60 @@
       "osm": "way/268782305",
       "note": "GVB station page (CHB): Rolstoelvriendelijk, 2026-10-27; lift between street and station in GVB's lift faults since 2026-11-07; set back to yes once it is no longer listed",
       "gvb_search": "Waterlooplein",
-      "lift_out": true
+      "lift_out": true,
+      "gvb_stops": [
+        "NL:S:30009508"
+      ]
     },
     "Amsterdam, Weesperplein": {
       "step_free": "yes",
       "source": "checked",
       "osm": "way/268998785",
       "note": "GVB station page (CHB): Rolstoelvriendelijk; lift at exit Stadstimmertuin no longer in GVB's lift faults, 2026-11-01",
-      "gvb_search": "Weesperplein"
+      "gvb_search": "Weesperplein",
+      "gvb_stops": [
+        "NL:S:30009510"
+      ]
     },
     "Amsterdam, Wibautstraat": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/4073693628",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Wibautstraat"
+      "gvb_search": "Wibautstraat",
+      "gvb_stops": [
+        "NL:S:30009512"
+      ]
     },
     "Diemen, Station Diemen Zuid": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/14140826449",
       "note": "GVB station page NL:S:30009542 (CHB): Rolstoelvriendelijk; lift no longer in GVB's lift faults (listed since Nov 2023), 2026-11-02",
-      "gvb_search": "Diemen Zuid"
+      "gvb_search": "Diemen Zuid",
+      "gvb_stops": [
+        "NL:S:30009542"
+      ]
     },
     "Diemen, Verrijn Stuartweg": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/4064153245",
       "note": "GVB station page (CHB), 2026-10-27",
-      "gvb_search": "Stuartweg"
+      "gvb_search": "Stuartweg",
+      "gvb_stops": [
+        "NL:S:30009544"
+      ]
     },
     "Duivendrecht, Station Duivendrecht": {
       "step_free": "yes",
       "source": "checked",
       "osm": "node/4041666291",
       "note": "GVB station page NL:S:30009551 (CHB, metro 50/54): Rolstoelvriendelijk, no lift fault, 2026-11-02",
-      "gvb_search": "Duivendrecht"
+      "gvb_search": "Duivendrecht",
+      "gvb_stops": [
+        "NL:S:30009551"
+      ]
     }
   }
 }

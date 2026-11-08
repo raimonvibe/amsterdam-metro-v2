@@ -26,6 +26,9 @@ Tests in [`frontend/src/components/StepFree.test.tsx`](../frontend/src/component
 - A ♿ after step-free stations in the map's station picker, the travel page's station list and search.
 - The journey planner's "Zonder trappen" option: names the stations on a journey (start, changes, end) that are not step-free and says which have a lift out (with the check date). Once above the options: the link to GVB's lift faults, a copy pill per GVB search term for the stations used, and what "0 resultaten" means.
 - The station card's lift link also copies its search term, and says "Gekopieerd" next to it (hover text does not show on a phone).
+- Three states with their own look everywhere: ♿ step-free, ⚠ step-free but a lift is out (amber), and not step-free. "Not step-free" says why on the station board: GVB's page says so, or the station isn't confirmed yet.
+- With a lift out, the board names the nearest step-free station in each direction, and lists the step-free stations reachable without changing trains. The station list has a "step-free only" filter.
+- Each station's own page (`/reisinfo/<station>`, see [seo-tidy-plan.md](seo-tidy-plan.md)) has crawlable text with **GVB's own rating** and the date of our last check, and links its GVB station page (`gvb_stops`). It never states a lift fault: those only appear once the page runs, so they still drop off 10 days after a missed check.
 
 ## Sources
 
@@ -80,6 +83,7 @@ Record every check in the [Check log](#check-log), even when nothing changed: th
    - `note`: what you saw, where, and the date (YYYY-MM-DD). For a broken lift, say when to set it back.
    - `gvb_search`: what finds the station in the search box on GVB's lift-fault page, in GVB's spelling. Short beats exact: a term that also matches a neighbour is harmless, one that matches nothing looks like "no fault".
    - `lift_out`: `true` while GVB's lift faults list a lift at a station whose GVB page says "Rolstoelvriendelijk"; remove it when the fault is gone. Not for stations that are "niet rolstoelvriendelijk" anyway (Centraal Station).
+   - `gvb_stops`: the station's code(s) from its GVB page address (`NL:S:…` / `NL:Q:…`), as in the table below. The station's page links them; a station without one isn't indexed.
    - Remove `osm_wheelchair` once checked.
 5. Run `npm test` in `frontend/`, then add a line to the [Check log](#check-log).
 

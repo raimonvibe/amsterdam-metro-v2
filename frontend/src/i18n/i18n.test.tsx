@@ -32,6 +32,17 @@ describe("language", () => {
     expect(screen.getByRole("link", { name: "Wissel naar Nederlands" })).toHaveTextContent("NL");
   });
 
+  it("keeps the station when a station page switches language", async () => {
+    window.history.replaceState(null, "", "/reisinfo/zuid?lijn=52");
+    render(<LanguageToggle />);
+    const toggle = screen.getByRole("link", { name: "Switch to English" });
+    expect(toggle).toHaveAttribute("href", "/en/reisinfo/zuid");
+    await userEvent.click(toggle);
+    expect(window.location.pathname).toBe("/en/reisinfo/zuid");
+    expect(window.location.search).toBe("?lijn=52");
+    setLang("nl");
+  });
+
   it("is a link to this page in the other language, and moves the address bar there", async () => {
     window.history.replaceState(null, "", "/reisinfo?station=Noord#x");
     render(<LanguageToggle />);

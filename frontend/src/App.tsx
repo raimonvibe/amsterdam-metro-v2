@@ -5,6 +5,7 @@ import { AlertAnnouncer } from "./components/AlertList";
 import { strings, useLang, useT } from "./i18n";
 import { pagePath } from "./i18n/paths";
 import { setPageMeta } from "./seo/site";
+import { stationSlug } from "./data/network";
 import { NO_HOVER } from "./components/hover";
 import { type Quality, startQuality, useQualityPref } from "./quality";
 import { carried, carryOver } from "./i18n/translated";
@@ -19,7 +20,6 @@ import { MAP_STYLES, useMapStyle, useThemeToggle } from "./theme";
 import { streamWhileVisible } from "./stream";
 import { usePrivacyRoute } from "./hooks/usePrivacyRoute";
 import { useTravelRoute } from "./hooks/useTravelRoute";
-import { formatPlaceName } from "./format";
 import { useSidebarOpen } from "./hooks/useSidebarOpen";
 import { ChunkErrorBoundary } from "./components/ChunkErrorBoundary";
 import { MapErrorBoundary } from "./components/MapErrorBoundary";
@@ -109,7 +109,10 @@ export default function App() {
   const [slowDevice, setSlowDevice] = useState(false);
   const quality: Quality = qualityPref === "auto" ? (slowDevice ? "lite" : autoStart) : qualityPref;
   const page = showTravel ? "/reisinfo" : showPrivacy ? "/privacy" : "/";
-  useEffect(() => setPageMeta(page, lang), [page, lang]);
+  // The travel page sets its own head tags: they name its station.
+  useEffect(() => {
+    if (page !== "/reisinfo") setPageMeta(page, lang);
+  }, [page, lang]);
   // Phones: the sidebar is a drawer over the map. Left open from before the
   // travel page, it would be all one sees on the way back, so close it on
   // every return (page buttons and the browser's back button alike).
@@ -121,7 +124,7 @@ export default function App() {
   // Open /reisinfo on the station selected on the map, if any; otherwise the
   // page falls back to a favourite, a recent station or CS.
   const openTravelForSelection = () =>
-    openTravel(selectedStation ? `?station=${encodeURIComponent(formatPlaceName(selectedStation.name))}` : "");
+    openTravel(selectedStation ? stationSlug(selectedStation.name) : undefined);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

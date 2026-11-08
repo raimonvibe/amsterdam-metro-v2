@@ -1,14 +1,16 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
-import { ROUTE_PAGES, routeDir, routeHtml } from "./src/seo/routeHtml";
+import { ROUTE_PAGES, STATION_PAGES, routeDir, routeHtml, sitemapXml, stationHtml } from "./src/seo/routeHtml";
+import { notFoundHtml } from "./src/seo/notFound";
 import { securityHeaders } from "./src/securityHeaders";
 
 /** After the build, write dist/<page>/index.html for every page besides the
- *  Dutch homepage (reisinfo, privacy, en, en/reisinfo, en/privacy): copies of
- *  the entry page whose head already names that page and language, for
- *  crawlers that read the HTML before (or without) running the app. */
+ *  Dutch homepage (reisinfo, privacy, en, en/reisinfo, en/privacy, and each
+ *  station's page): copies of the entry page whose head already names that
+ *  page and language, for crawlers that read the HTML before (or without)
+ *  running the app. Also the sitemap and the 404 page. */
 function routePages(): Plugin {
   let outDir = "dist";
   return {
@@ -19,17 +21,60 @@ function routePages(): Plugin {
     },
     closeBundle() {
       const index = readFileSync(join(outDir, "index.html"), "utf8");
-      for (const route of ROUTE_PAGES) {
-        const dir = join(outDir, routeDir(route));
-        mkdirSync(dir, { recursive: true });
-        writeFileSync(join(dir, "index.html"), routeHtml(index, route));
-      }
+      const write = (dir: string, html: string) => {
+        mkdirSync(join(outDir, dir), { recursive: true });
+        writeFileSync(join(outDir, dir, "index.html"), html);
+      };
+      for (const route of ROUTE_PAGES) write(routeDir(route), routeHtml(index, route));
+      // One page per station and language: /reisinfo/zuid, /en/reisinfo/zuid.
+      for (const page of STATION_PAGES) write(page.dir, stationHtml(index, page));
+      writeFileSync(join(outDir, "sitemap.xml"), sitemapXml());
+      // Served with status 404 for every address no file or rule matches.
+      writeFileSync(join(outDir, "404.html"), notFoundHtml());
+    },
+  };
+}
+
+/**
+ * `npm run preview` answers like the live site's routing rules (render.yaml):
+ * a page's address serves its built index.html, and an address with no page
+ * gets 404.html with status 404. Vite's own fallback would serve the
+ * homepage everywhere, hiding exactly what these rules are for.
+ */
+function liveRouting(): Plugin {
+  return {
+    name: "live-routing",
+    configurePreviewServer(server) {
+      const outDir = server.config.build.outDir;
+      server.middlewares.use((req, res, next) => {
+        const [path, query = ""] = (req.url ?? "/").split("?");
+        const notFound = () => {
+          res.statusCode = 404;
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          res.end(readFileSync(join(outDir, "404.html")));
+        };
+        // Page addresses are plain: letters, digits, dashes, slashes. Anything
+        // else ("..", "%2f", "\\") gets the 404 page without touching the disk,
+        // so the preview can't be used to probe or reach files outside dist.
+        if (!/^[a-z0-9/_-]*$/i.test(path) || path.includes("//")) {
+          // Files (/assets/x.js, /sitemap.xml) may have dots, but no "..".
+          const plainFile = /^[a-z0-9/_.-]*\.[a-z0-9]+$/i.test(path) && !path.includes("..") && !path.includes("//");
+          return plainFile ? next() : notFound();
+        }
+        if (path === "/" || /\.[a-z0-9]+$/i.test(path)) return next();
+        const page = `${path.replace(/\/+$/, "")}/index.html`;
+        if (existsSync(join(outDir, page))) {
+          req.url = page + (query ? `?${query}` : "");
+          return next();
+        }
+        notFound();
+      });
     },
   };
 }
 
 export default defineConfig({
-  plugins: [react(), routePages()],
+  plugins: [react(), routePages(), liveRouting()],
   server: {
     host: true,
     port: 5183,

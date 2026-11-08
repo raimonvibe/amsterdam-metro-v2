@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from "react";
-import { Clock, Footprints, Link2, MapPin, Radio, Route, Star } from "lucide-react";
+import { Clock, Footprints, Link2, MapPin, Pause, Play, Radio, Route, Star } from "lucide-react";
 import { fetchBoard, fetchStationInfo, SlowDown } from "../api";
 import { delayLabel } from "../format";
 import { Place } from "../components/Place";
@@ -13,6 +13,7 @@ import { BoardDeparture, JourneyLeg, StationInfo } from "./types";
 import { LineBadge, Section, Segmented, SkeletonRows } from "./ui";
 import { Num } from "../components/Num";
 import { useTravelT } from "./strings";
+import { StationAccess } from "./StationAccess";
 
 const ROWS_PER_DIRECTION = 5;
 const BOARD_REFRESH_MS = 20000;
@@ -83,6 +84,9 @@ export function StationBoard(props: StationBoardProps) {
   const [updated, setUpdated] = useState<number | null>(null);
   const [lineFilter, setLineFilter] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  // Auto-refresh can be paused, to read the board at one's own pace (WCAG
+  // 2.2.2); the time of the last update stays on screen.
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     setDeps(null);
@@ -91,6 +95,8 @@ export function StationBoard(props: StationBoardProps) {
     setUpdated(null);
     setLineFilter([]);
     setExpanded({});
+    // A new station's board must load, even if the last one was paused.
+    setPaused(false);
   }, [station.name]);
 
   useEffect(() => {
@@ -116,13 +122,14 @@ export function StationBoard(props: StationBoardProps) {
         else setError(true);
       }
     };
+    if (paused) return;
     const cleanup = pollWhileVisible(load, BOARD_REFRESH_MS);
     return () => {
       stop = true;
       window.clearTimeout(retry);
       cleanup();
     };
-  }, [station.name, prefs.windowMin, prefs.showCancelled]);
+  }, [station.name, prefs.windowMin, prefs.showCancelled, paused]);
 
   useEffect(() => {
     let stop = false;
@@ -167,8 +174,22 @@ export function StationBoard(props: StationBoardProps) {
       title={txt.board}
       aside={
         updated && (
-          <span className="text-[11px] tabular-nums text-[#6b6455] dark:text-[#8b93a7]" aria-live="off">
-            {error ? txt.connectionTrouble : ""}{txt.updated} <Num>{clock(updated / 1000)}</Num>
+          <span className="flex items-center gap-1.5 text-[11px] tabular-nums text-[#6b6455] dark:text-[#8b93a7]">
+            <span aria-live="off">
+              {error ? txt.connectionTrouble : ""}
+              {paused ? `${txt.paused} · ` : ""}
+              {txt.updated} <Num>{clock(updated / 1000)}</Num>
+            </span>
+            <button
+              type="button"
+              onClick={() => setPaused((p) => !p)}
+              aria-pressed={paused}
+              aria-label={paused ? txt.resumeUpdates : txt.pauseUpdates}
+              title={paused ? txt.resumeUpdates : txt.pauseUpdates}
+              className="flex min-h-6 min-w-6 items-center justify-center rounded hover:bg-[#f1ebdd] hover:text-[#1d2433] dark:hover:bg-[#1a2134] dark:hover:text-[#ece6d6]"
+            >
+              {paused ? <Play size={12} aria-hidden /> : <Pause size={12} aria-hidden />}
+            </button>
           </span>
         )
       }
@@ -189,6 +210,7 @@ export function StationBoard(props: StationBoardProps) {
             )}
           </div>
           <StepFree station={station.name} className="mt-1.5" />
+          <StationAccess station={station.name} colorOf={colorOf} onStation={props.onStation} nowMs={nowMs} />
         </div>
         <div className="flex flex-wrap gap-1.5">
           <ActionButton onClick={props.onToggleFavourite} label={props.favourite ? txt.unfavourite : txt.favourite} pressed={props.favourite}>

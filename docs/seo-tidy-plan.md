@@ -66,7 +66,7 @@ Only the safest options are in this plan. Ideas with more risk are listed at the
 - A short, fixed list, kept in the repo. No new pages; anything not on the list lands on the 404 page.
 
 **2.4 🏷️ Structured data on the station page**
-- schema.org `SubwayStation` with name and coordinates. Adds no pages, only tells Google precisely what the page is.
+- ~~schema.org `SubwayStation` with name and coordinates.~~ Changed 8 Nov: Google has no feature for it. `BreadcrumbList` (Reisinformatie › station) instead.
 - Only facts that are already on the page. Accessibility in structured data only with the same "no" default and check date as the page text.
 
 **2.5 🌐 Link to the sources instead of copying them**
@@ -81,6 +81,93 @@ Only the safest options are in this plan. Ideas with more risk are listed at the
 
 ---
 
+## 🔬 Research, 8 Nov 2026: what makes these pages useful
+
+Done before building, to answer one question: **how do we make the station pages user-friendly?** Three rounds: what works in transit apps worldwide, the software and design behind them, and other angles. Sources are at the end of this section; claims from blogs or vendors are marked as such.
+
+### What works worldwide
+
+- **Departures first, everything else short.** Transit's 6.0 redesign made the next departures big and tappable because small times were hard to read. A widely shared critique of the MTA app: too much information; riders want the station's times and a few details.
+- **Lift faults say where, and what to do instead.** TfL's pattern: "[Station]: no step-free access between X and Y due to a faulty lift", often with a workaround, and "check before you travel".
+- **Google already shows a station's lines (and sometimes departures) in search.** Departure times alone won't earn a click. Checked step-free status and lift faults in one place are what others don't offer.
+- **Per-stop pages work only with real, crawlable content.** Transit's site reportedly grew to ~21,000 programmatic pages (vendor claim). MobilityData saw JavaScript-only pages classed as low quality and left out. AI crawlers often skip JavaScript entirely.
+- **Google's spam policies** (scaled content abuse, doorway abuse) judge purpose, not method: pages must differ in substance, not just swap a name. This plan's "only station-specific facts" rule already meets that.
+
+### What Amsterdam's own research says
+
+- The city's **"All Aboard"** project (openresearch.amsterdam, 2023–24) tested trips with wheelchair users: GVB's lift information was **hard to find, unreliable and not fully accessible**; a broken lift can leave someone **stuck on the platform**; planners suggested routes that didn't work.
+- In NH Nieuws one wheelchair user said GVB's app is wrong about lifts "nine times out of ten" (one person, not a measurement). NOS quotes GVB: an on-demand minibus can be called when a lift is out.
+- GVB replaces all 93 lifts and 177 escalators **from mid-2027**, line 50 first. Stations will lose lifts for weeks; these pages will matter most then.
+
+### Software and design in this field
+
+| Source | Lesson for us |
+|---|---|
+| **Digitransit** (Helsinki, open source) | A stop's URL opens straight to its board and works as a bookmark or home-screen icon. |
+| **OpenTripPlanner** | Accessibility data is mostly yes/no and often incomplete. Our rule (unknown = "no") is stricter than most apps, so say so on the page. |
+| **UnlockedMaps** (UW research, 44-person field study) | Three states: step-free, step-free but a lift is out, not step-free. Filtering for accessible stations was the most-used feature. |
+| **Transit app** | Shows lift outages as disruptions next to departures, before you travel. |
+| **STIB app** (Brussels) | Per station: which stations you can reach by lift. |
+| **WMATA screens** (D.C.) | Cycling through outages one at a time was called "a remarkably bad way" to show them: list all of a station's faults at once. |
+| **Departure boards** (passenger.tech) | A pause for auto-refresh, with "last updated" shown when paused, helps people with cognitive disabilities and screen-reader users (WCAG 2.2.2). Announce updates politely; reserve assertive announcements for cancellations. |
+| **BrokenLifts.org** (Berlin) | Works because operators supply a live feed. Our trigger to stop hand checks: GVB's lifts in NDOV (SIRI-FM). |
+
+### Tech checks
+
+- **Prerendering:** most Vite prerender plugins run a headless browser and would bake live times into the HTML. Keep the existing build step ([`routeHtml.ts`](../frontend/src/seo/routeHtml.ts)) and generate station HTML from the same data the app uses.
+- **Render:** docs confirm rules are skipped when a file exists at the path, and Blueprint routes don't remove rules set in the dashboard. Not stated: whether `/x/y` serves `x/y/index.html`, and whether an unmatched path gets `404.html` with status 404 (the community forum says it does). **Both must be tested on the live site after deploy.** Routing rules are typed into the dashboard by hand ([render-deploy-plan.md](render-deploy-plan.md)), so the design needs few rules: one placeholder rule per language, not 78.
+- **Structured data:** Google's search gallery has no feature for `SubwayStation`, `TrainStation` or `Place`. Dropped. `BreadcrumbList` is supported and fits.
+- **Not needed:** NS's design system (Tractie; its licence is unclear and it's NS branding) and Transitous/MOTIS (a routing engine; we don't route on a server).
+
+### ✏️ Changes to the plan from this research
+
+1. **Station page layout, in order of what people come for:** name and lines → step-free status → live departures per direction → actions → fixed facts (neighbouring stations per line, GVB station page, lift-fault search term).
+2. **Three visible states**, the same everywhere (station page, lists, planner): ✅ step-free, ⚠️ step-free but a lift is out, ❌ not step-free.
+3. **"Niet stapvrij" explains itself:** it also covers "not confirmed by GVB".
+4. **A lift out comes with an alternative:** the nearest step-free station on the same line, in each direction.
+5. **Step-free reachable from here:** on each station page, the step-free stations reachable without a change.
+6. **A "step-free only" filter** in the station list, instead of a separate step-free page (no new URLs).
+7. **Live departures:** a pause button for auto-refresh, the "bijgewerkt" time, polite announcements.
+8. **Static HTML says only the stable facts:** lines, neighbours, GVB's own rating and the link to GVB's lift faults. Lift faults load in the browser, so they still disappear 10 days after a missed check.
+9. **Nicknames:** no redirect for ambiguous ones ("amstel" is 3 stations).
+10. **Structured data:** `BreadcrumbList` instead of `SubwayStation`.
+11. **Routing:** `/reisinfo/:station` → `/reisinfo/:station/index.html`, one rule per language; unknown stations get the 404 page.
+12. **Sitemap:** generated, without `lastmod`. A missing date is better than a wrong one, and nothing per station records when its content changed.
+13. **Phase 3:** besides Search Console, ask wheelchair users (for example via the All Aboard team) to try the pages.
+
+<details>
+<summary>Sources</summary>
+
+[Transit 6.0](https://help.transitapp.com/article/546-transit-6-0-quick-start-guide) ·
+[MTA app critique](https://unpixelated.substack.com/p/the-official-mta-app-is-disappointing) ·
+[TfL step-free data](https://techforum.tfl.gov.uk/t/new-data-step-free-lift-status-and-accessible-routes-in-stations/1609) ·
+[TfL lifts & closures](https://tfl.gov.uk/status-updates/stations-lifts-and-escalators-works-and-closures) ·
+[Google: departures](https://support.google.com/maps/answer/6142130?hl=en) ·
+[Transit SEO case study (vendor)](https://aioseo.com/trends/transit-seo-case-study/) ·
+[MobilityData](https://dev.to/feed/mobilitydata) ·
+[Doorway pages](https://ppc.land/doorway-pages/) ·
+[Scaled content abuse](https://ppc.land/scaled-content-abuse/) ·
+[All Aboard workshop](https://openresearch.amsterdam/image/2024/5/22/research_workshop_all_aboard.pdf) ·
+[All Aboard field study](https://openresearch.amsterdam/image/2024/5/22/field_study_all_aboard.pdf) ·
+[NOS](https://nos.nl/l/2545215) ·
+[NH Nieuws](https://www.nhnieuws.nl/nieuws/342884/de-lift-nemen-bij-de-amsterdamse-metro-bij-een-ruim-derde-van-stations-kan-het-niet) ·
+[NH Nieuws: lift replacement](https://www.nhnieuws.nl/nieuws/350636/gvb-gaat-alle-93-liften-en-177-roltrappen-vervangen) ·
+[Digitransit](https://digitransit.fi/en/accessibility) ·
+[OpenTripPlanner](https://docs.opentripplanner.org/en/latest/Accessibility/) ·
+[UnlockedMaps](https://www.newswise.com/pdf_docs/166602228297733_assets-2022-unlockedmaps.pdf) ·
+[Transit NY](https://medium.com/transit-new-york/theres-not-an-app-for-that-83fbdadedd7b) ·
+[STIB](https://brusselstimes.com/85516/updated-stib-app-will-show-which-metro-stations-elevators-are-broken-mivb-tram) ·
+[GGWash](https://ggwash.org/view/38808/metros-inefficient-info-displays-worsen-crowding) ·
+[Pausing departure boards](https://releases.passenger.tech/2022/07/19/pausing-auto-refresh-for-website-departure-boards/) ·
+[BrokenLifts](https://www.europeandataportal.eu/fi/news/better-travel-planning-brokenliftsorg) ·
+[Render rewrites](https://render.com/docs/redirects-rewrites) ·
+[Render 404 (forum)](https://community.render.com/t/custom-404-error-page/746) ·
+[Google search gallery](https://developers.google.com/search/docs/appearance/structured-data/search-gallery)
+
+</details>
+
+---
+
 ## 🚫 Not in this plan, and why
 
 | Idea | Why it's left out for now |
@@ -90,21 +177,27 @@ Only the safest options are in this plan. Ideas with more risk are listed at the
 | 📝 Station "guides" or text written for SEO | That is exactly the clutter this plan avoids. |
 | 🔁 Automated lift checks against gvb.nl | Not allowed: [`AGENTS.md`](../AGENTS.md) forbids scripting requests to gvb.nl. |
 | 🤖 Pages per line, per exit, per neighbourhood | More thin pages. Reconsider only if Phase 3 shows the station pages help. |
+| ♿ A separate step-free overview page | A filter in the existing station list does the same without a new URL. |
+| 🚪 Exits and best carriage (Citymapper-style) | Tourists like it, but there's no reliable data for Amsterdam yet; it would be filler. |
+| 🏷️ `SubwayStation` structured data | Google has no feature for it (search gallery, checked 8 Nov). |
 
 ---
 
 ## 🧪 Done means
 
-- [ ] `curl -I https://amsterdammetro.nl/does-not-exist` returns **404**, and the page has `noindex`.
-- [ ] `curl https://amsterdammetro.nl/reisinfo/waterlooplein` shows a station-specific `<title>`, description and canonical without JavaScript.
-- [ ] `?station=Waterlooplein&lijn=51` has a canonical to `/reisinfo/waterlooplein`.
-- [ ] The sitemap is generated and lists only real, indexable URLs.
-- [ ] No live times in any prerendered HTML.
-- [ ] `npm test` and `tsc --noEmit` pass in `frontend/`.
+- [ ] `curl -I https://amsterdammetro.nl/does-not-exist` returns **404**, and the page has `noindex`. *Built and checked locally with `npm run preview`; on the live site after deploy and after deleting the `/*` rule in Render's dashboard ([render-deploy-plan.md](render-deploy-plan.md#routing-dashboard)).*
+- [ ] `curl https://amsterdammetro.nl/reisinfo/waterlooplein` shows a station-specific `<title>`, description and canonical without JavaScript. *Built and checked locally; live after deploy.*
+- [x] `?station=Waterlooplein&lijn=51` has a canonical to `/reisinfo/waterlooplein`: the app moves the station into the path and sets the canonical without the query.
+- [x] The sitemap is generated and lists only real, indexable URLs (82, no `lastmod`).
+- [x] No live times in any prerendered HTML (tested in `routeHtml.test.ts`).
+- [x] `npm test` and the type check (`tsc -b`) pass in `frontend/`.
 - [ ] A Search Console check is noted below 4–6 weeks after release.
+- [ ] Wheelchair users (for example via the All Aboard team) have tried a station page.
 
 ## 🗒️ Log
 
 | Date | What | Result |
 |---|---|---|
 | 2026-11-07 | Plan written | Nothing built yet |
+| 2026-11-08 | Research added (UX, software, tech), plan refined | See "Changes to the plan from this research" |
+| 2026-11-08 | Phases 1 and 2 built, with research changes 1–12 | Station pages for 39 stations × 2 languages, generated sitemap, standalone 404 page with "did you mean", no catch-all, step-free details on the board (three states, alternatives, reachable stations), pause button, step-free filter. Not yet deployed; 1.4 (titles from Search Console data) still to do. Nicknames are handled by the 404 page's suggestions instead of 301s: no dashboard rules needed. |
