@@ -154,11 +154,14 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       /* Full screen: the Fullscreen API, or where that's missing (iPhone
          Safari) a fixed layer over the page (.is-fake-fs, page.ts). One
          finger turns the train there; the page can't scroll anyway. */
-      .stage.is-fs { aspect-ratio: auto; width: 100%; height: 100%; border-radius: 0; box-shadow: none; touch-action: none; }
+      .stage.is-fs { aspect-ratio: auto; width: 100%; height: 100%; max-height: none; border-radius: 0; box-shadow: none; touch-action: none; }
       .stage.is-fake-fs { position: fixed; inset: 0; z-index: 100; width: auto; height: auto; }
       .stage:fullscreen { background: var(--stage); }
       html.fs-lock, html.fs-lock body { overflow: hidden; }
       @media (min-width: 40rem) { .stage { aspect-ratio: 16 / 10; } }
+      /* A phone on its side: never taller than the screen, so the buttons on
+         top and the train fit in one view (the scene fits any shape). */
+      .stage { width: 100%; max-height: calc(100vh - 2rem); max-height: calc(100svh - 2rem); }
       .stage-still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transition: opacity 0.6s ease; }
       .progress, .loading, .replay, .view-tools, .wheel-hint { z-index: 1; }
       .stage-canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; opacity: 0; transition: opacity 0.8s ease; cursor: grab; }
