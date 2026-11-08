@@ -45,8 +45,12 @@
     return prev[b.length];
   }
 
-  var matches = (data.nicknames && data.nicknames[wanted]) || [];
-  if (!matches.length && bySlug[wanted]) matches = [wanted];
+  // Own keys only: "/constructor" must not find Object's constructor.
+  var has = function (obj, key) {
+    return !!obj && Object.prototype.hasOwnProperty.call(obj, key);
+  };
+  var matches = has(data.nicknames, wanted) ? data.nicknames[wanted] : [];
+  if (!matches.length && has(bySlug, wanted)) matches = [wanted];
   if (!matches.length) {
     var flat = wanted.replace(/-/g, "");
     var scored = stations
@@ -65,17 +69,27 @@
       return x.slug;
     });
   }
-  if (!matches.length) return;
+  // Links are built from the page's own station list only, never from the
+  // address the visitor typed.
+  // (In match order: the closest first.)
+  var found = matches
+    .map(function (slug) {
+      return stations.filter(function (st) {
+        return st.slug === slug;
+      })[0];
+    })
+    .filter(Boolean);
+  if (!found.length) return;
 
   var base = lang === "en" ? "/en/reisinfo/" : "/reisinfo/";
   var box = document.querySelector('[data-lang="' + lang + '"] [data-suggest]');
   if (!box) return;
   box.appendChild(document.createTextNode(lang === "en" ? "Did you mean " : "Bedoelde je "));
-  matches.forEach(function (slug, n) {
-    if (n > 0) box.appendChild(document.createTextNode(n === matches.length - 1 ? (lang === "en" ? " or " : " of ") : ", "));
+  found.forEach(function (st, n) {
+    if (n > 0) box.appendChild(document.createTextNode(n === found.length - 1 ? (lang === "en" ? " or " : " of ") : ", "));
     var a = document.createElement("a");
-    a.href = base + slug;
-    a.textContent = bySlug[slug] ? bySlug[slug].name : slug;
+    a.href = base + encodeURIComponent(st.slug);
+    a.textContent = st.name;
     box.appendChild(a);
   });
   box.appendChild(document.createTextNode("?"));
