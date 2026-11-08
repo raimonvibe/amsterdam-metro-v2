@@ -86,7 +86,8 @@ The queries fall into six groups. The last column says whether the site has a pa
 
 - [x] **Sitemap:** resubmitted on 8 Nov 2026. The one from the week before still had the old 4 URLs; Search Console now finds **82** (39 stations × NL/EN, plus `/`, `/en/`, `/reisinfo`, `/en/reisinfo`). Google rereads it by itself from now on: resubmit only after a big change (the line pages of step 3, say).
 - [ ] Turn on the *Position* column, and export *Pages* as well as *Queries*.
-- [ ] Ask Google to index the pages that matter most, in both languages (below).
+- [ ] Ask Google to index the pages that matter most, in both languages (below). Day 1 done on 8 Nov 2026; days 2 and 3 on **9 and 10 Nov**.
+- [ ] **About 15 Nov:** check which canonical Google picked for `/reisinfo` and `/reisinfo/centraal-station/` (0.2 below).
 - [ ] *Pages → Indexing*: how many of the 82 are indexed? Note it with the date in the check log.
 - [ ] Save this export as the baseline. Next exports: **6 Dec 2026** (4 weeks) and **3 Jan 2027** (8 weeks), the same windows as [Phase 3 of the tidy plan](seo-tidy-plan.md#phase-3-measure-keep-or-roll-back-).
 
@@ -112,7 +113,7 @@ The queries fall into six groups. The last column says whether the site has a pa
 
 Already says "URL is on Google"? Nothing to request. A message about the limit? Stop, carry on the next day.
 
-**Day 1: the travel-info pages and Centraal Station**
+**Day 1: the travel-info pages and Centraal Station** ✅ *done 8 Nov 2026*
 
 | | Nederlands | English |
 |---|---|---|
@@ -144,6 +145,16 @@ Already says "URL is on Google"? Nothing to request. A message about the limit? 
 **Not needed:** the homepages (`/`, `/en/`) are in Google already, and the other 29 stations come through the sitemap.
 
 **After a week:** *Pages → Indexing*, or *Sitemaps → See index coverage*, for how many of the 82 are in. In Google itself: `site:amsterdammetro.nl/reisinfo/` and `site:amsterdammetro.nl/en/reisinfo/`.
+
+#### 0.2 Watch: `/reisinfo` shows Centraal Station's board 👀
+
+Found in the live test's screenshot on 8 Nov. Plain `/reisinfo` opens a board: a favourite or recent station, else **Centraal Station** (`DEFAULT_STATION` in `TravelInfoPage.tsx`). Google has no favourites, so it gets Centraal Station.
+
+- **By design, and the head is right:** the default doesn't take over the page (#232). Address, title and canonical stay `/reisinfo`; the live test confirmed the canonical.
+- **The risk:** the main content of `/reisinfo` and `/reisinfo/centraal-station/` is nearly the same. Both declare themselves canonical, but Google may still treat one as a duplicate of the other.
+- **Check about 15 Nov:** URL inspection of both URLs, the indexed result (not the live test), *Google-selected canonical*. Also *Pages → Indexing* for "Duplicate, Google chose different canonical than user".
+  - Each its own URL: nothing to do.
+  - One points to the other: make `/reisinfo` an overview for a first visit (and for Google): the five lines, today's disruptions, all stations as links, and the board only once a station is chosen. Returning visitors keep their own station. That overview is also where step 1's "first and last metro per line" table goes. Then request indexing for `/reisinfo` again.
 
 **Your own browser isn't Google's.** The app reopens the station or trip you last looked at, so `/reisinfo` can open on a station for you (Rokin, here). Google has none of that; a private window shows what it sees.
 
@@ -209,7 +220,8 @@ Group 2 is the first sign of demand for line pages, which the tidy plan left out
 | 8 Nov 2026 | First export (24 h, 7 d, 28 d), this plan written | Baseline above. Position column still missing. |
 | 8 Nov 2026 | Sitemap resubmitted | Discovered pages 4 → 82. |
 | 8 Nov 2026 | `site:amsterdammetro.nl/reisinfo/` in Google | One result: `/reisinfo` with an old title, "Centraal Station — vertrektijden". The live page has its own title and canonical (checked). No station page indexed yet. |
-| | Indexing requested, day 1 (4 URLs) | |
+| 8 Nov 2026 | Indexing requested, day 1 (4 URLs) | `/reisinfo`, `/en/reisinfo`, `/reisinfo/centraal-station/`, `/en/reisinfo/centraal-station/`. Live tests all fine: available to Google, indexing allowed, each its own canonical, the English page in English. Breadcrumbs valid on both station pages, with Dutch ("Reisinformatie") and English ("Travel info") names linking their own language. Before the test, both station pages were "Discovered – currently not indexed" (never crawled). The screenshot of `/reisinfo` shows Centraal Station's board: see 0.2. |
 | | Indexing requested, day 2 (5 URLs, NL) | |
 | | Indexing requested, day 3 (5 URLs, EN) | |
 | | Pages → Indexing, a week later | … of 82 indexed |
+| | Canonical check, `/reisinfo` vs `/reisinfo/centraal-station/` (0.2) | |
