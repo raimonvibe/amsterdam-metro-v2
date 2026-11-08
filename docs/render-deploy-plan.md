@@ -184,8 +184,15 @@ The build writes an `index.html` for every page and language: `reisinfo/`, `priv
 | `/en/` | `/en/index.html` | Rewrite |
 | `/en/reisinfo` | `/en/reisinfo/index.html` | Rewrite |
 | `/en/privacy` | `/en/privacy/index.html` | Rewrite |
-| `/reisinfo/:station` | `/reisinfo/:station/index.html` | Rewrite |
-| `/en/reisinfo/:station` | `/en/reisinfo/:station/index.html` | Rewrite |
+
+**Station pages need no rule.** They live at `/reisinfo/zuid/`, *with* a trailing slash: Render serves a folder's `index.html` at that address by itself. Tested on the live site on 8 Nov 2026:
+
+| Address | Without a rule |
+|---|---|
+| `/reisinfo/zuid/` | the Station Zuid page ✅ |
+| `/reisinfo/zuid` | not served: falls through to `/*` (or, without it, the 404 page, which forwards to `/reisinfo/zuid/`) |
+
+A placeholder rule (`/reisinfo/:station` → `/reisinfo/:station/index.html`) was tried first and removed the same day: for an unknown station it answered **200 with an empty page** instead of falling through to the next rule or the 404 page.
 
 **No `/*` catch-all.** Until Nov 2026 a `/*` → `/index.html` rule answered every address, including made-up ones, with the homepage and status 200: Google can treat those as real pages ("soft 404s"). Without it, Render serves `404.html` with status 404 for any address no file or rule matches ([Render community answer](https://community.render.com/t/custom-404-error-page/746); Render's own docs don't state it, so the checks below confirm it). **Delete the `/*` rule in the dashboard by hand**: deploying `render.yaml` does not remove it.
 
@@ -194,18 +201,15 @@ The build writes an `index.html` for every page and language: `reisinfo/`, `priv
 Check after deploy:
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}
-" https://amsterdammetro.nl/reisinfo/zuid      # 200
-curl -s https://amsterdammetro.nl/reisinfo/zuid | grep -E "<title>|canonical"          # Station Zuid, …/reisinfo/zuid
-curl -s https://amsterdammetro.nl/en/reisinfo/bijlmer-arena | grep -E "<html|canonical" # lang="en", …/en/reisinfo/bijlmer-arena
-curl -s -o /dev/null -w "%{http_code}
-" https://amsterdammetro.nl/does-not-exist      # 404
-curl -s -o /dev/null -w "%{http_code}
-" https://amsterdammetro.nl/reisinfo/amstel     # 404 (the page suggests three stations)
-curl -s https://amsterdammetro.nl/sitemap.xml | grep -c "<loc>"                         # 82
+curl -s -o /dev/null -w "%{http_code}\n" https://amsterdammetro.nl/reisinfo/zuid/       # 200
+curl -s https://amsterdammetro.nl/reisinfo/zuid/ | grep -E "<title>|canonical"           # Station Zuid, …/reisinfo/zuid/
+curl -s https://amsterdammetro.nl/en/reisinfo/bijlmer-arena/ | grep -E "<html|canonical" # lang="en", …/en/reisinfo/bijlmer-arena/
+curl -s -o /dev/null -w "%{http_code}\n" https://amsterdammetro.nl/does-not-exist        # 404
+curl -s -o /dev/null -w "%{http_code}\n" https://amsterdammetro.nl/reisinfo/amstel       # 404 (the page suggests three stations)
+curl -s https://amsterdammetro.nl/sitemap.xml | grep -c "<loc>"                          # 82
 ```
 
-If `/reisinfo/zuid` gives 404, the placeholder rules aren't working on Render: add the 78 station rules one by one instead (`/reisinfo/zuid` → `/reisinfo/zuid/index.html`, …; the slugs are the folder names under `dist/reisinfo/`), or ask Render support. If `/does-not-exist` gives 200, the `/*` rule is still in the dashboard.
+If `/does-not-exist` gives 200, the `/*` rule is still in the dashboard. In a browser, `/reisinfo/zuid` (no slash) should land on `/reisinfo/zuid/` via the 404 page.
 
 ### HTTP response headers (dashboard)
 

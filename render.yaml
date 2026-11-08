@@ -62,15 +62,10 @@ services:
       - type: rewrite
         source: /en/privacy
         destination: /en/privacy/index.html
-      # One page per station and language, built as reisinfo/<slug>/index.html.
-      # An unknown station has no file, so it gets the 404 page. Render may
-      # serve these directories without the rule; it is harmless either way.
-      - type: rewrite
-        source: /reisinfo/:station
-        destination: /reisinfo/:station/index.html
-      - type: rewrite
-        source: /en/reisinfo/:station
-        destination: /en/reisinfo/:station/index.html
+      # Station pages need no rule: they are built as reisinfo/<slug>/index.html
+      # and linked as /reisinfo/<slug>/, which Render serves by itself. A
+      # placeholder rule (/reisinfo/:station → …/index.html) was tried on
+      # 8 Nov 2026: for an unknown station it answered 200 with an empty page.
       # No catch-all (/* → /index.html) any more: it answered every made-up
       # address with the homepage and status 200 ("soft 404s"). Anything not
       # matched above gets dist/404.html with a real 404 (docs/seo-tidy-plan.md).

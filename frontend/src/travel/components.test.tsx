@@ -240,7 +240,7 @@ describe("StationBoard", () => {
     const { props } = renderBoard({ station: byName("Amsterdam, Overamstel") });
     const box = (await screen.findByText("Stapvrij in- of uitstappen kan wel in:")).parentElement!;
     const amstel = within(box).getByRole("link", { name: "Amstelstation" });
-    expect(amstel).toHaveAttribute("href", "/reisinfo/amstelstation");
+    expect(amstel).toHaveAttribute("href", "/reisinfo/amstelstation/");
     await userEvent.click(amstel);
     expect(props.onStation).toHaveBeenCalledWith("Amsterdam, Amstelstation");
   });
@@ -430,7 +430,7 @@ describe("StationIndex", () => {
     expect(links.length).toBeLessThan(STATIONS.length);
     expect(within(list).queryByRole("link", { name: /Gein/ })).toBeNull();
     const rokin = within(list).getByRole("link", { name: /Rokin/ });
-    expect(rokin).toHaveAttribute("href", "/reisinfo/rokin");
+    expect(rokin).toHaveAttribute("href", "/reisinfo/rokin/");
     await userEvent.click(rokin);
     expect(onStation).toHaveBeenCalledWith("Amsterdam, Rokin");
   });

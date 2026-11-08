@@ -36,9 +36,9 @@ describe("language", () => {
     window.history.replaceState(null, "", "/reisinfo/zuid?lijn=52");
     render(<LanguageToggle />);
     const toggle = screen.getByRole("link", { name: "Switch to English" });
-    expect(toggle).toHaveAttribute("href", "/en/reisinfo/zuid");
+    expect(toggle).toHaveAttribute("href", "/en/reisinfo/zuid/");
     await userEvent.click(toggle);
-    expect(window.location.pathname).toBe("/en/reisinfo/zuid");
+    expect(window.location.pathname).toBe("/en/reisinfo/zuid/");
     expect(window.location.search).toBe("?lijn=52");
     setLang("nl");
   });
