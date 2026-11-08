@@ -25,6 +25,8 @@ import {
 const $ = <T extends Element>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel);
 const $$ = <T extends Element>(sel: string, root: ParentNode = document) => [...root.querySelectorAll<T>(sel)];
 
+// Before init() runs below: the app's saved map style (theme.ts).
+const STYLE_KEY = "metro-live:map-style";
 const path = window.location.pathname;
 const data: PageData = JSON.parse($("#station-data")?.textContent || '{"stations":[],"nicknames":{}}');
 
@@ -38,9 +40,17 @@ if (forward) {
 
 function savedStyle(): string | null {
   try {
-    return localStorage.getItem("metro-live:map-style");
+    return localStorage.getItem(STYLE_KEY);
   } catch {
     return null; // site data blocked
+  }
+}
+
+function saveStyle(style: string) {
+  try {
+    localStorage.setItem(STYLE_KEY, style);
+  } catch {
+    // site data blocked: the choice holds for this page only
   }
 }
 
@@ -83,12 +93,19 @@ function badges(st: StationData): HTMLSpanElement {
   return span;
 }
 
+/** Light or dark on the page (the 3D follows through the "themechange" event). */
+function applyTheme(dark: boolean) {
+  const root = document.documentElement;
+  if (dark) root.dataset.theme = "dark";
+  else delete root.dataset.theme;
+  document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", dark ? "dark" : "light");
+  document.dispatchEvent(new CustomEvent("themechange", { detail: { dark } }));
+}
+
 function init() {
-  const dark = themeFor(savedStyle()) === "dark";
-  if (dark) {
-    document.documentElement.dataset.theme = "dark";
-    document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", "dark");
-  }
+  let style = savedStyle();
+  let dark = themeFor(style) === "dark";
+  applyTheme(dark);
 
   const blocks = $$<HTMLElement>("[data-lang]");
   const toggle = $<HTMLButtonElement>("[data-switch]");
@@ -104,8 +121,43 @@ function init() {
 
   // Shows the page in one language, in place; the address stays and
   // nothing is stored.
+  // The light/dark switch. It stores a map style, as the app's own switch
+  // on /reisinfo does, so the app looks the same afterwards: back to the
+  // style used before on the other side (Bright stays Bright), else Liberty
+  // or Dark, the app's defaults.
+  const themeButton = $<HTMLButtonElement>("[data-theme-toggle]");
+  const THEME: Record<Lang, { toDark: string; toLight: string }> = {
+    nl: { toDark: "Donkere weergave", toLight: "Lichte weergave" },
+    en: { toDark: "Dark view", toLight: "Light view" },
+  };
+  let previous: string | null = null;
+  const labelTheme = () => {
+    if (!themeButton) return;
+    const label = dark ? THEME[lang].toLight : THEME[lang].toDark;
+    themeButton.setAttribute("aria-label", label);
+    themeButton.title = label;
+  };
+  if (themeButton) {
+    themeButton.hidden = false;
+    let animTimer = 0;
+    themeButton.addEventListener("click", () => {
+      const next = previous && themeFor(previous) !== themeFor(style) ? previous : dark ? "liberty" : "dark";
+      previous = style ?? "liberty";
+      style = next;
+      dark = themeFor(next) === "dark";
+      saveStyle(next);
+      // Colours fade for a moment (CSS, not with reduced motion).
+      document.documentElement.classList.add("theme-anim");
+      window.clearTimeout(animTimer);
+      animTimer = window.setTimeout(() => document.documentElement.classList.remove("theme-anim"), 400);
+      applyTheme(dark);
+      labelTheme();
+    });
+  }
+
   const show = (l: Lang) => {
     lang = l;
+    labelTheme();
     for (const b of blocks) b.hidden = b.dataset.lang !== l;
     // The head script set these first (no frame with both languages).
     const root = document.documentElement;
@@ -199,7 +251,7 @@ function init() {
     if (report) report.href = issueUrl(path, l);
   }
 
-  start3d(dark);
+  start3d();
 }
 
 /** Whether this device and connection should get the 3D train. */
@@ -215,7 +267,7 @@ function canRun3d(): boolean {
   }
 }
 
-function start3d(dark: boolean) {
+function start3d() {
   const stage = $<HTMLElement>("[data-stage]");
   if (!stage) return;
   const wrap = stage.closest(".stage-wrap");
@@ -245,7 +297,7 @@ function start3d(dark: boolean) {
           // still image of the train it starts where that has it. Either
           // way the swap from still image to 3D doesn't show.
           parked: reducedMotion || !document.documentElement.classList.contains("will-3d"),
-          dark,
+          dark: document.documentElement.dataset.theme === "dark",
           onProgress: (f) => bar?.style.setProperty("--p", String(f)),
           wheelZooms: () => stage.classList.contains("is-fs"),
           onWheelScroll: wheelHint,
@@ -268,6 +320,9 @@ function start3d(dark: boolean) {
           });
         }
         const fullscreen = fullscreenToggle(stage);
+        // Follow the page's light/dark switch, also one used while loading.
+        scene.setTheme(document.documentElement.dataset.theme === "dark");
+        document.addEventListener("themechange", (e) => scene.setTheme((e as CustomEvent<{ dark: boolean }>).detail.dark));
         const STEP = Math.PI / 12;
         stage.addEventListener("keydown", (e) => {
           if (e.target !== stage || e.altKey || e.ctrlKey || e.metaKey) return;

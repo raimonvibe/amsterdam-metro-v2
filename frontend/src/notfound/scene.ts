@@ -67,6 +67,8 @@ export interface SceneHandle {
   zoom(factor: number): void;
   /** Back to the first view. */
   reset(): void;
+  /** Light or dark, as the page now is. */
+  setTheme(dark: boolean): void;
   dispose(): void;
 }
 
@@ -158,8 +160,9 @@ function railsFrom(scene: Object3D): Rails | null {
  * simple boxes if it didn't load) with no bed under them, a soft shadow
  * that grounds them, and the five lines as a strip along the far side.
  */
-function buildTrack(dark: boolean, gauge: number, rails: Rails | null): Group {
+function buildTrack(dark: boolean, gauge: number, rails: Rails | null): { group: Group; setDark(dark: boolean): void } {
   const group = new Group();
+  const themed: ((dark: boolean) => void)[] = [];
   const length = TRACK_LENGTH;
   const startX = TRACK_END - length;
 
@@ -181,7 +184,8 @@ function buildTrack(dark: boolean, gauge: number, rails: Rails | null): Group {
     inst.computeBoundingSphere();
     group.add(inst);
   } else {
-    const sleeperMat = new MeshStandardMaterial({ color: dark ? "#4a4237" : "#8a7458", roughness: 0.9 });
+    const sleeperMat = new MeshStandardMaterial({ roughness: 0.9 });
+    themed.push((d) => sleeperMat.color.set(d ? "#4a4237" : "#8a7458"));
     const railMat = new MeshStandardMaterial({ color: "#9aa3ad", metalness: 0.8, roughness: 0.35 });
     const n = Math.round(length / (gauge * 0.6));
     const sleepers = new InstancedMesh(new BoxGeometry(gauge * 0.25, -sleeperBottom * 0.6, sleeperHalf * 2), sleeperMat, n);
@@ -202,50 +206,58 @@ function buildTrack(dark: boolean, gauge: number, rails: Rails | null): Group {
   // track stands on something without a block under it.
   const bedTop = sleeperBottom;
   const bedHalf = sleeperHalf * 1.6;
-  group.add(softShadow(startX, length, sleeperHalf * 2.6, bedTop - 0.005, dark));
+  const shadow = softShadow(startX, length, sleeperHalf * 2.6, bedTop - 0.005);
+  group.add(shadow.mesh);
+  themed.push(shadow.setDark);
 
   // The five lines, as a strip along the far side of the track.
   LINE_COLORS.forEach((c, i) => {
-    const stripe = new Mesh(
-      new BoxGeometry(length * (1 - i * 0.08), 0.04, 0.16),
-      new MeshStandardMaterial({ color: c, roughness: 0.6, emissive: new Color(c), emissiveIntensity: dark ? 0.35 : 0.05 }),
-    );
+    const mat = new MeshStandardMaterial({ color: c, roughness: 0.6, emissive: new Color(c) });
+    themed.push((d) => (mat.emissiveIntensity = d ? 0.35 : 0.05));
+    const stripe = new Mesh(new BoxGeometry(length * (1 - i * 0.08), 0.04, 0.16), mat);
     stripe.position.set(startX + (length * (1 - i * 0.08)) / 2, bedTop + 0.01, -bedHalf - 0.25 - i * 0.22);
     group.add(stripe);
   });
 
-  return group;
+  const setDark = (d: boolean) => themed.forEach((f) => f(d));
+  setDark(dark);
+  return { group, setDark };
 }
 
 /** A blurred dark band on the ground, fading out across and at the far end. */
-function softShadow(startX: number, length: number, width: number, y: number, dark: boolean): Mesh {
+function softShadow(startX: number, length: number, width: number, y: number): { mesh: Mesh; setDark(dark: boolean): void } {
   const c = document.createElement("canvas");
   c.width = 256;
   c.height = 64;
   const g = c.getContext("2d")!;
-  const across = g.createLinearGradient(0, 0, 0, 64);
-  const ink = dark ? "0, 0, 0" : "60, 45, 25";
-  across.addColorStop(0, `rgba(${ink}, 0)`);
-  across.addColorStop(0.5, `rgba(${ink}, ${dark ? 0.55 : 0.3})`);
-  across.addColorStop(1, `rgba(${ink}, 0)`);
-  g.fillStyle = across;
-  g.fillRect(0, 0, 256, 64);
-  // Fade out along the far end and at the end of the rails.
-  g.globalCompositeOperation = "destination-in";
-  const along = g.createLinearGradient(0, 0, 256, 0);
-  along.addColorStop(0, "rgba(0,0,0,0)");
-  along.addColorStop(0.35, "rgba(0,0,0,1)");
-  along.addColorStop(0.985, "rgba(0,0,0,1)");
-  along.addColorStop(1, "rgba(0,0,0,0)");
-  g.fillStyle = along;
-  g.fillRect(0, 0, 256, 64);
   const tex = new CanvasTexture(c);
   tex.colorSpace = SRGBColorSpace;
+  const paint = (dark: boolean) => {
+    g.globalCompositeOperation = "source-over";
+    g.clearRect(0, 0, 256, 64);
+    const across = g.createLinearGradient(0, 0, 0, 64);
+    const ink = dark ? "0, 0, 0" : "60, 45, 25";
+    across.addColorStop(0, `rgba(${ink}, 0)`);
+    across.addColorStop(0.5, `rgba(${ink}, ${dark ? 0.55 : 0.3})`);
+    across.addColorStop(1, `rgba(${ink}, 0)`);
+    g.fillStyle = across;
+    g.fillRect(0, 0, 256, 64);
+    // Fade out along the far end and at the end of the rails.
+    g.globalCompositeOperation = "destination-in";
+    const along = g.createLinearGradient(0, 0, 256, 0);
+    along.addColorStop(0, "rgba(0,0,0,0)");
+    along.addColorStop(0.35, "rgba(0,0,0,1)");
+    along.addColorStop(0.985, "rgba(0,0,0,1)");
+    along.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = along;
+    g.fillRect(0, 0, 256, 64);
+    tex.needsUpdate = true;
+  };
   const mesh = new Mesh(new PlaneGeometry(length, width), new MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
   mesh.rotation.x = -Math.PI / 2;
   mesh.position.set(startX + length / 2, y, 0);
   mesh.renderOrder = -1;
-  return mesh;
+  return { mesh, setDark: paint };
 }
 
 export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<SceneHandle> {
@@ -253,15 +265,16 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = SRGBColorSpace;
   renderer.toneMapping = ACESFilmicToneMapping;
-  renderer.toneMappingExposure = opts.dark ? 1.15 : 1.0;
+
   const canvas = renderer.domElement;
   canvas.className = "stage-canvas";
   canvas.setAttribute("aria-hidden", "true");
 
   const scene = new Scene();
   const camera = new PerspectiveCamera(32, 16 / 9, 0.1, 200);
-  scene.add(new HemisphereLight(opts.dark ? "#c9d6ff" : "#ffffff", opts.dark ? "#1a1f2b" : "#b9ab90", opts.dark ? 1.6 : 1.9));
-  const sun = new DirectionalLight("#fff4e0", opts.dark ? 1.6 : 2.4);
+  const sky = new HemisphereLight();
+  scene.add(sky);
+  const sun = new DirectionalLight("#fff4e0");
   sun.position.set(-6, 10, 8);
   scene.add(sun);
   const fill = new DirectionalLight("#bcd0ff", 0.6);
@@ -288,7 +301,18 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
   scene.add(train);
   const trainWidth = new Box3().setFromObject(train).getSize(new Vector3()).z;
   const rails = railsGltf ? railsFrom(railsGltf.scene) : null;
-  scene.add(buildTrack(opts.dark, trainWidth * GAUGE_PER_WIDTH, rails));
+  const track = buildTrack(opts.dark, trainWidth * GAUGE_PER_WIDTH, rails);
+  scene.add(track.group);
+  // Light or dark (the page's switch can change it while it runs).
+  const setTheme = (dark: boolean) => {
+    renderer.toneMappingExposure = dark ? 1.15 : 1.0;
+    sky.color.set(dark ? "#c9d6ff" : "#ffffff");
+    sky.groundColor.set(dark ? "#1a1f2b" : "#b9ab90");
+    sky.intensity = dark ? 1.6 : 1.9;
+    sun.intensity = dark ? 1.6 : 2.4;
+    track.setDark(dark);
+  };
+  setTheme(opts.dark);
 
   // Where the train comes to rest: its nose a little before the rails end.
   const stopX = TRACK_END - 0.8;
@@ -590,6 +614,10 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
       zoomBy(factor, true);
     },
     reset,
+    setTheme(dark: boolean) {
+      setTheme(dark);
+      request();
+    },
     dispose() {
       cancelAnimationFrame(frame);
       stage.removeEventListener("wheel", onWheel, { capture: true });
