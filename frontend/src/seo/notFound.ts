@@ -76,12 +76,12 @@ export function notFoundHtml(assets: NotFoundAssets): string {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex" />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="color-scheme" content="light" />
     <title>Pagina niet gevonden — Metro Amsterdam Live</title>
     <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 96x96" />
     <style>
       :root { --bg: #faf6ec; --ink: #1d2433; --muted: #6b6455; --accent: #7b2132; --card: #f1ebdd; --line: #e2d8c4; --link: #1f3a68; --stage: linear-gradient(180deg, #fbf8f1 0%, #efe6d3 100%); --board: #14181f; --amber: #ffb000; }
-      @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #111727; --ink: #ece6d6; --muted: #9aa2b5; --accent: #d9b95f; --card: #1a2134; --line: #263049; --link: #9db1ff; --stage: linear-gradient(180deg, #172036 0%, #0d1220 100%); } }
+      /* Light unless the visitor chose a dark map style (page.ts), as in the app. */
       :root[data-theme="dark"] { --bg: #111727; --ink: #ece6d6; --muted: #9aa2b5; --accent: #d9b95f; --card: #1a2134; --line: #263049; --link: #9db1ff; --stage: linear-gradient(180deg, #172036 0%, #0d1220 100%); }
       * { box-sizing: border-box; }
       html { -webkit-text-size-adjust: 100%; }

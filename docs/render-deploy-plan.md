@@ -185,12 +185,13 @@ The build writes an `index.html` for every page and language: `reisinfo/`, `priv
 | `/en/reisinfo` | `/en/reisinfo/index.html` | Rewrite |
 | `/en/privacy` | `/en/privacy/index.html` | Rewrite |
 
-**Station pages need no rule.** They live at `/reisinfo/zuid/`, *with* a trailing slash: Render serves a folder's `index.html` at that address by itself. Tested on the live site on 8 Nov 2026:
+**Station pages need no rule.** Their address is `/reisinfo/zuid/`, *with* a trailing slash: Render serves a folder's `index.html` there by itself. Tested on the live site on 8 Nov 2026:
 
 | Address | Without a rule |
 |---|---|
 | `/reisinfo/zuid/` | the Station Zuid page ✅ |
-| `/reisinfo/zuid` | not served: falls through to `/*` (or, without it, the 404 page, which forwards to `/reisinfo/zuid/`) |
+| `/reisinfo/zuid` | the Station Zuid page too ✅, once the `/*` rule was gone (while it existed, `/*` caught this address first and served the homepage). The page's canonical names the slash form. |
+| `/reisinfo/Zuid`, `/reisinfo/cs` | the 404 page, which forwards to `/reisinfo/zuid/` and `/reisinfo/centraal-station/` |
 
 A placeholder rule (`/reisinfo/:station` → `/reisinfo/:station/index.html`) was tried first and removed the same day: for an unknown station it answered **200 with an empty page** instead of falling through to the next rule or the 404 page.
 
@@ -209,7 +210,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://amsterdammetro.nl/reisinfo/amst
 curl -s https://amsterdammetro.nl/sitemap.xml | grep -c "<loc>"                          # 82
 ```
 
-If `/does-not-exist` gives 200, the `/*` rule is still in the dashboard. In a browser, `/reisinfo/zuid` (no slash) should land on `/reisinfo/zuid/` via the 404 page.
+If `/does-not-exist` gives 200, the `/*` rule is still in the dashboard. In a browser, `/reisinfo/cs` should land on `/reisinfo/centraal-station/` via the 404 page.
 
 ### HTTP response headers (dashboard)
 
