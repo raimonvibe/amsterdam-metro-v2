@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 import type { Lang } from "../i18n";
 import { type Page, pagePath } from "../i18n/paths";
 import { ROUTE_PAGES, STATION_PAGES, linesHtml, routeDir, routeHtml, sitemapXml, stationBody, stationHtml } from "./routeHtml";
-import { MODEL, NICKNAMES, notFoundHtml } from "./notFound";
+import { MODEL, NICKNAMES, NOT_FOUND_BOOT, notFoundHtml } from "./notFound";
+import { langOfPath, themeFor } from "../notfound/suggest";
 import { STATION_NAMES, stationOfSlug, stationSlug } from "../data/network";
 import { IMAGE_ALT, INDEXED_PAGES, PAGE_META, SITE_NAME } from "./site";
 
@@ -265,7 +266,27 @@ describe("404 page", () => {
     expect(page).toContain('data-exit-label="Volledig scherm sluiten"');
     expect(page).toContain('data-exit-label="Exit full screen"');
     // Hidden until the 3D runs: without it they would do nothing.
-    expect(page).toContain(".stage-wrap:not(.is-ready) .view-tools { display: none; }");
+    expect(page).toMatch(/\.stage-wrap:not\(\.is-ready\) \.view-tools[^{]*\{ opacity: 0; visibility: hidden; \}/);
+  });
+
+  it("loads the head script before the first paint, when given", () => {
+    const withBoot = notFoundHtml({ script: "/x.js", boot: "/assets/notfound-boot-abc.js", hasPoster: false });
+    const head = withBoot.slice(0, withBoot.indexOf("</head>"));
+    expect(head).toContain('<script src="/assets/notfound-boot-abc.js"></script>');
+    // Classic and blocking: no defer, no async, no module.
+    expect(head).not.toMatch(/notfound-boot[^>]*(defer|async|module)/);
+  });
+
+  it("keeps each language in one grid cell, so without JavaScript they stack instead of overlapping", () => {
+    expect(page.match(/class="head"/g)).toHaveLength(1);
+    expect(page.match(/class="tools"/g)).toHaveLength(1);
+  });
+
+  it("puts the 3D controls in a dropdown, closed, in both languages", () => {
+    expect(page.match(/<details class="disclosure help"/g)).toHaveLength(2);
+    expect(page).not.toMatch(/<details class="disclosure help"[^>]* open/);
+    expect(page).toContain("Zo bedien je de 3D-metro");
+    expect(page).toContain("How to control the 3D metro");
   });
 
   it("only knows nicknames that point to real stations and aren't real addresses", () => {
@@ -274,5 +295,36 @@ describe("404 page", () => {
       for (const n of names) expect(STATION_NAMES).toContain(n);
     }
     expect(NICKNAMES.amstel).toHaveLength(3);
+  });
+});
+
+describe("404 page head script", () => {
+  /** Runs NOT_FOUND_BOOT against a stand-in document. */
+  function boot(path: string, style: string | null) {
+    const attrs: Record<string, string> = {};
+    const meta = { content: "light", setAttribute: (_: string, v: string) => (meta.content = v) };
+    const root = { lang: "", className: "", setAttribute: (k: string, v: string) => (attrs[k] = v) };
+    const doc = { documentElement: root, querySelector: () => meta };
+    const storage = { getItem: () => style };
+    new Function("document", "location", "localStorage", NOT_FOUND_BOOT)(doc, { pathname: path }, storage);
+    return { lang: root.lang, classes: root.className.trim().split(/\s+/), theme: attrs["data-theme"] ?? "light", meta: meta.content };
+  }
+
+  it.each(["/", "/nope", "/en", "/en/", "/en/nope", "/english", "/reisinfo/x/"])("agrees with langOfPath for %s", (path) => {
+    const r = boot(path, null);
+    expect(r.lang).toBe(langOfPath(path));
+    expect(r.classes).toEqual(["js", `lang-${langOfPath(path)}`]);
+  });
+
+  it.each([null, "light", "dark", "fiord", "positron", "constructor"])("agrees with themeFor for style %s", (style) => {
+    const r = boot("/x", style);
+    expect(r.theme).toBe(themeFor(style));
+    expect(r.meta).toBe(themeFor(style));
+  });
+
+  it("survives blocked site data", () => {
+    const doc = { documentElement: { lang: "", className: "", setAttribute() {} }, querySelector: () => null };
+    const storage = { getItem: () => { throw new Error("blocked"); } };
+    expect(() => new Function("document", "location", "localStorage", NOT_FOUND_BOOT)(doc, { pathname: "/" }, storage)).not.toThrow();
   });
 });

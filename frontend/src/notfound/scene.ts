@@ -24,8 +24,9 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 /**
- * The 404 page's 3D scene: an S1/S2 metro (retired in 2024) rolls in and
- * comes to a stop at the end of the track. Loaded
+ * The 404 page's 3D scene: an S1/S2 metro (retired in 2024) at the end of
+ * the track. Over the still image it starts parked, exactly where the still
+ * has it (a seamless swap); the replay button lets it roll in. Loaded
  * only after the page's text, and only where it can run well (see page.ts).
  * Draws a frame only while something moves, and not at all off screen.
  *
@@ -39,6 +40,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 export interface SceneOptions {
   modelUrl: string;
   reducedMotion: boolean;
+  /** Start with the train at rest (as on the still image) instead of arriving. */
+  parked?: boolean;
   dark: boolean;
   /** 0–1 while the model downloads, when the size is known. */
   onProgress?: (fraction: number) => void;
@@ -78,10 +81,14 @@ const MOVE_MS = 420;
 const MAX_PIXELS = 4_500_000;
 /** tan(half the vertical field of view): wide stages, narrow stages, and the widest we go. */
 const TAN_WIDE = Math.tan((16 * Math.PI) / 180);
-const TAN_NARROW = Math.tan((22 * Math.PI) / 180);
 const TAN_MAX = Math.tan((30 * Math.PI) / 180);
-/** How much of the train's width a narrow stage needs to show (tan of half the horizontal view). */
-const TAN_FIT_X = 0.48;
+/** How much width a stage narrower than 16:10 keeps (tan of half the
+ *  horizontal view): the still image's own (16:10 at 32°, shown with
+ *  object-fit: contain), so the 3D's first frame frames the train exactly
+ *  like the still and the swap doesn't jump. A bit more when upright. */
+const POSTER_ASPECT = 1.6;
+const TAN_FIT_X = TAN_WIDE * POSTER_ASPECT;
+const TAN_FIT_X_PORTRAIT = 0.48;
 
 /** Lay the model along +x, wheels on y = 0, front end at x = 0. */
 function placeTrain(model: Object3D): Group {
@@ -198,8 +205,9 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
 
   const restX = stopX;
   const startX = restX - TRAIN_LENGTH * 2.6;
-  let arriveStart = opts.reducedMotion ? -Infinity : performance.now();
-  train.position.x = opts.reducedMotion ? restX : startX;
+  const parked = opts.reducedMotion || opts.parked;
+  let arriveStart = parked ? -Infinity : performance.now();
+  train.position.x = parked ? restX : startX;
 
   let frame = 0;
   let visible = true;
@@ -278,10 +286,11 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
     if (renderer.getPixelRatio() !== ratio) renderer.setPixelRatio(ratio);
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    // Narrow stages (a phone, a portrait full screen): a wider lens, and
-    // past the widest lens a step back, so the whole train stays in view.
-    let tan = TAN_WIDE;
-    if (camera.aspect < 1.2) tan = Math.max(TAN_NARROW, TAN_FIT_X / camera.aspect);
+    // Stages narrower than the still image (a phone, a portrait full
+    // screen): a wider lens, and past the widest lens a step back, so the
+    // whole train stays in view.
+    const fitX = camera.aspect < 1 ? TAN_FIT_X_PORTRAIT : TAN_FIT_X;
+    let tan = Math.max(TAN_WIDE, fitX / camera.aspect);
     const fit = Math.max(1, tan / TAN_MAX);
     tan = Math.min(tan, TAN_MAX);
     camera.fov = (2 * Math.atan(tan) * 180) / Math.PI;

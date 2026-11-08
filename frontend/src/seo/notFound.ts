@@ -1,5 +1,6 @@
 import { stationPath } from "../i18n/paths";
 import { METRO_LINES, STATION_NAMES, displayName, linesAt, stationSlug } from "../data/network";
+import { DARK_STYLES } from "../notfound/suggest";
 
 /** The app's line colours (the same as the API's). */
 const LINE_COLORS: Record<string, string> = { "50": "#3CB44B", "51": "#F58231", "52": "#4363D8", "53": "#E6194B", "54": "#FFE119" };
@@ -35,9 +36,32 @@ export const MODEL = {
   licenseUrl: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
 } as const;
 
+/**
+ * The 404 page's head script, run before the first paint: the language of
+ * the address and the visitor's theme, so the page never shows both
+ * languages or the wrong theme for a frame (page.ts does the rest later).
+ * Must agree with langOfPath and themeFor (tested).
+ */
+export const NOT_FOUND_BOOT = `(function () {
+  var d = document.documentElement, p = location.pathname;
+  var l = p === "/en" || p.indexOf("/en/") === 0 ? "en" : "nl";
+  d.lang = l;
+  d.className += " js lang-" + l;
+  try {
+    if (${JSON.stringify(DARK_STYLES)}.indexOf(localStorage.getItem("metro-live:map-style")) >= 0) {
+      d.setAttribute("data-theme", "dark");
+      var m = document.querySelector('meta[name="color-scheme"]');
+      if (m) m.setAttribute("content", "dark");
+    }
+  } catch (e) {}
+})();
+`;
+
 export interface NotFoundAssets {
   /** The built page script (src/notfound/page.ts), e.g. "/assets/notfound-abc.js". */
   script: string;
+  /** The built head script (NOT_FOUND_BOOT), e.g. "/assets/notfound-boot-abc.js". */
+  boot?: string;
   /** Whether the still image of the train exists (public/models/…-poster.webp). */
   hasPoster: boolean;
 }
@@ -57,11 +81,67 @@ function viewTools(lang: "nl" | "en"): string {
   const button = (data: string, label: string, body: string) =>
     `<button type="button" ${data} aria-label="${label}" title="${label}">${body}</button>`;
   return `<div class="view-tools" role="group" aria-label="${t.group}"${attrs}>
-            ${button('data-zoom="in"', t.zoomIn, icon("M12 5v14M5 12h14"))}
-            ${button('data-zoom="out"', t.zoomOut, icon("M5 12h14"))}
-            ${button('data-zoom="reset"', t.reset, icon("M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"))}
-            ${button(`data-fullscreen aria-pressed="false" data-label="${t.full}" data-exit-label="${t.exit}"`, t.full, `<span class="fs-enter">${icon("M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5")}</span><span class="fs-exit">${icon("M6 6l12 12M18 6L6 18")}</span>`)}
+            ${button('data-zoom="in"', t.zoomIn, icon(ICON.plus))}
+            ${button('data-zoom="out"', t.zoomOut, icon(ICON.minus))}
+            ${button('data-zoom="reset"', t.reset, icon(ICON.reset))}
+            ${button(`data-fullscreen aria-pressed="false" data-label="${t.full}" data-exit-label="${t.exit}"`, t.full, `<span class="fs-enter">${icon(ICON.full)}</span><span class="fs-exit">${icon("M6 6l12 12M18 6L6 18")}</span>`)}
           </div>`;
+}
+
+/** Icons shared by the toolbar and its help. */
+const ICON = {
+  plus: "M12 5v14M5 12h14",
+  minus: "M5 12h14",
+  reset: "M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5",
+  full: "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5",
+} as const;
+
+/** A small copy of a toolbar button, for the help. */
+const btn = (d: string) => `<span class="mini-btn" aria-hidden="true">${icon(d)}</span>`;
+
+/**
+ * The 3D view's controls, as a short list in a dropdown under the train.
+ * .fine shows only with a mouse (keys, wheel), .coarse only on a touch screen.
+ */
+const CONTROLS = {
+  nl: {
+    summary: "Zo bedien je de 3D-metro",
+    sub: "Draaien, zoomen, volledig scherm",
+    rows: [
+      ["Draaien", `<span class="chip">Slepen</span><span class="fine">of</span><span class="fine keys-row"><kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd></span>`],
+      ["Zoomen", `<span class="chip coarse">Twee vingers</span><span class="chip fine">Ctrl + scroll</span>${btn(ICON.plus)}${btn(ICON.minus)}<span class="sr">knoppen + en −</span>`],
+      ["Inzoomen op een plek", `<span class="chip fine">Dubbelklik</span><span class="chip coarse">Dubbeltik</span>`],
+      ["Beginbeeld", `${btn(ICON.reset)}<span class="sr">knop Beeld herstellen</span><span class="fine">of</span><kbd class="fine">0</kbd>`],
+      ["Volledig scherm", `${btn(ICON.full)}<span class="sr">knop Volledig scherm</span><span class="fine">of</span><kbd class="fine">F</kbd><span class="fine">· sluiten:</span><kbd class="fine">Esc</kbd>`],
+    ],
+    keys: "Toetsen werken als de metro geselecteerd is: klik erop of ga er met Tab naartoe.",
+  },
+  en: {
+    summary: "How to control the 3D metro",
+    sub: "Turn, zoom, full screen",
+    rows: [
+      ["Turn", `<span class="chip">Drag</span><span class="fine">or</span><span class="fine keys-row"><kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd></span>`],
+      ["Zoom", `<span class="chip coarse">Two fingers</span><span class="chip fine">Ctrl + scroll</span>${btn(ICON.plus)}${btn(ICON.minus)}<span class="sr">buttons + and −</span>`],
+      ["Zoom in on a spot", `<span class="chip fine">Double-click</span><span class="chip coarse">Double-tap</span>`],
+      ["First view", `${btn(ICON.reset)}<span class="sr">Reset view button</span><span class="fine">or</span><kbd class="fine">0</kbd>`],
+      ["Full screen", `${btn(ICON.full)}<span class="sr">Full screen button</span><span class="fine">or</span><kbd class="fine">F</kbd><span class="fine">· close:</span><kbd class="fine">Esc</kbd>`],
+    ],
+    keys: "Keys work once the metro is selected: click it or Tab to it.",
+  },
+} as const;
+
+const chevron = `<svg class="chev" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function controlsHelp(lang: "nl" | "en"): string {
+  const c = CONTROLS[lang];
+  const attrs = lang === "en" ? ` data-lang="en" lang="en"` : ` data-lang="nl"`;
+  return `<details class="disclosure help"${attrs}>
+            <summary><span class="sum-icon" aria-hidden="true">${icon("M12 3v4M12 17v4M3 12h4M17 12h4M12 9a3 3 0 1 0 0 6a3 3 0 0 0 0-6")}</span><span class="sum-text">${c.summary}<span class="sub">${c.sub}</span></span>${chevron}</summary>
+            <dl class="controls">
+              ${c.rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("\n              ")}
+            </dl>
+            <p class="keys fine">${c.keys}</p>
+          </details>`;
 }
 
 const badge = (l: string) => `<span class="badge l${l}">${l}</span>`;
@@ -100,7 +180,7 @@ export function notFoundHtml(assets: NotFoundAssets): string {
     <meta name="robots" content="noindex" />
     <meta name="color-scheme" content="light" />
     <title>Pagina niet gevonden — Metro Amsterdam Live</title>
-    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 96x96" />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 96x96" />${assets.boot ? `\n    <script src="${assets.boot}"></script>` : ""}
     <style>
       :root { --bg: #faf6ec; --ink: #1d2433; --muted: #6b6455; --accent: #7b2132; --card: #f1ebdd; --line: #e2d8c4; --link: #1f3a68; --stage: linear-gradient(180deg, #fbf8f1 0%, #efe6d3 100%); --board: #14181f; --amber: #ffb000; }
       /* Light unless the visitor chose a dark map style (page.ts), as in the app. */
@@ -121,6 +201,10 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       @media (min-width: 60rem) { main.hero { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr); grid-template-areas: "head stage" "tools stage"; align-items: start; padding-top: 2rem; } }
       .head { grid-area: head; }
       .tools { grid-area: tools; }
+      /* One language at a time once the head script ran (html.lang-nl or
+         .lang-en); without JavaScript both, one under the other. */
+      html.lang-nl [data-lang="en"], html.lang-en [data-lang="nl"] { display: none !important; }
+      html:not(.js) .head > [lang="en"], html:not(.js) .tools > [lang="en"] { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
       .stage-wrap { grid-area: stage; margin: 0; }
       @media (min-width: 60rem) { .stage-wrap { position: sticky; top: 1.5rem; } }
       .board { display: inline-flex; align-items: center; gap: 0.75rem; margin: 0 0 1rem; padding: 0.45rem 0.8rem; border-radius: 0.35rem; background: var(--board); color: var(--amber); font: 600 0.85rem/1.2 ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: 0.12em; text-transform: uppercase; box-shadow: inset 0 0 0 1px #2a313d; }
@@ -148,6 +232,7 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       .mine h2 { margin: 0 0 0.35rem; font-size: 1.05rem; color: var(--accent); }
       .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 1rem; }
       .actions a { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 1rem; border-radius: 0.5rem; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-weight: 600; text-decoration: none; }
+      @media (max-width: 40rem) { .actions a { flex: 1 1 100%; justify-content: center; } }
       .actions a.primary { background: #1f3a68; border-color: #1f3a68; color: #fff; }
       .report { margin: 0; color: var(--muted); font-size: 0.92rem; }
       .stage { position: relative; overflow: hidden; aspect-ratio: 4 / 3; border-radius: 1rem; background: var(--stage); box-shadow: inset 0 0 0 1px var(--line); touch-action: pan-y; }
@@ -163,23 +248,26 @@ export function notFoundHtml(assets: NotFoundAssets): string {
          top and the train fit in one view (the scene fits any shape). */
       .stage { width: 100%; max-height: calc(100vh - 2rem); max-height: calc(100svh - 2rem); }
       .stage-still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transition: opacity 0.6s ease; }
-      .progress, .loading, .replay, .view-tools, .wheel-hint { z-index: 1; }
-      .stage-canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; opacity: 0; transition: opacity 0.8s ease; cursor: grab; }
+      .progress, .replay, .view-tools, .wheel-hint { z-index: 1; }
+      /* The 3D fades in over the still image, which goes only after: the
+         first 3D frame shows the train where the still has it, so the swap
+         is seamless (no dip, no empty track). */
+      .stage-canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; opacity: 0; transition: opacity 0.6s ease; cursor: grab; }
       .stage-canvas:active { cursor: grabbing; }
       .stage.is-live .stage-canvas { opacity: 1; }
-      .stage.is-live .stage-still { opacity: 0; }
+      .stage.is-live .stage-still { opacity: 0; transition-delay: 0.6s; }
       .progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: linear-gradient(90deg, #3CB44B, #F58231, #4363D8, #E6194B, #FFE119); transform-origin: left; transform: scaleX(var(--p, 0.08)); opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease; }
       .stage.is-loading .progress { opacity: 1; }
-      .loading { position: absolute; left: 0.85rem; bottom: 0.85rem; margin: 0; padding: 0.25rem 0.6rem; border-radius: 999px; background: var(--card); color: var(--muted); font-size: 0.85rem; opacity: 0; transition: opacity 0.3s ease; }
-      .stage.is-loading .loading { opacity: 1; }
-      /* Only once the 3D runs (page.ts adds .is-ready), and no replay
-         button with reduced motion. */
-      .stage-wrap:not(.is-ready) .replay, .stage-wrap:not(.is-ready) .hint, .stage-wrap.no-replay .replay { display: none; }
+      /* Only once the 3D runs (page.ts adds .is-ready): faded in, and their
+         space kept from the start so nothing below moves. No replay button
+         with reduced motion; no help where the 3D can't run (.no-3d). */
+      .replay, .view-tools, .help { transition: opacity 0.4s ease, visibility 0.4s; }
+      .stage-wrap:not(.is-ready) .replay, .stage-wrap:not(.is-ready) .view-tools, .stage-wrap:not(.is-ready) .help { opacity: 0; visibility: hidden; }
+      .stage-wrap.no-replay .replay, .stage-wrap.no-3d .help, html:not(.js) .help { display: none; }
       .replay { position: absolute; right: 0.75rem; bottom: 0.75rem; min-height: 2.75rem; padding: 0 0.9rem; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink); font: 600 0.9rem/1 system-ui, sans-serif; cursor: pointer; box-shadow: 0 2px 8px rgb(0 0 0 / 0.12); }
       .stage.is-fs .replay { right: max(0.75rem, env(safe-area-inset-right)); bottom: max(0.75rem, env(safe-area-inset-bottom)); }
       /* The zoom and full screen buttons: only the buttons take clicks, so
          dragging the train works right up to them. */
-      .stage-wrap:not(.is-ready) .view-tools { display: none; }
       .view-tools { position: absolute; top: 0.6rem; right: 0.6rem; display: flex; gap: 0.4rem; pointer-events: none; }
       .stage.is-fs .view-tools { top: max(0.75rem, env(safe-area-inset-top)); right: max(0.75rem, env(safe-area-inset-right)); }
       .view-tools button { pointer-events: auto; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0; border: 1px solid var(--line); border-radius: 0.6rem; background: var(--card); color: var(--ink); cursor: pointer; box-shadow: 0 2px 8px rgb(0 0 0 / 0.12); touch-action: manipulation; }
@@ -191,10 +279,42 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       @media (max-width: 22rem) { .view-tools { gap: 0.25rem; } .view-tools button { width: 2.5rem; height: 2.5rem; } }
       .wheel-hint { position: absolute; left: 50%; top: 50%; margin: 0; padding: 0.5rem 0.9rem; border-radius: 0.5rem; background: rgb(20 24 31 / 0.82); color: #fff; font-size: 0.95rem; transform: translate(-50%, -50%); opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
       .stage.show-wheel-hint .wheel-hint { opacity: 1; }
-      figcaption { margin-top: 0.6rem; color: var(--muted); font-size: 0.9rem; }
-      figcaption p { margin: 0 0 0.25rem; }
-      details.all { margin: 0 0 2rem; padding: 0.25rem 1rem; border: 1px solid var(--line); border-radius: 0.75rem; }
-      details.all summary { min-height: 2.75rem; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
+      figcaption { margin-top: 0.75rem; }
+      /* Dropdowns: a calm card, one line closed, opening smoothly where the
+         browser can animate to auto height. */
+      :root { interpolate-size: allow-keywords; }
+      details.disclosure { border: 1px solid var(--line); border-radius: 0.75rem; background: var(--bg); }
+      details.disclosure[open] { background: var(--card); }
+      details.disclosure > summary { display: flex; align-items: center; gap: 0.75rem; min-height: 3rem; padding: 0.4rem 0.75rem 0.4rem 1rem; list-style: none; cursor: pointer; border-radius: 0.75rem; font-weight: 600; -webkit-tap-highlight-color: transparent; }
+      details.disclosure > summary::-webkit-details-marker { display: none; }
+      details.disclosure > summary:hover { background: var(--card); }
+      details.disclosure > summary:focus-visible { outline: 3px solid var(--link); outline-offset: 2px; }
+      details.disclosure::details-content { block-size: 0; overflow: clip; transition: block-size 0.25s ease, content-visibility 0.25s allow-discrete; }
+      details.disclosure[open]::details-content { block-size: auto; }
+      .sum-icon { display: grid; flex: none; place-items: center; width: 2rem; height: 2rem; border-radius: 0.5rem; background: var(--card); color: var(--accent); }
+      details[open] > summary .sum-icon { background: var(--bg); }
+      .sum-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+      .sum-text .sub { color: var(--muted); font-size: 0.85rem; font-weight: 400; }
+      .chev { flex: none; margin-left: auto; color: var(--muted); transition: transform 0.25s ease; }
+      details[open] > summary .chev { transform: rotate(180deg); }
+      .controls { display: grid; gap: 0.1rem; margin: 0; padding: 0.25rem 1rem 0.5rem; }
+      .controls > div { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 0.25rem 0.75rem; align-items: center; min-height: 2.6rem; padding: 0.35rem 0; border-top: 1px solid var(--line); }
+      .controls > div:first-child { border-top: 0; }
+      .controls dt { color: var(--muted); font-size: 0.9rem; }
+      .controls dd { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin: 0; color: var(--muted); font-size: 0.9rem; }
+      @media (max-width: 30rem) { .controls > div { grid-template-columns: 7.5rem minmax(0, 1fr); } }
+      .keys-row { display: inline-flex; gap: 0.2rem; }
+      .mini-btn { display: inline-grid; place-items: center; width: 1.9rem; height: 1.9rem; border: 1px solid var(--line); border-radius: 0.45rem; background: var(--bg); color: var(--ink); box-shadow: 0 1px 3px rgb(0 0 0 / 0.1); }
+      .mini-btn svg { width: 15px; height: 15px; }
+      .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+      .chip { display: inline-flex; align-items: center; min-height: 1.9rem; padding: 0 0.65rem; border-radius: 999px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); white-space: nowrap; }
+      kbd { display: inline-grid; place-items: center; min-width: 1.9rem; min-height: 1.9rem; color: var(--ink); padding: 0 0.35rem; border-radius: 0.35rem; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line), 0 2px 0 var(--line); font: 600 0.8rem/1 ui-monospace, "Cascadia Mono", Consolas, monospace; }
+      .keys { margin: 0; padding: 0 1rem 0.85rem; color: var(--muted); font-size: 0.85rem; }
+      /* A phone: no keyboard and no mouse wheel to explain. */
+      @media (pointer: coarse) { .fine { display: none !important; } }
+      @media not (pointer: coarse) { .coarse { display: none !important; } }
+      details.all { margin: 0 0 2rem; }
+      details.all > ul.stations { padding: 0.5rem 1rem 1rem; }
       ul.stations { columns: 3 13rem; column-gap: 1.5rem; padding-bottom: 0.75rem; font-size: 0.95rem; }
       ul.stations li { break-inside: avoid; }
       ul.stations a, .results a, .mine a, .suggest a, figcaption a, footer a, .report a { display: inline-block; min-height: 24px; line-height: 24px; }
@@ -217,41 +337,41 @@ export function notFoundHtml(assets: NotFoundAssets): string {
     </header>
 
     <main class="hero wrap">
-      <div class="head" data-lang="nl">
+      <div class="head">
+      <div data-lang="nl">
         <p class="board" aria-label="Spoor 404: geen dienst"><span class="track">Spoor 404</span><span class="flap">Geen dienst</span></p>
         <p class="code">Fout 404 · pagina niet gevonden</p>
         <h1>Deze metro rijdt niet meer. <span class="then">Deze pagina bestaat niet.</span></h1>
         <p class="lead">Dit adres bestaat niet (meer): misschien een tikfout, of een oude link. Zoek je station hieronder, of ga terug naar de kaart.</p>
         <p class="fact">De S1/S2 in beeld reed van 1990 tot april 2024 in Amsterdam. Hij komt hier niet meer langs.</p>
       </div>
-      <div class="head" data-lang="en" lang="en">
+      <div data-lang="en" lang="en">
         <p class="board" aria-label="Track 404: not in service"><span class="track">Track 404</span><span class="flap">Not in service</span></p>
         <p class="code">Error 404 · page not found</p>
         <h1>This metro no longer runs. <span class="then">This page doesn't exist.</span></h1>
         <p class="lead">This address doesn't exist (any more): maybe a typo, or an old link. Find your station below, or go back to the map.</p>
         <p class="fact">The S1/S2 shown here ran in Amsterdam from 1990 until April 2024. It won't stop here again.</p>
       </div>
+      </div>
 
       <figure class="stage-wrap">
         <div class="stage" data-stage data-model="${MODEL.url}" role="group" aria-label="Een S1/S2-metro aan het eind van het spoor / An S1/S2 metro at the end of the track">
           ${still}
           <span class="progress" data-progress aria-hidden="true"></span>
-          <p class="loading" aria-hidden="true"><span data-lang="nl">De metro komt eraan…</span><span data-lang="en" lang="en">The metro is on its way…</span></p>
-          <button type="button" class="replay" data-replay data-lang="nl">↻ Nog een keer</button>
-          <button type="button" class="replay" data-replay data-lang="en" lang="en">↻ Once more</button>
+          <button type="button" class="replay" data-replay data-lang="nl">↻ Laat binnenrijden</button>
+          <button type="button" class="replay" data-replay data-lang="en" lang="en">↻ Roll it in</button>
           ${viewTools("nl")}
           ${viewTools("en")}
           <p class="wheel-hint" aria-hidden="true"><span data-lang="nl">Ctrl + scroll om te zoomen</span><span data-lang="en" lang="en">Ctrl + scroll to zoom</span></p>
         </div>
         <figcaption>
-          <p class="hint" data-lang="nl">Sleep om de metro te draaien. Zoom met twee vingers, Ctrl + scroll, dubbelklikken (of -tikken) of de knoppen. Toetsenbord: klik op de metro, dan pijltjes, + en −, 0 herstelt, F voor volledig scherm.</p>
-          <p class="hint" data-lang="en" lang="en">Drag to turn the metro. Zoom with two fingers, Ctrl + scroll, a double-click (or double-tap) or the buttons. Keyboard: click the metro, then the arrow keys, + and −, 0 resets, F for full screen.</p>
-          <p data-lang="nl">${credit("nl")}</p>
-          <p data-lang="en" lang="en">${credit("en")}</p>
+          ${controlsHelp("nl")}
+          ${controlsHelp("en")}
         </figcaption>
       </figure>
 
-      <div class="tools" data-lang="nl" data-copy>
+      <div class="tools">
+      <div data-lang="nl" data-copy>
         <p class="suggest" data-suggest hidden></p>
         <form class="search" data-search role="search" hidden>
           <label for="zoek-nl">Zoek een station</label>
@@ -269,7 +389,7 @@ export function notFoundHtml(assets: NotFoundAssets): string {
         <p class="actions"><a class="primary" href="/">Live 3D-metrokaart</a><a href="/reisinfo">Reisinformatie en reisplanner</a></p>
         <p class="report">Link stuk? <a data-report href="https://github.com/raimonvibe/amsterdam-metro-v2/issues/new">Meld het (GitHub)</a>, dan repareren we hem.</p>
       </div>
-      <div class="tools" data-lang="en" lang="en" data-copy>
+      <div data-lang="en" lang="en" data-copy>
         <p class="suggest" data-suggest hidden></p>
         <form class="search" data-search role="search" hidden>
           <label for="zoek-en">Find a station</label>
@@ -287,17 +407,18 @@ export function notFoundHtml(assets: NotFoundAssets): string {
         <p class="actions"><a class="primary" href="/en/">Live 3D metro map</a><a href="/en/reisinfo">Travel info and journey planner</a></p>
         <p class="report">Broken link? <a data-report href="https://github.com/raimonvibe/amsterdam-metro-v2/issues/new">Report it (GitHub)</a> and we'll fix it.</p>
       </div>
+      </div>
     </main>
 
     <section class="wrap">
-      <details class="all" data-lang="nl">
-        <summary>Alle ${STATION_NAMES.length} metrostations</summary>
+      <details class="disclosure all" data-lang="nl">
+        <summary><span class="sum-icon" aria-hidden="true">${icon("M4 6h16M4 12h16M4 18h10")}</span><span class="sum-text">Alle ${STATION_NAMES.length} metrostations<span class="sub">Op naam, met hun lijnen</span></span>${chevron}</summary>
         <ul class="stations">
             ${list("nl")}
         </ul>
       </details>
-      <details class="all" data-lang="en" lang="en">
-        <summary>All ${STATION_NAMES.length} metro stations</summary>
+      <details class="disclosure all" data-lang="en" lang="en">
+        <summary><span class="sum-icon" aria-hidden="true">${icon("M4 6h16M4 12h16M4 18h10")}</span><span class="sum-text">All ${STATION_NAMES.length} metro stations<span class="sub">By name, with their lines</span></span>${chevron}</summary>
         <ul class="stations">
             ${list("en")}
         </ul>

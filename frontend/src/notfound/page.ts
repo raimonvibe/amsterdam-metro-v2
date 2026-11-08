@@ -95,7 +95,12 @@ function init() {
   const show = (l: Lang) => {
     lang = l;
     for (const b of blocks) b.hidden = b.dataset.lang !== l;
-    document.documentElement.lang = l;
+    // The head script set these first (no frame with both languages).
+    const root = document.documentElement;
+    root.classList.add("js");
+    root.classList.toggle("lang-nl", l === "nl");
+    root.classList.toggle("lang-en", l === "en");
+    root.lang = l;
     document.title = TITLE[l];
     if (toggle) {
       toggle.textContent = SWITCH[l].code;
@@ -200,9 +205,14 @@ function canRun3d(): boolean {
 
 function start3d(dark: boolean) {
   const stage = $<HTMLElement>("[data-stage]");
-  if (!stage || !canRun3d()) return;
+  if (!stage) return;
+  const wrap = stage.closest(".stage-wrap");
   const modelUrl = stage.dataset.model;
-  if (!modelUrl) return;
+  // No 3D here: the still image stays, without the help for its controls.
+  if (!canRun3d() || !modelUrl) {
+    wrap?.classList.add("no-3d");
+    return;
+  }
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const bar = $<HTMLElement>("[data-progress]", stage);
 
@@ -215,6 +225,8 @@ function start3d(dark: boolean) {
         mount(stage, {
           modelUrl,
           reducedMotion,
+          // Start where the still image has the train, so the swap is seamless.
+          parked: !!$("img.stage-still", stage),
           dark,
           onProgress: (f) => bar?.style.setProperty("--p", String(f)),
           wheelZooms: () => stage.classList.contains("is-fs"),
@@ -226,8 +238,7 @@ function start3d(dark: boolean) {
         stage.tabIndex = 0;
         stage.setAttribute("aria-roledescription", "3D");
         for (const b of $$<HTMLButtonElement>("[data-replay]", stage)) b.addEventListener("click", () => scene.replay());
-        // Shows the replay button and the hint (CSS), in the page's language.
-        const wrap = stage.closest(".stage-wrap");
+        // Shows the buttons and the help (CSS), in the page's language.
         wrap?.classList.add("is-ready");
         if (reducedMotion) wrap?.classList.add("no-replay");
         const ZOOM_STEP = 1.35;
@@ -261,6 +272,7 @@ function start3d(dark: boolean) {
       .catch(() => {
         // The still image stays; nothing else to do.
         stage.classList.remove("is-loading");
+        wrap?.classList.add("no-3d");
       });
   };
   // A plain wheel over the train scrolls the page; say once in a while how

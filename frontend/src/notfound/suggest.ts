@@ -23,8 +23,11 @@ export interface PageData {
 /** Light or dark, as in the app: the map style chosen on this site, and
  *  light (Liberty) for anyone who hasn't chosen one. Following the system
  *  instead made a first visit flip from a dark 404 page to a light app. */
+/** The app's map styles that are dark: the 404 page follows them. */
+export const DARK_STYLES = ["dark", "fiord"] as const;
+
 export function themeFor(savedStyle: string | null): "dark" | "light" {
-  return savedStyle === "dark" || savedStyle === "fiord" ? "dark" : "light";
+  return (DARK_STYLES as readonly string[]).includes(savedStyle ?? "") ? "dark" : "light";
 }
 
 export const REPO_ISSUES = "https://github.com/raimonvibe/amsterdam-metro-v2/issues/new";
