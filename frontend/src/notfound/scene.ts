@@ -24,8 +24,9 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 /**
- * The 404 page's 3D scene: an S1/S2 metro (retired in 2024) rolls in and
- * comes to a stop at the end of the track. Loaded
+ * The 404 page's 3D scene: an S1/S2 metro (retired in 2024) at the end of
+ * the track. Over the still image it starts parked, exactly where the still
+ * has it (a seamless swap); the replay button lets it roll in. Loaded
  * only after the page's text, and only where it can run well (see page.ts).
  * Draws a frame only while something moves, and not at all off screen.
  *
@@ -39,6 +40,9 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 export interface SceneOptions {
   modelUrl: string;
   reducedMotion: boolean;
+  /** Start with the train at rest (as on the still image) instead of
+   *  letting it roll in the first time the stage is in view. */
+  parked?: boolean;
   dark: boolean;
   /** 0–1 while the model downloads, when the size is known. */
   onProgress?: (fraction: number) => void;
@@ -78,10 +82,14 @@ const MOVE_MS = 420;
 const MAX_PIXELS = 4_500_000;
 /** tan(half the vertical field of view): wide stages, narrow stages, and the widest we go. */
 const TAN_WIDE = Math.tan((16 * Math.PI) / 180);
-const TAN_NARROW = Math.tan((22 * Math.PI) / 180);
 const TAN_MAX = Math.tan((30 * Math.PI) / 180);
-/** How much of the train's width a narrow stage needs to show (tan of half the horizontal view). */
-const TAN_FIT_X = 0.48;
+/** How much width a stage narrower than 16:10 keeps (tan of half the
+ *  horizontal view): the still image's own (16:10 at 32°, shown with
+ *  object-fit: contain), so the 3D's first frame frames the train exactly
+ *  like the still and the swap doesn't jump. A bit more when upright. */
+const POSTER_ASPECT = 1.6;
+const TAN_FIT_X = TAN_WIDE * POSTER_ASPECT;
+const TAN_FIT_X_PORTRAIT = 0.48;
 
 /** Lay the model along +x, wheels on y = 0, front end at x = 0. */
 function placeTrain(model: Object3D): Group {
@@ -198,8 +206,11 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
 
   const restX = stopX;
   const startX = restX - TRAIN_LENGTH * 2.6;
-  let arriveStart = opts.reducedMotion ? -Infinity : performance.now();
-  train.position.x = opts.reducedMotion ? restX : startX;
+  const parked = opts.reducedMotion || opts.parked;
+  // Rolling in: waits off screen (Infinity) until the stage is in view, so a
+  // visitor who scrolls to it later still sees the arrival.
+  let arriveStart = parked ? -Infinity : Infinity;
+  train.position.x = parked ? restX : startX;
 
   let frame = 0;
   let visible = true;
@@ -278,10 +289,11 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
     if (renderer.getPixelRatio() !== ratio) renderer.setPixelRatio(ratio);
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    // Narrow stages (a phone, a portrait full screen): a wider lens, and
-    // past the widest lens a step back, so the whole train stays in view.
-    let tan = TAN_WIDE;
-    if (camera.aspect < 1.2) tan = Math.max(TAN_NARROW, TAN_FIT_X / camera.aspect);
+    // Stages narrower than the still image (a phone, a portrait full
+    // screen): a wider lens, and past the widest lens a step back, so the
+    // whole train stays in view.
+    const fitX = camera.aspect < 1 ? TAN_FIT_X_PORTRAIT : TAN_FIT_X;
+    let tan = Math.max(TAN_WIDE, fitX / camera.aspect);
     const fit = Math.max(1, tan / TAN_MAX);
     tan = Math.min(tan, TAN_MAX);
     camera.fov = (2 * Math.atan(tan) * 180) / Math.PI;
@@ -315,7 +327,9 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
       moving = true;
     }
     const t = now - arriveStart;
-    if (t < ARRIVE_MS) {
+    if (arriveStart === Infinity) {
+      train.position.x = startX; // waiting to be in view
+    } else if (t < ARRIVE_MS) {
       train.position.x = startX + (restX - startX) * easeOutCubic(Math.max(0, t) / ARRIVE_MS);
       moving = true;
     } else {
@@ -396,12 +410,18 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
   ro.observe(stage);
   const io = new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting && !document.hidden;
+    // Well in view for the first time: now the train rolls in.
+    if (visible && entry.intersectionRatio >= 0.35 && arriveStart === Infinity) arriveStart = performance.now();
     if (visible) request();
-  });
+  }, { threshold: 0.35 });
   io.observe(stage);
   const onVisibility = () => {
-    visible = !document.hidden;
-    if (visible) request();
+    // A tab in the background: the observer decides again when it's back.
+    if (document.hidden) visible = false;
+    else {
+      io.unobserve(stage);
+      io.observe(stage);
+    }
   };
   document.addEventListener("visibilitychange", onVisibility);
 
@@ -412,13 +432,15 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
   requestAnimationFrame(() => stage.classList.add("is-live"));
   request();
 
-  // Regenerating the still image (public/models/s12-metro-poster.webp):
-  // open the 404 page with ?poster and run __capturePoster() in the
-  // console. Renders the resting train at 1280×800 on a transparent
-  // background. See assets-src/models/README.md.
+  // Regenerating the still images (public/models/s12-metro-poster.webp and
+  // s12-track-poster.webp): open the 404 page with ?poster and run
+  // __capturePoster() (the resting train) or __capturePoster(false) (the
+  // track only) in the console. 1280×800 on a transparent background. See
+  // assets-src/models/README.md.
   if (new URLSearchParams(window.location.search).has("poster")) {
-    (window as Window & { __capturePoster?: () => string }).__capturePoster = () => {
+    (window as Window & { __capturePoster?: (withTrain?: boolean) => string }).__capturePoster = (withTrain = true) => {
       train.position.x = restX;
+      train.visible = withTrain;
       arriveStart = -Infinity;
       const { width, height } = stage.getBoundingClientRect();
       renderer.setPixelRatio(1);
@@ -428,6 +450,7 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
       camera.updateProjectionMatrix();
       renderer.render(scene, camera);
       const url = canvas.toDataURL("image/webp", 0.86);
+      train.visible = true;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.setSize(width, height, false);
       resize();

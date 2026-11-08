@@ -3,7 +3,7 @@ import { join } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { ROUTE_PAGES, STATION_PAGES, routeDir, routeHtml, sitemapXml, stationHtml } from "./src/seo/routeHtml";
-import { MODEL, notFoundHtml } from "./src/seo/notFound";
+import { MODEL, NOT_FOUND_BOOT, notFoundHtml } from "./src/seo/notFound";
 import { securityHeaders } from "./src/securityHeaders";
 
 /** After the build, write dist/<page>/index.html for every page besides the
@@ -17,6 +17,9 @@ function routePages(): Plugin {
   // The 404 page's script, a separate entry (src/notfound/page.ts): its
   // hashed file name is only known once the bundle is written.
   let notFoundScript = "";
+  // Its tiny head script, which picks the language and theme before the
+  // first paint (a file, not inline: the CSP allows only 'self' scripts).
+  let notFoundBoot = "";
   return {
     name: "route-pages",
     apply: "build",
@@ -25,6 +28,8 @@ function routePages(): Plugin {
       publicDir = config.publicDir;
     },
     generateBundle(_, bundle) {
+      const ref = this.emitFile({ type: "asset", name: "notfound-boot.js", source: NOT_FOUND_BOOT });
+      notFoundBoot = `/${this.getFileName(ref)}`;
       for (const file of Object.values(bundle)) {
         if (file.type === "chunk" && file.isEntry && file.name === "notfound") notFoundScript = `/${file.fileName}`;
       }
@@ -43,7 +48,12 @@ function routePages(): Plugin {
       // Served with status 404 for every address no file or rule matches.
       writeFileSync(
         join(outDir, "404.html"),
-        notFoundHtml({ script: notFoundScript, hasPoster: existsSync(join(publicDir, MODEL.poster)) }),
+        notFoundHtml({
+          script: notFoundScript,
+          boot: notFoundBoot,
+          hasPoster: existsSync(join(publicDir, MODEL.poster)),
+          hasTrackPoster: existsSync(join(publicDir, MODEL.trackPoster)),
+        }),
       );
     },
   };
