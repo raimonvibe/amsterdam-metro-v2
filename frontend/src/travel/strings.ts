@@ -5,8 +5,6 @@ import { PSEUDO, pseudoDict } from "../i18n/pseudo";
  *  in this page's chunk: map visitors never download them. */
 const nl = {
   pageTitle: "Reisinformatie",
-  docTitleStation: (name: string) => `${name} — vertrektijden | Metro Amsterdam Live`,
-  docTitle: "Reisinformatie — Metro Amsterdam Live",
   tabs: { vertrekken: "Vertrekken", plannen: "Plannen", lijnen: "Lijnen", stations: "Stations", status: "Status" },
   sections: "Onderdelen",
   searchLabel: "Zoek een station, lijn of reis",
@@ -117,6 +115,17 @@ const nl = {
   towards: "richting",
   viewOnLine: "Bekijk op het lijnoverzicht →",
   avoidStairs: "Zonder trappen",
+  // step-free details on the station board
+  notStepFreeGvb: "Volgens de haltepagina van GVB niet rolstoelvriendelijk.",
+  notStepFreeUnchecked: "Nog niet bevestigd op de site van GVB, en daarom hier als niet stapvrij getoond.",
+  liftOutInstead: "Stapvrij in- of uitstappen kan wel in:",
+  reachTitle: "Stapvrij bereikbaar zonder overstap",
+  reachNote: "Volgens de laatste liftcontrole. Kijk vlak voor vertrek ook bij GVB.",
+  reachNone: "geen",
+  pauseUpdates: "Pauzeer verversen",
+  resumeUpdates: "Ververs weer",
+  paused: "gepauzeerd",
+  stepFreeOnly: "Alleen stapvrij",
   stepFreeTrip: "zonder trappen",
   stairsWarning: "Niet zeker zonder trappen:",
   liftCheck: "Zonder trappen zolang de liften werken:",
@@ -192,8 +201,6 @@ export type TravelStrings = typeof nl;
 
 const en: TravelStrings = {
   pageTitle: "Travel info",
-  docTitleStation: (name: string) => `${name} — departures | Amsterdam Metro Live`,
-  docTitle: "Travel info — Amsterdam Metro Live",
   tabs: { vertrekken: "Departures", plannen: "Plan", lijnen: "Lines", stations: "Stations", status: "Status" },
   sections: "Sections",
   searchLabel: "Search a station, line or trip",
@@ -301,6 +308,17 @@ const en: TravelStrings = {
   towards: "towards",
   viewOnLine: "View on the line overview →",
   avoidStairs: "Avoid stairs",
+  // step-free details on the station board
+  notStepFreeGvb: "Not step-free according to GVB's station page.",
+  notStepFreeUnchecked: "Not yet confirmed on GVB's site, so shown here as not step-free.",
+  liftOutInstead: "Step-free boarding instead at:",
+  reachTitle: "Step-free without changing trains",
+  reachNote: "As of the last lift check. Check GVB too, just before you travel.",
+  reachNone: "none",
+  pauseUpdates: "Pause updates",
+  resumeUpdates: "Resume updates",
+  paused: "paused",
+  stepFreeOnly: "Step-free only",
   stepFreeTrip: "step-free",
   stairsWarning: "Not sure to be step-free:",
   liftCheck: "Step-free while the lifts work:",

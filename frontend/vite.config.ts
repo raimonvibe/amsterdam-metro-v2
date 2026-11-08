@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
@@ -35,8 +35,35 @@ function routePages(): Plugin {
   };
 }
 
+/**
+ * `npm run preview` answers like the live site's routing rules (render.yaml):
+ * a page's address serves its built index.html, and an address with no page
+ * gets 404.html with status 404. Vite's own fallback would serve the
+ * homepage everywhere, hiding exactly what these rules are for.
+ */
+function liveRouting(): Plugin {
+  return {
+    name: "live-routing",
+    configurePreviewServer(server) {
+      const outDir = server.config.build.outDir;
+      server.middlewares.use((req, res, next) => {
+        const [path, query = ""] = (req.url ?? "/").split("?");
+        if (path === "/" || /\.[a-z0-9]+$/i.test(path)) return next();
+        const page = `${path.replace(/\/+$/, "")}/index.html`;
+        if (existsSync(join(outDir, page))) {
+          req.url = page + (query ? `?${query}` : "");
+          return next();
+        }
+        res.statusCode = 404;
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.end(readFileSync(join(outDir, "404.html")));
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), routePages()],
+  plugins: [react(), routePages(), liveRouting()],
   server: {
     host: true,
     port: 5183,

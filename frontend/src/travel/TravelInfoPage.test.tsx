@@ -60,7 +60,7 @@ describe("TravelInfoPage", { timeout: PAGE_TEST_TIMEOUT }, () => {
   it("switches station from the index and remembers it as recent", async () => {
     renderPage();
     const index = await screen.findByRole("list", { name: "Alle stations" });
-    await userEvent.click(within(index).getByRole("button", { name: /Rokin/ }));
+    await userEvent.click(within(index).getByRole("link", { name: /Rokin/ }));
     expect(boardHeading()).toHaveTextContent("Rokin");
     expect(JSON.parse(localStorage.getItem("metro-live:recent")!)).toEqual(["Amsterdam, Rokin"]);
     expect(window.location.pathname).toBe("/reisinfo/rokin");
@@ -117,7 +117,7 @@ describe("TravelInfoPage", { timeout: PAGE_TEST_TIMEOUT }, () => {
   it("hands the map the station the visitor chose, or arrived with", async () => {
     const first = renderPage();
     const index = await screen.findByRole("list", { name: "Alle stations" });
-    await userEvent.click(within(index).getByRole("button", { name: /Rokin/ }));
+    await userEvent.click(within(index).getByRole("link", { name: /Rokin/ }));
     await userEvent.click(screen.getByRole("button", { name: /Kaart/ }));
     expect(first.onClose).toHaveBeenCalledWith(expect.objectContaining({ name: "Amsterdam, Rokin" }));
     cleanup();

@@ -9,6 +9,7 @@ import { routeStretches } from "./LineDiagram";
 import { SearchBox } from "./SearchBox";
 import { StationBoard, groupByDirection } from "./StationBoard";
 import { StationClock, handAngles } from "./StationClock";
+import { StationIndex } from "./StationIndex";
 import { DEFAULT_PREFS } from "./storage";
 import { BoardDeparture, Journey } from "./types";
 
@@ -222,6 +223,34 @@ describe("StationBoard", () => {
     return { props, ...render(<StationBoard {...props} />) };
   }
 
+  it("pauses and resumes auto-refresh, saying it is paused", async () => {
+    vi.mocked(api.fetchBoard).mockResolvedValue([dep({ headsign: "Zuid", departure_ts: s(4) })]);
+    renderBoard();
+    const pause = await screen.findByRole("button", { name: "Pauzeer verversen" });
+    await userEvent.click(pause);
+    expect(screen.getByRole("button", { name: "Ververs weer" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText(/gepauzeerd/)).toBeInTheDocument();
+    const calls = vi.mocked(api.fetchBoard).mock.calls.length;
+    await userEvent.click(screen.getByRole("button", { name: "Ververs weer" }));
+    await waitFor(() => expect(vi.mocked(api.fetchBoard).mock.calls.length).toBeGreaterThan(calls));
+  });
+
+  it("with a lift out, names where to board step-free instead, as links", async () => {
+    vi.mocked(api.fetchBoard).mockResolvedValue([]);
+    const { props } = renderBoard({ station: byName("Amsterdam, Overamstel") });
+    const box = (await screen.findByText("Stapvrij in- of uitstappen kan wel in:")).parentElement!;
+    const amstel = within(box).getByRole("link", { name: "Amstelstation" });
+    expect(amstel).toHaveAttribute("href", "/reisinfo/amstelstation");
+    await userEvent.click(amstel);
+    expect(props.onStation).toHaveBeenCalledWith("Amsterdam, Amstelstation");
+  });
+
+  it("says why a station is not step-free", async () => {
+    vi.mocked(api.fetchBoard).mockResolvedValue([]);
+    renderBoard({ station: byName("Amsterdam, Gein") });
+    expect(await screen.findByText("Volgens de haltepagina van GVB niet rolstoelvriendelijk.")).toBeInTheDocument();
+  });
+
   it("shows one platform on the card, several per row, and none when unknown", async () => {
     vi.mocked(api.fetchBoard).mockResolvedValue([
       dep({ headsign: "Zuid", platform: "2", departure_ts: s(2) }),
@@ -374,6 +403,36 @@ describe("StationBoard", () => {
     expect(props.onToggleFavourite).toHaveBeenCalled();
     expect(props.onShowOnMap).toHaveBeenCalled();
     expect(props.onPlanFrom).toHaveBeenCalled();
+  });
+});
+
+describe("StationIndex", () => {
+  it("filters to step-free stations, each a link to its page", async () => {
+    const onStation = vi.fn();
+    render(
+      <StationIndex
+        stations={STATIONS}
+        lineIds={LINES}
+        colorOf={colorOf}
+        current={null}
+        favourites={[]}
+        recent={[]}
+        locating={false}
+        onStation={onStation}
+        onNearby={vi.fn()}
+        onClearRecent={vi.fn()}
+      />,
+    );
+    const list = screen.getByRole("list", { name: "Alle stations" });
+    expect(within(list).getAllByRole("link")).toHaveLength(STATIONS.length);
+    await userEvent.click(screen.getByRole("checkbox", { name: /Alleen stapvrij/ }));
+    const links = within(list).getAllByRole("link");
+    expect(links.length).toBeLessThan(STATIONS.length);
+    expect(within(list).queryByRole("link", { name: /Gein/ })).toBeNull();
+    const rokin = within(list).getByRole("link", { name: /Rokin/ });
+    expect(rokin).toHaveAttribute("href", "/reisinfo/rokin");
+    await userEvent.click(rokin);
+    expect(onStation).toHaveBeenCalledWith("Amsterdam, Rokin");
   });
 });
 

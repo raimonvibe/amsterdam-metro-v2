@@ -39,7 +39,7 @@ export function notFoundHtml(): string {
       (name) =>
         `<li><a href="${stationPath(stationSlug(name), lang)}">${escape(displayName(name))}</a> <span class="lines">${linesAt(name)
           .map((l) => `<span class="badge" style="--c:${LINE_COLORS[l]}">${l}</span>`)
-          .join("")}</span></li>`,
+          .join(" ")}</span></li>`,
     ).join("\n          ");
   const track = METRO_LINES.map(
     ({ line }, i) => `<line x1="0" y1="${12 + i * 7}" x2="${250 - i * 22}" y2="${12 + i * 7}" stroke="${LINE_COLORS[line]}" stroke-width="4" stroke-linecap="round"/>`,

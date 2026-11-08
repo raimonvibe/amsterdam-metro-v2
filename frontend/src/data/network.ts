@@ -123,6 +123,11 @@ export function gvbStopUrls(name: string): string[] {
   return (ACCESS[name]?.gvb_stops ?? []).map((code) => `https://www.gvb.nl/reisinformatie/halte/${code}`);
 }
 
+/** Whether the station was checked on GVB's site (not just seeded from OSM). */
+export function gvbChecked(name: string): boolean {
+  return ACCESS[name]?.source === "checked";
+}
+
 /** What GVB's own station page says, as recorded at the last check: a
  *  station with a lift out is still "Rolstoelvriendelijk" there. */
 export function gvbSaysStepFree(name: string): boolean {

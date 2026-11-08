@@ -1,11 +1,14 @@
 import { useMemo, useState } from "react";
-import { History, LocateFixed, Star, X } from "lucide-react";
+import { Accessibility, History, LocateFixed, Star, X } from "lucide-react";
 import { formatPlaceName } from "../format";
 import { Place } from "../components/Place";
 import { StepFreeMark } from "../components/StepFree";
 import { Station } from "../types";
 import { LineBadge, Section } from "./ui";
 import { useTravelT } from "./strings";
+import { accessState, stationSlug } from "../data/network";
+import { getLang } from "../i18n";
+import { stationPath } from "../i18n/paths";
 
 export interface StationIndexProps {
   stations: Station[];
@@ -20,17 +23,21 @@ export interface StationIndexProps {
   onClearRecent: () => void;
 }
 
-/** Stations A-Z by display name, optionally only those on one line. */
-export function sortedStations(stations: Station[], line: string | null): Station[] {
+/** Stations A-Z by display name, optionally only those on one line, and
+ *  only the step-free ones. */
+export function sortedStations(stations: Station[], line: string | null, stepFreeOnly = false): Station[] {
   return stations
     .filter((s) => !line || s.lines.includes(line))
+    .filter((s) => !stepFreeOnly || accessState(s.name) === "step-free")
     .sort((a, b) => formatPlaceName(a.name).localeCompare(formatPlaceName(b.name), "nl"));
 }
 
 export function StationIndex(p: StationIndexProps) {
   const txt = useTravelT();
   const [line, setLine] = useState<string | null>(null);
-  const all = useMemo(() => sortedStations(p.stations, line), [p.stations, line]);
+  // The filter wheelchair users reach for first (UnlockedMaps' field study).
+  const [stepFreeOnly, setStepFreeOnly] = useState(false);
+  const all = useMemo(() => sortedStations(p.stations, line, stepFreeOnly), [p.stations, line, stepFreeOnly]);
   const byName = useMemo(() => new Map(p.stations.map((s) => [s.name, s])), [p.stations]);
 
   const chip = (name: string, icon?: React.ReactNode) => {
@@ -39,10 +46,16 @@ export function StationIndex(p: StationIndexProps) {
     const here = p.current?.name === name;
     return (
       <li key={name}>
-        <button
-          type="button"
-          onClick={() => p.onStation(name)}
-          aria-current={here ? "true" : undefined}
+        {/* A real link to the station's page (open in a new tab, copy the
+            link, crawlers), that opens the board here on a plain click. */}
+        <a
+          href={stationPath(stationSlug(name), getLang())}
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+            e.preventDefault();
+            p.onStation(name);
+          }}
+          aria-current={here ? "page" : undefined}
           className={`flex w-full min-w-0 items-center gap-1.5 rounded px-1.5 py-1 text-left text-xs transition hover:bg-[#f1ebdd] dark:hover:bg-[#1a2134] ${
             here ? "bg-[#f1ebdd] font-semibold dark:bg-[#1a2134]" : ""
           }`}
@@ -55,7 +68,7 @@ export function StationIndex(p: StationIndexProps) {
               <LineBadge key={l} id={l} color={p.colorOf(l)} small />
             ))}
           </span>
-        </button>
+        </a>
       </li>
     );
   };
@@ -117,6 +130,11 @@ export function StationIndex(p: StationIndexProps) {
           </button>
         ))}
       </div>
+      <label className="mt-1.5 flex w-fit cursor-pointer items-center gap-1.5 text-[11px] font-semibold text-[#3b4457] dark:text-[#c9c3b4]">
+        <input type="checkbox" checked={stepFreeOnly} onChange={(e) => setStepFreeOnly(e.target.checked)} className="accent-[#1f3a68] dark:accent-[#c8a951]" />
+        <Accessibility size={12} aria-hidden />
+        {txt.stepFreeOnly}
+      </label>
       <ul className="mt-1.5 space-y-0.5" aria-label={txt.allStations}>
         {all.map((s) => chip(s.name))}
       </ul>

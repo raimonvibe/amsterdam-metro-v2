@@ -1,13 +1,25 @@
-import { Accessibility, Check, Copy } from "lucide-react";
+import { Accessibility, Check, Copy, TriangleAlert } from "lucide-react";
 import { CopyStatus, useCopy } from "./CopyTerm";
 import { useLang, useT } from "../i18n";
 import { GVB_LIFT_FAULTS, StepFree as State, gvbSearch, liftOutSince, shortDate, stepFree } from "../data/accessibility";
 import { NO_TRANSLATE } from "./Num";
 
 /** A small ♿ after a station name in lists and search, for step-free
- *  stations only; limited and unknown get no mark. */
+ *  stations; a ⚠ for a step-free station whose lift was seen broken at the
+ *  last (recent) lift check. Other stations get no mark. */
 export function StepFreeMark({ station, className = "" }: { station: string; className?: string }) {
   const txt = useT();
+  const lang = useLang();
+  const liftOut = liftOutSince(station);
+  if (liftOut) {
+    const label = txt.liftOut(shortDate(liftOut, lang));
+    return (
+      <span title={label} data-lift-out="" className={`inline-flex shrink-0 text-amber-700 dark:text-amber-400 ${className}`}>
+        <TriangleAlert size={12} aria-hidden />
+        <span className="sr-only">{label}</span>
+      </span>
+    );
+  }
   if (stepFree(station) !== "yes") return null;
   return (
     <span title={txt.stepFreeYes} className={`inline-flex shrink-0 text-[#1f3a68] dark:text-[#8aa2ff] ${className}`}>
@@ -39,8 +51,18 @@ export function StepFree({ station, className = "" }: { station: string; classNa
   };
   return (
     <p className={`flex flex-wrap items-center gap-x-1.5 text-[11px] leading-snug text-gray-600 dark:text-gray-400 ${className}`}>
-      <Accessibility size={12} className="shrink-0" aria-hidden />
-      <span data-step-free={state} data-lift-out={liftOut ? "" : undefined}>
+      {/* Three states, each with its own look: step-free, a lift out,
+          not step-free (which also covers "not confirmed"). */}
+      {liftOut ? (
+        <TriangleAlert size={12} className="shrink-0 text-amber-700 dark:text-amber-400" aria-hidden />
+      ) : (
+        <Accessibility size={12} className={`shrink-0 ${state === "yes" ? "text-emerald-700 dark:text-emerald-400" : ""}`} aria-hidden />
+      )}
+      <span
+        data-step-free={state}
+        data-lift-out={liftOut ? "" : undefined}
+        className={liftOut ? "font-semibold text-amber-800 dark:text-amber-300" : state === "yes" ? "font-semibold text-emerald-800 dark:text-emerald-300" : ""}
+      >
         {liftOut ? txt.liftOut(shortDate(liftOut, lang)) : label[state]}
       </span>
       <span aria-hidden>·</span>
