@@ -217,6 +217,8 @@ function start3d(dark: boolean) {
           reducedMotion,
           dark,
           onProgress: (f) => bar?.style.setProperty("--p", String(f)),
+          wheelZooms: () => stage.classList.contains("is-fs"),
+          onWheelScroll: wheelHint,
         }),
       )
       .then((scene) => {
@@ -228,8 +230,18 @@ function start3d(dark: boolean) {
         const wrap = stage.closest(".stage-wrap");
         wrap?.classList.add("is-ready");
         if (reducedMotion) wrap?.classList.add("no-replay");
+        const ZOOM_STEP = 1.35;
+        for (const b of $$<HTMLButtonElement>("[data-zoom]", stage)) {
+          b.addEventListener("click", () => {
+            if (b.dataset.zoom === "in") scene.zoom(ZOOM_STEP);
+            else if (b.dataset.zoom === "out") scene.zoom(1 / ZOOM_STEP);
+            else scene.reset();
+          });
+        }
+        const fullscreen = fullscreenToggle(stage);
         const STEP = Math.PI / 12;
         stage.addEventListener("keydown", (e) => {
+          if (e.target !== stage || e.altKey || e.ctrlKey || e.metaKey) return;
           const turns: Record<string, [number, number]> = {
             ArrowLeft: [-STEP, 0],
             ArrowRight: [STEP, 0],
@@ -237,10 +249,13 @@ function start3d(dark: boolean) {
             ArrowDown: [0, STEP / 2],
           };
           const t = turns[e.key];
-          if (t && e.target === stage) {
-            e.preventDefault();
-            scene.turn(t[0], t[1]);
-          }
+          if (t) scene.turn(t[0], t[1]);
+          else if (e.key === "+" || e.key === "=") scene.zoom(ZOOM_STEP);
+          else if (e.key === "-" || e.key === "_") scene.zoom(1 / ZOOM_STEP);
+          else if (e.key === "0") scene.reset();
+          else if (e.key === "f" || e.key === "F") fullscreen.toggle();
+          else return;
+          e.preventDefault();
         });
       })
       .catch(() => {
@@ -248,8 +263,97 @@ function start3d(dark: boolean) {
         stage.classList.remove("is-loading");
       });
   };
+  // A plain wheel over the train scrolls the page; say once in a while how
+  // to zoom instead (as maps do).
+  let hintTimer = 0;
+  let hintShownAt = -Infinity;
+  function wheelHint() {
+    const now = performance.now();
+    if (now - hintShownAt < 4000) return;
+    hintShownAt = now;
+    stage!.classList.add("show-wheel-hint");
+    window.clearTimeout(hintTimer);
+    hintTimer = window.setTimeout(() => stage!.classList.remove("show-wheel-hint"), 1400);
+  }
+
   const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
   const later = () => (idle ? idle(go, { timeout: 2500 }) : window.setTimeout(go, 400));
   if (document.readyState === "complete") later();
   else window.addEventListener("load", later, { once: true });
+}
+
+type FsDocument = Document & { webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => Promise<void> | void; webkitFullscreenEnabled?: boolean };
+type FsElement = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
+
+/**
+ * The stage's full screen button (and F): the Fullscreen API where there is
+ * one, else (iPhone Safari) a fixed layer over the page, closed with the
+ * same button or Esc. Adds .is-fs to the stage either way.
+ */
+function fullscreenToggle(stage: HTMLElement): { toggle(): void } {
+  const doc = document as FsDocument;
+  const el = stage as FsElement;
+  const native = !!(doc.fullscreenEnabled || doc.webkitFullscreenEnabled) && !!(el.requestFullscreen || el.webkitRequestFullscreen);
+  const buttons = $$<HTMLButtonElement>("[data-fullscreen]", stage);
+  let fake = false;
+  let lastFocus: HTMLElement | null = null;
+
+  const nativeOn = () => (doc.fullscreenElement ?? doc.webkitFullscreenElement) === stage;
+  const isOn = () => fake || nativeOn();
+
+  const sync = () => {
+    const on = isOn();
+    stage.classList.toggle("is-fs", on);
+    stage.classList.toggle("is-fake-fs", fake);
+    document.documentElement.classList.toggle("fs-lock", fake);
+    for (const b of buttons) {
+      const label = (on ? b.dataset.exitLabel : b.dataset.label) ?? "";
+      b.setAttribute("aria-pressed", String(on));
+      b.setAttribute("aria-label", label);
+      b.title = label;
+    }
+  };
+
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && fake) {
+      e.preventDefault();
+      setFake(false);
+    }
+  };
+  function setFake(on: boolean) {
+    fake = on;
+    if (on) {
+      lastFocus = document.activeElement as HTMLElement | null;
+      document.addEventListener("keydown", onKey);
+    } else {
+      document.removeEventListener("keydown", onKey);
+    }
+    sync();
+    if (on) stage.focus({ preventScroll: true });
+    else lastFocus?.focus({ preventScroll: true });
+  }
+
+  async function enter() {
+    if (native) {
+      try {
+        await (el.requestFullscreen ? el.requestFullscreen({ navigationUI: "hide" }) : el.webkitRequestFullscreen?.());
+        return;
+      } catch {
+        // Refused (an iframe without permission, say): the fixed layer instead.
+      }
+    }
+    setFake(true);
+  }
+
+  function exit() {
+    if (fake) return setFake(false);
+    if (doc.exitFullscreen) void doc.exitFullscreen().catch(() => {});
+    else doc.webkitExitFullscreen?.();
+  }
+
+  document.addEventListener("fullscreenchange", sync);
+  document.addEventListener("webkitfullscreenchange", sync);
+  const toggle = () => (isOn() ? exit() : void enter());
+  for (const b of buttons) b.addEventListener("click", toggle);
+  return { toggle };
 }
