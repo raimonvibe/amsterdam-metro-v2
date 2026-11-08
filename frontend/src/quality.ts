@@ -4,51 +4,19 @@ import { useSyncExternalStore } from "react";
  *  - "full": 3D buildings, motion trails, the opening flight.
  *  - "lite": still the tilted 3D map with the trains and their glow, without
  *    the heavy extras, for devices that can't draw them smoothly.
- *  Every device starts on "full" unless it draws in software or asks to save
- *  data; MetroMap watches the frame rate and steps down if it struggles.
+ *  Every device starts on "full"; MetroMap watches the frame rate and steps
+ *  down if it struggles.
  *  Visitors can override it in the menu. See docs/adaptive-3d.md. */
 export type Quality = "full" | "lite";
 export type QualityPref = "auto" | "full" | "lite";
 
 const STORAGE_KEY = "metro-live:3d";
 
-/** A GPU-less browser draws WebGL on the CPU (SwiftShader in headless Chrome
- *  and Lighthouse, llvmpipe on Linux, Microsoft Basic Render Driver). It works,
- *  but a 3D city at ~2 frames a second blocks the page. Firefox and Safari can
- *  hide the renderer's name; then this returns false and the frame-rate watch
- *  is what catches a slow device. */
-export function softwareRenderer(): boolean {
-  try {
-    const gl = document.createElement("canvas").getContext("webgl2") as WebGL2RenderingContext | null;
-    if (!gl) return false;
-    const info = gl.getExtension("WEBGL_debug_renderer_info");
-    const name = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) ?? "");
-    gl.getExtension("WEBGL_lose_context")?.loseContext();
-    return /swiftshader|llvmpipe|softpipe|software|basic render/i.test(name);
-  } catch {
-    return false;
-  }
-}
-
-let softwareGLCache: boolean | undefined;
-/** softwareRenderer(), checked once per page: it creates a WebGL context. */
-export function softwareGL(): boolean {
-  softwareGLCache ??= typeof document !== "undefined" && softwareRenderer();
-  return softwareGLCache;
-}
-
-/** The visitor's browser asks sites to use less data (Chrome "Lite mode",
- *  Android data saver). */
-function saveData(): boolean {
-  const c = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-  return c?.saveData === true;
-}
-
-/** Where a visit starts. "auto" is lite only when the device can't do better
- *  from the start; otherwise full, and the frame-rate watch decides. */
-export function startQuality(pref: QualityPref, probe = { software: softwareGL, saveData }): Quality {
-  if (pref !== "auto") return pref;
-  return probe.software() || probe.saveData() ? "lite" : "full";
+/** Where a visit starts: every visitor on "auto" gets the full 3D map with
+ *  its opening flight; the frame-rate watch steps down to lite if the device
+ *  can't keep up. */
+export function startQuality(pref: QualityPref): Quality {
+  return pref === "auto" ? "full" : pref;
 }
 
 /** Milliseconds between frames the map may take before it's called slow: at

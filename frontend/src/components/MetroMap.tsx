@@ -91,8 +91,9 @@ interface MetroMapProps {
   /** A map canvas lost its WebGL context (phones do this to backgrounded
    *  apps). The parent remounts the map: see App. */
   onContextLost?: () => void;
-  /** "lite" leaves out the 3D buildings, the motion trails and the opening
-   *  flight, and draws at 1 pixel per CSS pixel. See src/quality.ts. */
+  /** "lite" leaves out the 3D buildings and the motion trails, and draws at
+   *  1 pixel per CSS pixel. The opening flight runs either way. See
+   *  src/quality.ts. */
   quality?: Quality;
   /** Watch the frame rate while the map settles, and step down if it's too
    *  slow: first to 1 pixel per CSS pixel, then `onSlow` (lite). Only while
@@ -749,7 +750,7 @@ export function MetroMap({
     } else addBuildings();
     if (!introDone.current) {
       introDone.current = true;
-      if (reduceMotionRef.current || qualityRef.current === "lite") {
+      if (reduceMotionRef.current) {
         map.jumpTo(INTRO_END);
         setShowLabels(map.getZoom() >= LABEL_ZOOM);
       } else {
