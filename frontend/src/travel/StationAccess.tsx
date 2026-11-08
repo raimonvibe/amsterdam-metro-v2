@@ -69,7 +69,7 @@ export function StationAccess({ station, colorOf, onStation, nowMs = Date.now() 
         </div>
       )}
       <details className="group">
-        <summary className="cursor-pointer select-none underline decoration-dotted underline-offset-2">{txt.reachTitle}</summary>
+        <summary className="cursor-pointer select-none leading-6 underline decoration-dotted underline-offset-2">{txt.reachTitle}</summary>
         <ul className="mt-1 space-y-1">
           {reach.map((r) => (
             <li key={r.line} className="flex flex-wrap items-baseline gap-x-1">

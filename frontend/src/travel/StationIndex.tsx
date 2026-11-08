@@ -130,7 +130,7 @@ export function StationIndex(p: StationIndexProps) {
           </button>
         ))}
       </div>
-      <label className="mt-1.5 flex w-fit cursor-pointer items-center gap-1.5 text-[11px] font-semibold text-[#3b4457] dark:text-[#c9c3b4]">
+      <label className="mt-1.5 flex min-h-6 w-fit cursor-pointer items-center gap-1.5 text-[11px] font-semibold text-[#3b4457] dark:text-[#c9c3b4]">
         <input type="checkbox" checked={stepFreeOnly} onChange={(e) => setStepFreeOnly(e.target.checked)} className="accent-[#1f3a68] dark:accent-[#c8a951]" />
         <Accessibility size={12} aria-hidden />
         {txt.stepFreeOnly}

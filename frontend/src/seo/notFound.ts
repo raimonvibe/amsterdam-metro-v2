@@ -70,7 +70,9 @@ export function notFoundHtml(): string {
       .suggest:empty { display: none; }
       .actions { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; }
       ul.stations { list-style: none; padding: 0; columns: 2 14rem; column-gap: 1.5rem; font-size: 0.9rem; }
-      ul.stations li { break-inside: avoid; padding: 0.15rem 0; }
+      ul.stations li { break-inside: avoid; }
+      /* Tap targets of at least 24 px (WCAG 2.5.8), on phones too. */
+      ul.stations a, .actions a, .suggest a { display: inline-block; min-height: 24px; line-height: 24px; }
       .lines { white-space: nowrap; }
       .badge { display: inline-block; min-width: 1.6em; margin-left: 0.15rem; padding: 0 0.25em; border-radius: 0.2rem; background: var(--c); color: #111; font-size: 0.7rem; font-weight: 700; text-align: center; }
       [hidden] { display: none !important; }
