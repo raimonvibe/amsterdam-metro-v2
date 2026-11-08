@@ -27,6 +27,9 @@ export interface StationAccess {
   /** GVB's lift faults listed a lift here at the last lift check. Only on
    *  stations whose GVB page says step-free; the lift is why they are "no". */
   lift_out?: boolean;
+  /** The station's code(s) on GVB's site: www.gvb.nl/reisinformatie/halte/<code>.
+   *  Centraal Station has two metro stops. */
+  gvb_stops?: string[];
 }
 
 const STATIONS = accessibility.stations as Record<string, StationAccess>;

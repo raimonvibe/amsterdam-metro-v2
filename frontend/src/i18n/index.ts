@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { nl } from "./nl";
 import { en } from "./en";
-import { langOfPath, pageOfPath, pagePath } from "./paths";
+import { langOfPath, localizedPath } from "./paths";
 import { PSEUDO, pseudoDict } from "./pseudo";
 
 /** UI language. The URL decides it: /en/… is English, every other path
@@ -51,7 +51,7 @@ function apply(lang: Lang) {
   document.documentElement.lang = lang;
   const { pathname, search, hash } = window.location;
   if (langOfPath(pathname) !== lang) {
-    window.history.replaceState(window.history.state, "", pagePath(pageOfPath(pathname), lang) + search + hash);
+    window.history.replaceState(window.history.state, "", localizedPath(pathname, lang) + search + hash);
   }
 }
 apply(current);

@@ -36,7 +36,7 @@ describe("TravelInfoPage", { timeout: PAGE_TEST_TIMEOUT }, () => {
   it("opens on Centraal Station when the link names no station", async () => {
     renderPage();
     await waitFor(() => expect(boardHeading()).toHaveTextContent("Centraal Station"));
-    await waitFor(() => expect(window.location.search).toContain("station=CS"));
+    await waitFor(() => expect(window.location.pathname).toBe("/reisinfo/centraal-station"));
   });
 
   it("names the site in the page's language", async () => {
@@ -52,7 +52,9 @@ describe("TravelInfoPage", { timeout: PAGE_TEST_TIMEOUT }, () => {
     renderPage("/reisinfo?station=waterlooplein&van=noord&naar=gein&lijn=53");
     await waitFor(() => expect(boardHeading()).toHaveTextContent("Waterlooplein"));
     await waitFor(() => expect(api.fetchJourneys).toHaveBeenCalledWith("Amsterdam, Noord", "Amsterdam, Gein", 6));
-    expect(window.location.search).toBe("?station=Waterlooplein&van=Noord&naar=Gein&lijn=53");
+    // The station moves into the path; the query keeps the trip and line.
+    expect(window.location.pathname).toBe("/reisinfo/waterlooplein");
+    expect(window.location.search).toBe("?van=Noord&naar=Gein&lijn=53");
   });
 
   it("switches station from the index and remembers it as recent", async () => {
@@ -61,7 +63,7 @@ describe("TravelInfoPage", { timeout: PAGE_TEST_TIMEOUT }, () => {
     await userEvent.click(within(index).getByRole("button", { name: /Rokin/ }));
     expect(boardHeading()).toHaveTextContent("Rokin");
     expect(JSON.parse(localStorage.getItem("metro-live:recent")!)).toEqual(["Amsterdam, Rokin"]);
-    expect(window.location.search).toContain("station=Rokin");
+    expect(window.location.pathname).toBe("/reisinfo/rokin");
   });
 
   it("puts the planner's departure station on the board too", async () => {
@@ -71,7 +73,7 @@ describe("TravelInfoPage", { timeout: PAGE_TEST_TIMEOUT }, () => {
     await userEvent.keyboard("{Enter}");
     await waitFor(() => expect(boardHeading()).toHaveTextContent("Gein"));
     expect(window.location.search).toContain("van=Gein");
-    expect(window.location.search).toContain("station=Gein");
+    expect(window.location.pathname).toBe("/reisinfo/gein");
   });
 
   it("toggles a favourite with the button and with F", async () => {
@@ -159,5 +161,14 @@ describe("TravelInfoPage", { timeout: PAGE_TEST_TIMEOUT }, () => {
     expect(await screen.findByText(lineTitle("52"))).toBeInTheDocument();
     await userEvent.click(within(screen.getByRole("group", { name: "Kies een lijn" })).getByRole("button", { name: "Lijn 53" }));
     expect(screen.getByText(lineTitle("53"))).toBeInTheDocument();
+  });
+  it("opens the station a station page's path names, and keeps that address", async () => {
+    const canonical = document.head.appendChild(Object.assign(document.createElement("link"), { rel: "canonical" }));
+    renderPage("/reisinfo/bijlmer-arena");
+    expect(await screen.findByRole("heading", { level: 3, name: /Bijlmer ArenA/ })).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/reisinfo/bijlmer-arena");
+    expect(canonical.getAttribute("href")).toBe("https://amsterdammetro.nl/reisinfo/bijlmer-arena");
+    expect(document.title).toMatch(/^Station Bijlmer ArenA — metro 50, 54/);
+    canonical.remove();
   });
 });

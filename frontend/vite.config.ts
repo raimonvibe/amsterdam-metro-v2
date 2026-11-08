@@ -2,13 +2,15 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
-import { ROUTE_PAGES, routeDir, routeHtml } from "./src/seo/routeHtml";
+import { ROUTE_PAGES, STATION_PAGES, routeDir, routeHtml, sitemapXml, stationHtml } from "./src/seo/routeHtml";
+import { notFoundHtml } from "./src/seo/notFound";
 import { securityHeaders } from "./src/securityHeaders";
 
 /** After the build, write dist/<page>/index.html for every page besides the
- *  Dutch homepage (reisinfo, privacy, en, en/reisinfo, en/privacy): copies of
- *  the entry page whose head already names that page and language, for
- *  crawlers that read the HTML before (or without) running the app. */
+ *  Dutch homepage (reisinfo, privacy, en, en/reisinfo, en/privacy, and each
+ *  station's page): copies of the entry page whose head already names that
+ *  page and language, for crawlers that read the HTML before (or without)
+ *  running the app. Also the sitemap and the 404 page. */
 function routePages(): Plugin {
   let outDir = "dist";
   return {
@@ -19,11 +21,16 @@ function routePages(): Plugin {
     },
     closeBundle() {
       const index = readFileSync(join(outDir, "index.html"), "utf8");
-      for (const route of ROUTE_PAGES) {
-        const dir = join(outDir, routeDir(route));
-        mkdirSync(dir, { recursive: true });
-        writeFileSync(join(dir, "index.html"), routeHtml(index, route));
-      }
+      const write = (dir: string, html: string) => {
+        mkdirSync(join(outDir, dir), { recursive: true });
+        writeFileSync(join(outDir, dir, "index.html"), html);
+      };
+      for (const route of ROUTE_PAGES) write(routeDir(route), routeHtml(index, route));
+      // One page per station and language: /reisinfo/zuid, /en/reisinfo/zuid.
+      for (const page of STATION_PAGES) write(page.dir, stationHtml(index, page));
+      writeFileSync(join(outDir, "sitemap.xml"), sitemapXml());
+      // Served with status 404 for every address no file or rule matches.
+      writeFileSync(join(outDir, "404.html"), notFoundHtml());
     },
   };
 }

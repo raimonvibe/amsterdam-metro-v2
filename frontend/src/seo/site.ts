@@ -1,7 +1,8 @@
 import type { Lang } from "../i18n";
 import { en } from "../i18n/en";
 import { nl } from "../i18n/nl";
-import { type Page, PAGES, pagePath } from "../i18n/paths";
+import { type Page, PAGES, pagePath, stationPath } from "../i18n/paths";
+import { displayName, linesAt, stationSlug } from "../data/network";
 
 /** Gedeelde SEO-teksten voor paginatitels en meta-updates, per pagina en taal. */
 export const SEO = {
@@ -73,15 +74,45 @@ export function alternates(page: Page): { hreflang: string; href: string }[] {
 /** Pages search engines may index (in both languages); /privacy is noindex. */
 export const INDEXED_PAGES: Page[] = PAGES.filter((p) => p !== "/privacy");
 
+/** "51, 53 en 54" / "51, 53 and 54". */
+export function listJoin(items: string[], lang: Lang): string {
+  if (items.length < 2) return items.join("");
+  return `${items.slice(0, -1).join(", ")} ${lang === "nl" ? "en" : "and"} ${items[items.length - 1]}`;
+}
+
+/** Title and description of a station's page. Stable facts only: never live
+ *  times or lift status, which would be stale in search results. */
+export function stationMeta(name: string, lang: Lang): { title: string; description: string } {
+  const station = displayName(name);
+  const lines = linesAt(name);
+  const lineList = listJoin(lines, lang);
+  if (lang === "nl") {
+    return {
+      title: `${station} — metro ${lines.join(", ")}: vertrektijden & toegankelijkheid | ${SITE_NAME.nl}`,
+      description: `Metrostation ${station} (${lines.length > 1 ? "lijnen" : "lijn"} ${lineList}): live vertrektijden per richting, perrons en vertragingen, en of het station rolstoeltoegankelijk is.`,
+    };
+  }
+  return {
+    title: `${station} — metro ${lines.join(", ")}: departures & step-free access | ${SITE_NAME.en}`,
+    description: `${station} metro station (${lines.length > 1 ? "lines" : "line"} ${lineList}): live departures by direction, platforms and delays, and whether the station is step-free.`,
+  };
+}
+
+export const stationUrl = (name: string, lang: Lang) => `${SEO.canonicalBase}${stationPath(stationSlug(name), lang)}`;
+
+export function stationAlternates(name: string): { hreflang: string; href: string }[] {
+  return [
+    { hreflang: "nl", href: stationUrl(name, "nl") },
+    { hreflang: "en", href: stationUrl(name, "en") },
+    { hreflang: "x-default", href: stationUrl(name, "nl") },
+  ];
+}
+
 function setAttr(selector: string, attr: string, value: string) {
   document.querySelector(selector)?.setAttribute(attr, value);
 }
 
-/** Head tags for the page on screen, the same values the build writes into
- *  that page's HTML (routeHtml.ts). */
-export function setPageMeta(page: Page, lang: Lang) {
-  const { title, description } = PAGE_META[page][lang];
-  const url = pageUrl(page, lang);
+function applyMeta(title: string, description: string, url: string, alts: { hreflang: string; href: string }[], lang: Lang) {
   document.title = title;
   setAttr('meta[name="description"]', "content", description);
   setAttr('link[rel="canonical"]', "href", url);
@@ -95,7 +126,21 @@ export function setPageMeta(page: Page, lang: Lang) {
   setAttr('meta[property="og:locale:alternate"]', "content", OG_LOCALE[lang === "nl" ? "en" : "nl"]);
   setAttr('meta[name="twitter:title"]', "content", title);
   setAttr('meta[name="twitter:description"]', "content", description);
-  for (const { hreflang, href } of alternates(page)) {
+  for (const { hreflang, href } of alts) {
     setAttr(`link[rel="alternate"][hreflang="${hreflang}"]`, "href", href);
   }
+}
+
+/** Head tags for the page on screen, the same values the build writes into
+ *  that page's HTML (routeHtml.ts). */
+export function setPageMeta(page: Page, lang: Lang) {
+  const { title, description } = PAGE_META[page][lang];
+  applyMeta(title, description, pageUrl(page, lang), alternates(page), lang);
+}
+
+/** Head tags for a station's page. Every variant of its address (?van=,
+ *  &lijn=) names the plain station page as canonical. */
+export function setStationMeta(name: string, lang: Lang) {
+  const { title, description } = stationMeta(name, lang);
+  applyMeta(title, description, stationUrl(name, lang), stationAlternates(name), lang);
 }

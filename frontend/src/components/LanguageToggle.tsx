@@ -1,6 +1,6 @@
 import { useLang, useT } from "../i18n";
 import { switchLang } from "../i18n/translated";
-import { pageOfPath, pagePath } from "../i18n/paths";
+import { localizedPath } from "../i18n/paths";
 
 /** Flips between Dutch and English. A real link to this page's other-language
  *  URL (/reisinfo ↔ /en/reisinfo), so crawlers find both versions and a
@@ -13,7 +13,7 @@ export function LanguageToggle({ className = "" }: { className?: string }) {
   const other = lang === "nl" ? "en" : "nl";
   return (
     <a
-      href={pagePath(pageOfPath(window.location.pathname), other)}
+      href={localizedPath(window.location.pathname, other)}
       hrefLang={other}
       onClick={(e) => {
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;

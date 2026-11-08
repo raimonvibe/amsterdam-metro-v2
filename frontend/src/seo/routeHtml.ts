@@ -1,24 +1,46 @@
 import type { Lang } from "../i18n";
-import { type Page, pagePath } from "../i18n/paths";
-import { IMAGE_ALT, OG_LOCALE, PAGE_META, SITE_NAME, alternates, pageUrl } from "./site";
+import { type Page, pagePath, stationPath } from "../i18n/paths";
+import { GVB_LIFT_FAULTS, gvbSearch } from "../data/accessibility";
+import {
+  METRO_LINES,
+  STATION_NAMES,
+  checkedOn,
+  directionsFrom,
+  displayName,
+  gvbSaysStepFree,
+  gvbStopUrls,
+  linesAt,
+  stationSlug,
+} from "../data/network";
+import {
+  INDEXED_PAGES,
+  IMAGE_ALT,
+  OG_LOCALE,
+  PAGE_META,
+  SEO,
+  SITE_NAME,
+  alternates,
+  listJoin,
+  pageUrl,
+  stationAlternates,
+  stationMeta,
+  stationUrl,
+} from "./site";
 
-/** GVB's metro lines and their stations in running order, from the GTFS
- *  timetable (backend/data/cache/gvb_metro.json, Nov 2026). Crawlable text for
- *  the pages below; index.html's <noscript> carries the Dutch copy. */
-export const METRO_LINES: [line: string, stations: string[]][] = [
-  ["M50", ["Isolatorweg", "Station Sloterdijk", "Burg. De Vlugtlaan", "Jan van Galenstraat", "Postjesweg", "Station Lelylaan", "Heemstedestraat", "Henk Sneevlietweg", "Amstelveenseweg", "Station Zuid", "Station RAI", "Overamstel", "Van der Madeweg", "Station Duivendrecht", "Strandvliet", "Station Bijlmer ArenA", "Bullewijk", "Station Holendrecht", "Reigersbos", "Gein"]],
-  ["M51", ["Centraal Station", "Nieuwmarkt", "Waterlooplein", "Weesperplein", "Wibautstraat", "Amstelstation", "Spaklerweg", "Overamstel", "Station RAI", "Station Zuid", "Amstelveenseweg", "Henk Sneevlietweg", "Heemstedestraat", "Station Lelylaan", "Postjesweg", "Jan van Galenstraat", "Burg. De Vlugtlaan", "Station Sloterdijk", "Isolatorweg"]],
-  ["M52", ["Noord", "Noorderpark", "Centraal Station", "Rokin", "Vijzelgracht", "De Pijp", "Europaplein", "Station Zuid"]],
-  ["M53", ["Centraal Station", "Nieuwmarkt", "Waterlooplein", "Weesperplein", "Wibautstraat", "Amstelstation", "Spaklerweg", "Van der Madeweg", "Venserpolder", "Station Diemen Zuid", "Verrijn Stuartweg", "Ganzenhoef", "Kraaiennest", "Gaasperplas"]],
-  ["M54", ["Centraal Station", "Nieuwmarkt", "Waterlooplein", "Weesperplein", "Wibautstraat", "Amstelstation", "Spaklerweg", "Van der Madeweg", "Station Duivendrecht", "Strandvliet", "Station Bijlmer ArenA", "Bullewijk", "Station Holendrecht", "Reigersbos", "Gein"]],
-];
+const escape = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-/** The lines and their stations as a short HTML section, per language. */
+/** A link to a station's page, with its name as the text. */
+const stationLink = (name: string, lang: Lang) =>
+  `<a href="${stationPath(stationSlug(name), lang)}">${escape(displayName(name))}</a>`;
+
+/** The lines and their stations as a short HTML section, per language, each
+ *  station linked to its page. index.html's <noscript> carries the Dutch copy. */
 export function linesHtml(lang: Lang): string {
   const heading = lang === "nl" ? "De metrolijnen van Amsterdam" : "Amsterdam's metro lines";
   const items = METRO_LINES.map(
-    ([line, stations]) =>
-      `<li><strong>${line}</strong> ${stations[0]} – ${stations[stations.length - 1]}: ${stations.join(", ")}.</li>`,
+    ({ line, stations }) =>
+      `<li><strong>M${line}</strong> ${escape(displayName(stations[0]))} – ${escape(displayName(stations[stations.length - 1]))}: ${stations.map((n) => stationLink(n, lang)).join(", ")}.</li>`,
   ).join("\n        ");
   return `<h2>${heading}</h2>
       <ul>
@@ -38,7 +60,8 @@ export interface RoutePage {
 /** Pages that get their own built HTML (dist/<path>/index.html), so a crawler
  *  sees the right language, title, description, canonical, hreflang and body
  *  text before any JavaScript runs. At runtime setPageMeta() sets the same
- *  head values. The Dutch homepage is index.html itself. */
+ *  head values. The Dutch homepage is index.html itself. Station pages are
+ *  in STATION_PAGES below. */
 export const ROUTE_PAGES: RoutePage[] = [
   {
     page: "/",
@@ -132,45 +155,225 @@ export const ROUTE_PAGES: RoutePage[] = [
 /** Where a route's HTML goes under dist/: "/en/" → "en", "/reisinfo" → "reisinfo". */
 export const routeDir = (r: Pick<RoutePage, "page" | "lang">) => pagePath(r.page, r.lang).replace(/^\/|\/$/g, "");
 
-const escape = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+interface Head {
+  lang: Lang;
+  title: string;
+  description: string;
+  url: string;
+  alternates: { hreflang: string; href: string }[];
+  body: string;
+  noindex?: boolean;
+  /** Extra structured data, inserted before </head>. */
+  jsonLd?: object;
+}
 
 /**
- * The built index.html with the head rewritten for one route. Every tag must
+ * The built index.html with the head rewritten for one page. Every tag must
  * be found exactly once: if index.html changes shape, the build fails here
  * instead of quietly shipping a page that still claims to be the homepage.
  */
-export function routeHtml(indexHtml: string, route: RoutePage): string {
-  const meta = PAGE_META[route.page][route.lang];
-  const url = pageUrl(route.page, route.lang);
-  const title = escape(meta.title);
-  const description = escape(meta.description);
+function rewriteHead(indexHtml: string, h: Head, label: string): string {
+  const title = escape(h.title);
+  const description = escape(h.description);
   const swaps: [RegExp, string][] = [
-    [/(<html\s+lang=")[^"]*(")/g, `$1${route.lang}$2`],
+    [/(<html\s+lang=")[^"]*(")/g, `$1${h.lang}$2`],
     [/<title>[^<]*<\/title>/g, `<title>${title}</title>`],
     [/(<meta\s+name="description"\s+content=")[^"]*(")/g, `$1${description}$2`],
-    [/(<link\s+rel="canonical"\s+href=")[^"]*(")/g, `$1${url}$2`],
+    [/(<link\s+rel="canonical"\s+href=")[^"]*(")/g, `$1${h.url}$2`],
     [/(<meta\s+property="og:title"\s+content=")[^"]*(")/g, `$1${title}$2`],
     [/(<meta\s+property="og:description"\s+content=")[^"]*(")/g, `$1${description}$2`],
-    [/(<meta\s+property="og:url"\s+content=")[^"]*(")/g, `$1${url}$2`],
-    [/(<meta\s+property="og:site_name"\s+content=")[^"]*(")/g, `$1${escape(SITE_NAME[route.lang])}$2`],
-    [/(<meta\s+property="og:image:alt"\s+content=")[^"]*(")/g, `$1${escape(IMAGE_ALT[route.lang])}$2`],
-    [/(<meta\s+name="twitter:image:alt"\s+content=")[^"]*(")/g, `$1${escape(IMAGE_ALT[route.lang])}$2`],
-    [/(<meta\s+property="og:locale"\s+content=")[^"]*(")/g, `$1${OG_LOCALE[route.lang]}$2`],
-    [/(<meta\s+property="og:locale:alternate"\s+content=")[^"]*(")/g, `$1${OG_LOCALE[route.lang === "nl" ? "en" : "nl"]}$2`],
+    [/(<meta\s+property="og:url"\s+content=")[^"]*(")/g, `$1${h.url}$2`],
+    [/(<meta\s+property="og:site_name"\s+content=")[^"]*(")/g, `$1${escape(SITE_NAME[h.lang])}$2`],
+    [/(<meta\s+property="og:image:alt"\s+content=")[^"]*(")/g, `$1${escape(IMAGE_ALT[h.lang])}$2`],
+    [/(<meta\s+name="twitter:image:alt"\s+content=")[^"]*(")/g, `$1${escape(IMAGE_ALT[h.lang])}$2`],
+    [/(<meta\s+property="og:locale"\s+content=")[^"]*(")/g, `$1${OG_LOCALE[h.lang]}$2`],
+    [/(<meta\s+property="og:locale:alternate"\s+content=")[^"]*(")/g, `$1${OG_LOCALE[h.lang === "nl" ? "en" : "nl"]}$2`],
     [/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/g, `$1${title}$2`],
     [/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/g, `$1${description}$2`],
-    [/(<noscript>)[\s\S]*?(<\/noscript>)/g, `$1\n      ${route.body}\n    $2`],
+    [/(<noscript>)[\s\S]*?(<\/noscript>)/g, `$1\n      ${h.body}\n    $2`],
   ];
-  for (const { hreflang, href } of alternates(route.page)) {
+  for (const { hreflang, href } of h.alternates) {
     swaps.push([new RegExp(`(<link\\s+rel="alternate"\\s+hreflang="${hreflang}"\\s+href=")[^"]*(")`, "g"), `$1${href}$2`]);
   }
-  if (route.noindex) swaps.push([/(<meta\s+name="robots"\s+content=")[^"]*(")/g, "$1noindex, follow$2"]);
+  if (h.noindex) swaps.push([/(<meta\s+name="robots"\s+content=")[^"]*(")/g, "$1noindex, follow$2"]);
+  if (h.jsonLd) {
+    // "<" escaped so no text in the data can close the script element.
+    const json = JSON.stringify(h.jsonLd).replace(/</g, "\\u003c");
+    swaps.push([/<\/head>/g, `  <script type="application/ld+json">${json}</script>\n  </head>`]);
+  }
   let html = indexHtml;
   for (const [re, to] of swaps) {
     const found = html.match(re)?.length ?? 0;
-    if (found !== 1) throw new Error(`routeHtml(${pagePath(route.page, route.lang)}): expected one match for ${re}, found ${found}`);
-    html = html.replace(re, to);
+    if (found !== 1) throw new Error(`routeHtml(${label}): expected one match for ${re}, found ${found}`);
+    // "$$" keeps any other "$" in the content literal; $1/$2 are the groups.
+    html = html.replace(re, to.replace(/\$(?![12])/g, "$$$$"));
   }
   return html;
+}
+
+/** One built site page (/en/, /reisinfo, …). */
+export function routeHtml(indexHtml: string, route: RoutePage): string {
+  const meta = PAGE_META[route.page][route.lang];
+  return rewriteHead(
+    indexHtml,
+    {
+      lang: route.lang,
+      title: meta.title,
+      description: meta.description,
+      url: pageUrl(route.page, route.lang),
+      alternates: alternates(route.page),
+      body: route.body,
+      noindex: route.noindex,
+    },
+    pagePath(route.page, route.lang),
+  );
+}
+
+// ─── Station pages ───────────────────────────────────────────────────────────
+
+/** "2 november 2026" / "2 November 2026". */
+function longDate(iso: string, lang: Lang): string {
+  return new Intl.DateTimeFormat(lang === "nl" ? "nl-NL" : "en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${iso}T00:00:00Z`));
+}
+
+/** A station page is indexed only when it has something checked of its own
+ *  to say: a station checked on GVB's site, with its GVB page known. */
+export function stationIndexable(name: string): boolean {
+  return checkedOn(name) !== null && gvbStopUrls(name).length > 0;
+}
+
+/**
+ * The crawlable text of a station's page: only facts about this station that
+ * stay true between deploys (lines, directions, neighbours, GVB's own rating
+ * and links). Never live times or lift faults: those load in the browser, so
+ * they can't go stale in a search result. See docs/seo-tidy-plan.md.
+ */
+export function stationBody(name: string, lang: Lang): string {
+  const nl = lang === "nl";
+  const station = escape(displayName(name));
+  const lines = linesAt(name);
+  const checked = checkedOn(name);
+  const term = escape(gvbSearch(name));
+  const other: Lang = nl ? "en" : "nl";
+  const home = pagePath("/", lang);
+  const travel = pagePath("/reisinfo", lang);
+
+  const directions = directionsFrom(name)
+    .map(({ line, terminus, next }) =>
+      nl
+        ? `<li><strong>M${line}</strong> richting ${escape(displayName(terminus))}: volgende station ${stationLink(next, lang)}</li>`
+        : `<li><strong>M${line}</strong> towards ${escape(displayName(terminus))}: next station ${stationLink(next, lang)}</li>`,
+    )
+    .join("\n        ");
+
+  const when = checked ? (nl ? ` (onze laatste controle: ${longDate(checked, lang)})` : ` (our last check: ${longDate(checked, lang)})`) : "";
+  const faults = `<a href="${GVB_LIFT_FAULTS}">${nl ? "liftstoringen van GVB" : "GVB's lift faults"}</a>`;
+  let access: string;
+  if (!checked) {
+    access = nl
+      ? `<p>${station} is nog niet gecontroleerd op de site van GVB. Tot dan geldt het station hier als niet rolstoeltoegankelijk.</p>`
+      : `<p>${station} has not been checked on GVB's site yet. Until then it counts as not step-free here.</p>`;
+  } else if (gvbSaysStepFree(name)) {
+    access = nl
+      ? `<p>Volgens de haltepagina van GVB is ${station} rolstoelvriendelijk${when}. Een lift kan tijdelijk buiten gebruik zijn: zoek "${term}" bij de ${faults} voordat je reist.</p>`
+      : `<p>According to GVB's station page, ${station} is step-free${when}. A lift can be out of service for a while: search for "${term}" in ${faults} before you travel.</p>`;
+  } else {
+    access = nl
+      ? `<p>Volgens de haltepagina van GVB is ${station} niet rolstoelvriendelijk${when}.</p>`
+      : `<p>According to GVB's station page, ${station} is not step-free${when}.</p>`;
+  }
+
+  const gvbPages = gvbStopUrls(name)
+    .map((url, i, all) => `<a href="${url}">${nl ? "Haltepagina van GVB" : "GVB's station page"}${all.length > 1 ? ` ${i + 1}` : ""}</a>`)
+    .join(" · ");
+
+  const intro = nl
+    ? `Metro${lines.length > 1 ? "lijnen" : "lijn"} ${listJoin(lines, lang)} ${lines.length > 1 ? "stoppen" : "stopt"} op ${station}. Deze pagina toont live de vertrektijden per richting, met perron en vertraging; daarvoor is JavaScript nodig.`
+    : `Metro ${lines.length > 1 ? "lines" : "line"} ${listJoin(lines, lang)} ${lines.length > 1 ? "stop" : "stops"} at ${station}. This page shows live departures by direction, with platform and delay; that needs JavaScript.`;
+
+  return `<nav aria-label="${nl ? "Kruimelpad" : "Breadcrumb"}"><a href="${home}">${escape(SITE_NAME[lang])}</a> › <a href="${travel}">${nl ? "Reisinformatie" : "Travel info"}</a> › ${station}</nav>
+      <h1>${nl ? `Metrostation ${station}` : `${station} metro station`}</h1>
+      <p>${intro}</p>
+      <h2>${nl ? "Lijnen en richtingen" : "Lines and directions"}</h2>
+      <ul>
+        ${directions}
+      </ul>
+      <h2>${nl ? "Toegankelijkheid" : "Step-free access"}</h2>
+      ${access}
+      <p>${gvbPages}</p>
+      <p><a href="${travel}">${nl ? "Alle stations en de reisplanner" : "All stations and the journey planner"}</a> · <a href="${home}">${nl ? "Live 3D-metrokaart" : "Live 3D metro map"}</a> · <a href="${stationPath(stationSlug(name), other)}" hreflang="${other}" lang="${other}">${nl ? "English" : "Nederlands"}</a></p>`;
+}
+
+/** Breadcrumb structured data: Reisinformatie › station. */
+function stationBreadcrumb(name: string, lang: Lang): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: lang === "nl" ? "Reisinformatie" : "Travel info", item: pageUrl("/reisinfo", lang) },
+      { "@type": "ListItem", position: 2, name: displayName(name), item: stationUrl(name, lang) },
+    ],
+  };
+}
+
+export interface StationPage {
+  name: string;
+  lang: Lang;
+  /** Under dist/: "reisinfo/zuid", "en/reisinfo/zuid". */
+  dir: string;
+  indexed: boolean;
+}
+
+/** Every station's page in both languages. */
+export const STATION_PAGES: StationPage[] = STATION_NAMES.flatMap((name) =>
+  (["nl", "en"] as const).map((lang) => ({
+    name,
+    lang,
+    dir: stationPath(stationSlug(name), lang).slice(1),
+    indexed: stationIndexable(name),
+  })),
+);
+
+export function stationHtml(indexHtml: string, page: StationPage): string {
+  const { title, description } = stationMeta(page.name, page.lang);
+  return rewriteHead(
+    indexHtml,
+    {
+      lang: page.lang,
+      title,
+      description,
+      url: stationUrl(page.name, page.lang),
+      alternates: stationAlternates(page.name),
+      body: stationBody(page.name, page.lang),
+      noindex: !page.indexed,
+      jsonLd: stationBreadcrumb(page.name, page.lang),
+    },
+    `/${page.dir}`,
+  );
+}
+
+// ─── Sitemap ─────────────────────────────────────────────────────────────────
+
+/**
+ * Every indexable URL: the site's pages and the checked station pages, in
+ * both languages. No <lastmod>: nothing records when a station's page last
+ * changed, and a wrong date is worse than none.
+ */
+export function sitemapUrls(): string[] {
+  return [
+    ...INDEXED_PAGES.flatMap((p) => [pageUrl(p, "nl"), pageUrl(p, "en")]),
+    ...STATION_PAGES.filter((p) => p.indexed).map((p) => `${SEO.canonicalBase}/${p.dir}`),
+  ];
+}
+
+export function sitemapXml(): string {
+  const urls = sitemapUrls()
+    .map((u) => `  <url>\n    <loc>${escape(u)}</loc>\n  </url>`)
+    .join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 }

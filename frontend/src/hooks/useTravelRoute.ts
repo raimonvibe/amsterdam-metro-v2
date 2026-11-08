@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getLang } from "../i18n";
-import { pageOfPath, pagePath } from "../i18n/paths";
+import { pageOfPath, pagePath, stationPath } from "../i18n/paths";
 
 const onTravelPath = () => pageOfPath(window.location.pathname) === "/reisinfo";
 
@@ -9,8 +9,9 @@ const onTravelPath = () => pageOfPath(window.location.pathname) === "/reisinfo";
 export function useTravelRoute() {
   const [showTravel, setShowTravel] = useState(onTravelPath);
 
-  const openTravel = useCallback((query = "") => {
-    window.history.pushState({ travel: true }, "", `${pagePath("/reisinfo", getLang())}${query}`);
+  /** Opens the travel page, on a station's page when given its slug. */
+  const openTravel = useCallback((slug?: string) => {
+    window.history.pushState({ travel: true }, "", slug ? stationPath(slug, getLang()) : pagePath("/reisinfo", getLang()));
     setShowTravel(true);
   }, []);
 
