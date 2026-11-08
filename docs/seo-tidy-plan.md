@@ -75,6 +75,8 @@ Only the safest options are in this plan. Ideas with more risk are listed at the
 
 ### Phase 3: measure, keep or roll back 📊
 
+- 🔍 The first Search Console export (8 Nov 2026) and what to do with it: [search-console-plan.md](search-console-plan.md).
+
 - After **4–6 weeks**, check Search Console per station URL: indexed, impressions, clicks.
 - Stations Google ignores or flags as duplicate get `noindex`, so nothing stays on the web that doesn't help someone.
 - If the whole change doesn't help, roll it back: remove the station rewrites and keep the canonicals to `/reisinfo`. Phase 1 stays, since it is cleanup either way.
