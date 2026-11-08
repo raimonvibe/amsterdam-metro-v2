@@ -197,14 +197,17 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       .brand-mark { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 0.4rem; background: #1f3a68; color: #fff; font: 700 1rem/1 Georgia, serif; }
       .lang-toggle { margin-left: auto; min-width: 2.75rem; min-height: 2.75rem; padding: 0 0.75rem; border: 1px solid var(--muted); border-radius: 0.5rem; background: var(--card); color: var(--ink); font: 600 0.9rem/1 system-ui, sans-serif; letter-spacing: 0.05em; cursor: pointer; }
       .lang-toggle:hover { border-color: var(--ink); }
-      main.hero { display: grid; gap: 1.25rem 2.5rem; grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "stage" "tools"; padding-top: 0.5rem; padding-bottom: 2.5rem; }
-      @media (min-width: 60rem) { main.hero { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr); grid-template-areas: "head stage" "tools stage"; align-items: start; padding-top: 2rem; } }
+      main.hero { display: grid; gap: 1.25rem 2.5rem; grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "stage" "intro" "tools"; padding-top: 0.5rem; padding-bottom: 2.5rem; }
+      @media (min-width: 60rem) { main.hero { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr); grid-template-areas: "head stage" "intro stage" "tools stage"; grid-template-rows: auto auto 1fr; align-items: start; padding-top: 2rem; } .intro { margin-top: -0.5rem; } }
+      /* A phone: the title, then straight away the train, then the rest. */
       .head { grid-area: head; }
+      .head h1 { margin-bottom: 0; }
+      .intro { grid-area: intro; }
       .tools { grid-area: tools; }
       /* One language at a time once the head script ran (html.lang-nl or
          .lang-en); without JavaScript both, one under the other. */
       html.lang-nl [data-lang="en"], html.lang-en [data-lang="nl"] { display: none !important; }
-      html:not(.js) .head > [lang="en"], html:not(.js) .tools > [lang="en"] { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+      html:not(.js) .head > [lang="en"], html:not(.js) .intro > [lang="en"], html:not(.js) .tools > [lang="en"] { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
       .stage-wrap { grid-area: stage; margin: 0; }
       @media (min-width: 60rem) { .stage-wrap { position: sticky; top: 1.5rem; } }
       .board { display: inline-flex; align-items: center; gap: 0.75rem; margin: 0 0 1rem; padding: 0.45rem 0.8rem; border-radius: 0.35rem; background: var(--board); color: var(--amber); font: 600 0.85rem/1.2 ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: 0.12em; text-transform: uppercase; box-shadow: inset 0 0 0 1px #2a313d; }
@@ -342,13 +345,20 @@ export function notFoundHtml(assets: NotFoundAssets): string {
         <p class="board" aria-label="Spoor 404: geen dienst"><span class="track">Spoor 404</span><span class="flap">Geen dienst</span></p>
         <p class="code">Fout 404 · pagina niet gevonden</p>
         <h1>Deze metro rijdt niet meer. <span class="then">Deze pagina bestaat niet.</span></h1>
-        <p class="lead">Dit adres bestaat niet (meer): misschien een tikfout, of een oude link. Zoek je station hieronder, of ga terug naar de kaart.</p>
-        <p class="fact">De S1/S2 in beeld reed van 1990 tot april 2024 in Amsterdam. Hij komt hier niet meer langs.</p>
       </div>
       <div data-lang="en" lang="en">
         <p class="board" aria-label="Track 404: not in service"><span class="track">Track 404</span><span class="flap">Not in service</span></p>
         <p class="code">Error 404 · page not found</p>
         <h1>This metro no longer runs. <span class="then">This page doesn't exist.</span></h1>
+      </div>
+      </div>
+
+      <div class="intro">
+      <div data-lang="nl">
+        <p class="lead">Dit adres bestaat niet (meer): misschien een tikfout, of een oude link. Zoek je station hieronder, of ga terug naar de kaart.</p>
+        <p class="fact">De S1/S2 in beeld reed van 1990 tot april 2024 in Amsterdam. Hij komt hier niet meer langs.</p>
+      </div>
+      <div data-lang="en" lang="en">
         <p class="lead">This address doesn't exist (any more): maybe a typo, or an old link. Find your station below, or go back to the map.</p>
         <p class="fact">The S1/S2 shown here ran in Amsterdam from 1990 until April 2024. It won't stop here again.</p>
       </div>
