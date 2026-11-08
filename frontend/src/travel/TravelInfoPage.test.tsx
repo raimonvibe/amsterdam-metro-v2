@@ -34,9 +34,32 @@ beforeEach(() => {
 
 describe("TravelInfoPage", { timeout: PAGE_TEST_TIMEOUT }, () => {
   it("opens on Centraal Station when the link names no station", async () => {
+    const canonical = document.head.appendChild(Object.assign(document.createElement("link"), { rel: "canonical" }));
     renderPage();
     await waitFor(() => expect(boardHeading()).toHaveTextContent("Centraal Station"));
-    await waitFor(() => expect(window.location.pathname).toBe("/reisinfo/centraal-station/"));
+    // CS is only the fallback: the address and head tags stay the overview's,
+    // or a search engine would read /reisinfo as Centraal Station's page.
+    expect(window.location.pathname).toBe("/reisinfo");
+    expect(canonical.getAttribute("href")).toBe("https://amsterdammetro.nl/reisinfo");
+    expect(document.title).toMatch(/^Reisinformatie/);
+    canonical.remove();
+  });
+
+  it("shares the board's station, also when it is only the fallback", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    renderPage();
+    await waitFor(() => expect(boardHeading()).toHaveTextContent("Centraal Station"));
+    await userEvent.click(screen.getByRole("button", { name: /Deel/ }));
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/reisinfo/centraal-station/?lijn=52`);
+  });
+
+  it("gives a station the visitor picks its own address and head tags", async () => {
+    renderPage();
+    const index = await screen.findByRole("list", { name: "Alle stations" });
+    await userEvent.click(within(index).getByRole("link", { name: /Rokin/ }));
+    expect(window.location.pathname).toBe("/reisinfo/rokin/");
+    expect(document.title).toMatch(/^Rokin — metro 52/);
   });
 
   it("names the site in the page's language", async () => {
