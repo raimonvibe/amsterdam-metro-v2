@@ -257,6 +257,17 @@ describe("404 page", () => {
     expect(notFoundHtml({ script: "/x.js", hasPoster: true })).toContain(`<img class="stage-still" src="${MODEL.poster}"`);
   });
 
+  it("has labelled zoom, reset and full screen buttons in both languages", () => {
+    for (const label of ["Inzoomen", "Uitzoomen", "Beeld herstellen", "Volledig scherm", "Zoom in", "Zoom out", "Reset view", "Full screen"]) {
+      expect(page).toContain(`aria-label="${label}"`);
+    }
+    expect(page.match(/data-fullscreen aria-pressed="false"/g)).toHaveLength(2);
+    expect(page).toContain('data-exit-label="Volledig scherm sluiten"');
+    expect(page).toContain('data-exit-label="Exit full screen"');
+    // Hidden until the 3D runs: without it they would do nothing.
+    expect(page).toContain(".stage-wrap:not(.is-ready) .view-tools { display: none; }");
+  });
+
   it("only knows nicknames that point to real stations and aren't real addresses", () => {
     for (const [nick, names] of Object.entries(NICKNAMES)) {
       expect(stationOfSlug(nick), nick).toBeNull();

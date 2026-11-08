@@ -12,8 +12,11 @@ import {
   MeshStandardMaterial,
   type Object3D,
   PerspectiveCamera,
+  Raycaster,
   Scene,
+  Spherical,
   SRGBColorSpace,
+  Vector2,
   Vector3,
   WebGLRenderer,
 } from "three";
@@ -25,6 +28,12 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
  * comes to a stop at the end of the track. Loaded
  * only after the page's text, and only where it can run well (see page.ts).
  * Draws a frame only while something moves, and not at all off screen.
+ *
+ * Zoom: two-finger pinch, Ctrl/⌘ + wheel (a trackpad pinch sends that too),
+ * double-click or double-tap toward the train, and the page's buttons. A
+ * plain wheel keeps scrolling the page, except in full screen. The camera
+ * stays between MIN_DISTANCE and ZOOM_OUT × the fitted distance, so the
+ * train never fills the lens or shrinks to a dot.
  */
 
 export interface SceneOptions {
@@ -33,6 +42,10 @@ export interface SceneOptions {
   dark: boolean;
   /** 0–1 while the model downloads, when the size is known. */
   onProgress?: (fraction: number) => void;
+  /** Whether a plain wheel zooms (full screen) instead of scrolling the page. */
+  wheelZooms?: () => boolean;
+  /** A plain wheel scrolled the page past the train: tell how to zoom. */
+  onWheelScroll?: () => void;
 }
 
 export interface SceneHandle {
@@ -40,6 +53,10 @@ export interface SceneHandle {
   replay(): void;
   /** Turn the view by keyboard: azimuth and tilt steps in radians. */
   turn(azimuth: number, tilt: number): void;
+  /** Zoom by a factor: above 1 closer, below 1 further away. */
+  zoom(factor: number): void;
+  /** Back to the first view. */
+  reset(): void;
   dispose(): void;
 }
 
@@ -50,6 +67,21 @@ const TRAIN_LENGTH = 10;
 const ARRIVE_MS = 3600;
 
 const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+/** Closest the camera gets to the point it looks at: still outside the car body. */
+const MIN_DISTANCE = 4.5;
+/** Furthest out, as a multiple of the fitted first view. */
+const ZOOM_OUT = 1.8;
+const MOVE_MS = 420;
+/** Never more pixels than this in the canvas (a 4K full screen at 2× would be 33M). */
+const MAX_PIXELS = 4_500_000;
+/** tan(half the vertical field of view): wide stages, narrow stages, and the widest we go. */
+const TAN_WIDE = Math.tan((16 * Math.PI) / 180);
+const TAN_NARROW = Math.tan((22 * Math.PI) / 180);
+const TAN_MAX = Math.tan((30 * Math.PI) / 180);
+/** How much of the train's width a narrow stage needs to show (tan of half the horizontal view). */
+const TAN_FIT_X = 0.48;
 
 /** Lay the model along +x, wheels on y = 0, front end at x = 0. */
 function placeTrain(model: Object3D): Group {
@@ -143,18 +175,26 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
   scene.add(train);
 
   // A three-quarter view from the platform side, looking at the train's nose.
-  const target = new Vector3(stopX - TRAIN_LENGTH * 0.32, 1.1, 0);
-  camera.position.set(stopX + 3.6, 3.6, 10.2);
+  const homeTarget = new Vector3(stopX - TRAIN_LENGTH * 0.32, 1.1, 0);
+  const homeOffset = new Vector3(3.6 + TRAIN_LENGTH * 0.32, 2.5, 10.2);
+  const homeDistance = homeOffset.length();
+  // The fitted distance for the stage's shape (narrow stages step back).
+  let fitted = homeDistance;
+  camera.position.copy(homeTarget).add(homeOffset);
   const controls = new OrbitControls(camera, canvas);
-  controls.target.copy(target);
-  controls.enableZoom = false; // never take over the page's scrolling
+  controls.target.copy(homeTarget);
+  // Pinch zoom (touch); the wheel is ours (see onWheel): it scrolls the
+  // page unless Ctrl/⌘ is held or the stage is full screen.
+  controls.enableZoom = true;
+  controls.zoomSpeed = 1.1;
+  controls.minDistance = MIN_DISTANCE;
+  controls.maxDistance = fitted * ZOOM_OUT;
   controls.enablePan = false;
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   controls.minPolarAngle = 0.35;
   controls.maxPolarAngle = 1.45;
   controls.update();
-  const home = { pos: camera.position.clone() };
 
   const restX = stopX;
   const startX = restX - TRAIN_LENGTH * 2.6;
@@ -165,19 +205,115 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
   let visible = true;
   let interactingUntil = 0;
 
+  // A smooth camera move (zoom buttons, double-tap, reset), around the
+  // point looked at so it never passes through the train.
+  let move: { from: Spherical; to: Spherical; fromTarget: Vector3; toTarget: Vector3; start: number } | null = null;
+  const sphericalOf = (pos: Vector3, tgt: Vector3) => new Spherical().setFromVector3(pos.clone().sub(tgt));
+
+  function moveTo(toTarget: Vector3, to: Spherical) {
+    if (opts.reducedMotion) {
+      move = null;
+      controls.target.copy(toTarget);
+      camera.position.setFromSpherical(to).add(toTarget);
+    } else {
+      const from = sphericalOf(camera.position, controls.target);
+      // The short way round.
+      let dTheta = to.theta - from.theta;
+      dTheta = Math.atan2(Math.sin(dTheta), Math.cos(dTheta));
+      to = to.clone();
+      to.theta = from.theta + dTheta;
+      move = { from, to, fromTarget: controls.target.clone(), toTarget: toTarget.clone(), start: performance.now() };
+    }
+    interactingUntil = performance.now() + 600;
+    request();
+  }
+
+  /** Where the camera is going: the end of a move, or where it is. */
+  function destination(): { target: Vector3; sph: Spherical } {
+    if (move) return { target: move.toTarget.clone(), sph: move.to.clone() };
+    return { target: controls.target.clone(), sph: sphericalOf(camera.position, controls.target) };
+  }
+
+  function zoomBy(factor: number, smooth: boolean) {
+    const { target, sph } = destination();
+    sph.radius = clamp(sph.radius / factor, MIN_DISTANCE, fitted * ZOOM_OUT);
+    if (smooth) return moveTo(target, sph);
+    move = null;
+    controls.target.copy(target);
+    camera.position.setFromSpherical(sph).add(target);
+    interactingUntil = performance.now() + 600;
+    request();
+  }
+
+  function reset() {
+    const sph = new Spherical().setFromVector3(homeOffset);
+    sph.radius = fitted;
+    moveTo(homeTarget, sph);
+  }
+
+  // Double-click or double-tap: zoom in toward the spot on the train;
+  // close up already, back to the first view.
+  const raycaster = new Raycaster();
+  function zoomAt(clientX: number, clientY: number) {
+    const { target, sph } = destination();
+    if (sph.radius <= MIN_DISTANCE * 1.25) return reset();
+    const rect = canvas.getBoundingClientRect();
+    const ndc = new Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    const hit = raycaster.intersectObject(train, true)[0];
+    if (hit) {
+      target.lerp(hit.point, 0.75);
+      // Stay over the track, at the train's height.
+      target.set(clamp(target.x, stopX - TRAIN_LENGTH * 1.2, stopX), clamp(target.y, 0.4, 2.6), clamp(target.z, -1.5, 1.5));
+    }
+    sph.radius = clamp(sph.radius * 0.5, MIN_DISTANCE, fitted * ZOOM_OUT);
+    moveTo(target, sph);
+  }
+
   const resize = () => {
     const { width, height } = stage.getBoundingClientRect();
     if (!width || !height) return;
+    // Sharp on high-density screens, but capped for big full screens.
+    const ratio = Math.max(0.75, Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(MAX_PIXELS / (width * height))));
+    if (renderer.getPixelRatio() !== ratio) renderer.setPixelRatio(ratio);
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    // Narrow stages: step back so the whole train stays in view.
-    camera.fov = camera.aspect < 1.2 ? 44 : 32;
+    // Narrow stages (a phone, a portrait full screen): a wider lens, and
+    // past the widest lens a step back, so the whole train stays in view.
+    let tan = TAN_WIDE;
+    if (camera.aspect < 1.2) tan = Math.max(TAN_NARROW, TAN_FIT_X / camera.aspect);
+    const fit = Math.max(1, tan / TAN_MAX);
+    tan = Math.min(tan, TAN_MAX);
+    camera.fov = (2 * Math.atan(tan) * 180) / Math.PI;
     camera.updateProjectionMatrix();
+    // Keep the visitor's zoom, relative to the new fitted distance.
+    const nextFitted = homeDistance * fit;
+    if (Math.abs(nextFitted - fitted) > 1e-3) {
+      const scale = nextFitted / fitted;
+      fitted = nextFitted;
+      controls.maxDistance = fitted * ZOOM_OUT;
+      const off = camera.position.clone().sub(controls.target).multiplyScalar(scale);
+      off.setLength(clamp(off.length(), MIN_DISTANCE, controls.maxDistance));
+      camera.position.copy(controls.target).add(off);
+      if (move) move.to.radius = clamp(move.to.radius * scale, MIN_DISTANCE, controls.maxDistance);
+    }
     request();
   };
 
   function step(now: number): boolean {
     let moving = false;
+    if (move) {
+      const k = easeOutCubic(Math.min(1, (now - move.start) / MOVE_MS));
+      const s = new Spherical(
+        move.from.radius + (move.to.radius - move.from.radius) * k,
+        move.from.phi + (move.to.phi - move.from.phi) * k,
+        move.from.theta + (move.to.theta - move.from.theta) * k,
+      );
+      controls.target.lerpVectors(move.fromTarget, move.toTarget, k);
+      camera.position.setFromSpherical(s).add(controls.target);
+      if (k >= 1) move = null;
+      moving = true;
+    }
     const t = now - arriveStart;
     if (t < ARRIVE_MS) {
       train.position.x = startX + (restX - startX) * easeOutCubic(Math.max(0, t) / ARRIVE_MS);
@@ -202,6 +338,7 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
   }
 
   controls.addEventListener("start", () => {
+    move = null; // the visitor takes over
     interactingUntil = Infinity;
     request();
   });
@@ -209,6 +346,51 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
     interactingUntil = performance.now() + 1500; // let the damping settle
     request();
   });
+
+  // The wheel: caught before OrbitControls sees it.
+  const onWheel = (e: WheelEvent) => {
+    e.stopPropagation();
+    if (!(e.ctrlKey || e.metaKey || opts.wheelZooms?.())) {
+      opts.onWheelScroll?.();
+      return; // the page scrolls
+    }
+    e.preventDefault(); // not the browser's page zoom
+    const px = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+    // A trackpad pinch sends small steps with ctrlKey; a mouse wheel big ones.
+    const k = e.ctrlKey ? 0.012 : 0.0018;
+    zoomBy(Math.exp(clamp(-px * k, -0.5, 0.5)), false);
+  };
+  stage.addEventListener("wheel", onWheel, { capture: true, passive: false });
+
+  // Double-tap and double-click, from pointer events so both work the same
+  // (and a drag or a page scroll is never a tap).
+  let down = { x: 0, y: 0, t: 0, id: -1 };
+  let lastTap = { x: 0, y: 0, t: 0 };
+  const onDown = (e: PointerEvent) => {
+    if (!e.isPrimary || e.button !== 0) return;
+    down = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
+  };
+  const onUp = (e: PointerEvent) => {
+    if (e.pointerId !== down.id) return;
+    down.id = -1;
+    const now = performance.now();
+    const slop = e.pointerType === "mouse" ? 4 : 12;
+    if (now - down.t > 300 || Math.hypot(e.clientX - down.x, e.clientY - down.y) > slop) return;
+    if (now - lastTap.t < 350 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 32) {
+      lastTap.t = 0;
+      zoomAt(e.clientX, e.clientY);
+    } else {
+      lastTap = { x: e.clientX, y: e.clientY, t: now };
+    }
+  };
+  const onCancel = () => {
+    down.id = -1;
+  };
+  canvas.addEventListener("pointerdown", onDown);
+  canvas.addEventListener("pointerup", onUp);
+  canvas.addEventListener("pointercancel", onCancel);
+  // A page zoom or another screen changes the pixel ratio, not the stage's size.
+  window.addEventListener("resize", resize);
 
   const ro = new ResizeObserver(resize);
   ro.observe(stage);
@@ -265,19 +447,28 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
       const axis = new Vector3().crossVectors(new Vector3(0, 1, 0), offset).normalize();
       const tilted = offset.clone().applyAxisAngle(axis, tilt);
       const polar = tilted.angleTo(new Vector3(0, 1, 0));
+      move = null;
       camera.position.copy(controls.target).add(polar > controls.minPolarAngle && polar < controls.maxPolarAngle ? tilted : offset);
       interactingUntil = performance.now() + 600;
       request();
     },
+    zoom(factor: number) {
+      zoomBy(factor, true);
+    },
+    reset,
     dispose() {
       cancelAnimationFrame(frame);
+      stage.removeEventListener("wheel", onWheel, { capture: true });
+      canvas.removeEventListener("pointerdown", onDown);
+      canvas.removeEventListener("pointerup", onUp);
+      canvas.removeEventListener("pointercancel", onCancel);
+      window.removeEventListener("resize", resize);
       ro.disconnect();
       io.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       controls.dispose();
       renderer.dispose();
       canvas.remove();
-      camera.position.copy(home.pos);
     },
   };
 }

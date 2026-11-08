@@ -42,6 +42,28 @@ export interface NotFoundAssets {
   hasPoster: boolean;
 }
 
+/** The 3D view's buttons, one set per language (shown with the 3D only). */
+const VIEW_TOOLS = {
+  nl: { group: "Weergave", zoomIn: "Inzoomen", zoomOut: "Uitzoomen", reset: "Beeld herstellen", full: "Volledig scherm", exit: "Volledig scherm sluiten" },
+  en: { group: "View", zoomIn: "Zoom in", zoomOut: "Zoom out", reset: "Reset view", full: "Full screen", exit: "Exit full screen" },
+} as const;
+
+const icon = (d: string) =>
+  `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="${d}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function viewTools(lang: "nl" | "en"): string {
+  const t = VIEW_TOOLS[lang];
+  const attrs = lang === "en" ? ` data-lang="en" lang="en"` : ` data-lang="nl"`;
+  const button = (data: string, label: string, body: string) =>
+    `<button type="button" ${data} aria-label="${label}" title="${label}">${body}</button>`;
+  return `<div class="view-tools" role="group" aria-label="${t.group}"${attrs}>
+            ${button('data-zoom="in"', t.zoomIn, icon("M12 5v14M5 12h14"))}
+            ${button('data-zoom="out"', t.zoomOut, icon("M5 12h14"))}
+            ${button('data-zoom="reset"', t.reset, icon("M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"))}
+            ${button(`data-fullscreen aria-pressed="false" data-label="${t.full}" data-exit-label="${t.exit}"`, t.full, `<span class="fs-enter">${icon("M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5")}</span><span class="fs-exit">${icon("M6 6l12 12M18 6L6 18")}</span>`)}
+          </div>`;
+}
+
 const badge = (l: string) => `<span class="badge l${l}">${l}</span>`;
 
 /**
@@ -129,9 +151,16 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       .actions a.primary { background: #1f3a68; border-color: #1f3a68; color: #fff; }
       .report { margin: 0; color: var(--muted); font-size: 0.92rem; }
       .stage { position: relative; overflow: hidden; aspect-ratio: 4 / 3; border-radius: 1rem; background: var(--stage); box-shadow: inset 0 0 0 1px var(--line); touch-action: pan-y; }
+      /* Full screen: the Fullscreen API, or where that's missing (iPhone
+         Safari) a fixed layer over the page (.is-fake-fs, page.ts). One
+         finger turns the train there; the page can't scroll anyway. */
+      .stage.is-fs { aspect-ratio: auto; width: 100%; height: 100%; border-radius: 0; box-shadow: none; touch-action: none; }
+      .stage.is-fake-fs { position: fixed; inset: 0; z-index: 100; width: auto; height: auto; }
+      .stage:fullscreen { background: var(--stage); }
+      html.fs-lock, html.fs-lock body { overflow: hidden; }
       @media (min-width: 40rem) { .stage { aspect-ratio: 16 / 10; } }
       .stage-still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transition: opacity 0.6s ease; }
-      .progress, .loading, .replay { z-index: 1; }
+      .progress, .loading, .replay, .view-tools, .wheel-hint { z-index: 1; }
       .stage-canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; opacity: 0; transition: opacity 0.8s ease; cursor: grab; }
       .stage-canvas:active { cursor: grabbing; }
       .stage.is-live .stage-canvas { opacity: 1; }
@@ -144,6 +173,21 @@ export function notFoundHtml(assets: NotFoundAssets): string {
          button with reduced motion. */
       .stage-wrap:not(.is-ready) .replay, .stage-wrap:not(.is-ready) .hint, .stage-wrap.no-replay .replay { display: none; }
       .replay { position: absolute; right: 0.75rem; bottom: 0.75rem; min-height: 2.75rem; padding: 0 0.9rem; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink); font: 600 0.9rem/1 system-ui, sans-serif; cursor: pointer; box-shadow: 0 2px 8px rgb(0 0 0 / 0.12); }
+      .stage.is-fs .replay { right: max(0.75rem, env(safe-area-inset-right)); bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+      /* The zoom and full screen buttons: only the buttons take clicks, so
+         dragging the train works right up to them. */
+      .stage-wrap:not(.is-ready) .view-tools { display: none; }
+      .view-tools { position: absolute; top: 0.6rem; right: 0.6rem; display: flex; gap: 0.4rem; pointer-events: none; }
+      .stage.is-fs .view-tools { top: max(0.75rem, env(safe-area-inset-top)); right: max(0.75rem, env(safe-area-inset-right)); }
+      .view-tools button { pointer-events: auto; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0; border: 1px solid var(--line); border-radius: 0.6rem; background: var(--card); color: var(--ink); cursor: pointer; box-shadow: 0 2px 8px rgb(0 0 0 / 0.12); touch-action: manipulation; }
+      .view-tools button:hover { border-color: var(--muted); }
+      .view-tools button:disabled { opacity: 0.45; cursor: default; }
+      .view-tools button[data-fullscreen] { margin-left: 0.35rem; }
+      .view-tools .fs-exit, .stage.is-fs .view-tools .fs-enter { display: none; }
+      .stage.is-fs .view-tools .fs-exit { display: inline; }
+      @media (max-width: 22rem) { .view-tools { gap: 0.25rem; } .view-tools button { width: 2.5rem; height: 2.5rem; } }
+      .wheel-hint { position: absolute; left: 50%; top: 50%; margin: 0; padding: 0.5rem 0.9rem; border-radius: 0.5rem; background: rgb(20 24 31 / 0.82); color: #fff; font-size: 0.95rem; transform: translate(-50%, -50%); opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+      .stage.show-wheel-hint .wheel-hint { opacity: 1; }
       figcaption { margin-top: 0.6rem; color: var(--muted); font-size: 0.9rem; }
       figcaption p { margin: 0 0 0.25rem; }
       details.all { margin: 0 0 2rem; padding: 0.25rem 1rem; border: 1px solid var(--line); border-radius: 0.75rem; }
@@ -192,10 +236,13 @@ export function notFoundHtml(assets: NotFoundAssets): string {
           <p class="loading" aria-hidden="true"><span data-lang="nl">De metro komt eraan…</span><span data-lang="en" lang="en">The metro is on its way…</span></p>
           <button type="button" class="replay" data-replay data-lang="nl">↻ Nog een keer</button>
           <button type="button" class="replay" data-replay data-lang="en" lang="en">↻ Once more</button>
+          ${viewTools("nl")}
+          ${viewTools("en")}
+          <p class="wheel-hint" aria-hidden="true"><span data-lang="nl">Ctrl + scroll om te zoomen</span><span data-lang="en" lang="en">Ctrl + scroll to zoom</span></p>
         </div>
         <figcaption>
-          <p class="hint" data-lang="nl">Sleep, of klik en gebruik de pijltjestoetsen, om de metro te draaien.</p>
-          <p class="hint" data-lang="en" lang="en">Drag, or click and use the arrow keys, to turn the metro.</p>
+          <p class="hint" data-lang="nl">Sleep om de metro te draaien. Zoom met twee vingers, Ctrl + scroll, dubbelklikken (of -tikken) of de knoppen. Toetsenbord: klik op de metro, dan pijltjes, + en −, 0 herstelt, F voor volledig scherm.</p>
+          <p class="hint" data-lang="en" lang="en">Drag to turn the metro. Zoom with two fingers, Ctrl + scroll, a double-click (or double-tap) or the buttons. Keyboard: click the metro, then the arrow keys, + and −, 0 resets, F for full screen.</p>
           <p data-lang="nl">${credit("nl")}</p>
           <p data-lang="en" lang="en">${credit("en")}</p>
         </figcaption>
