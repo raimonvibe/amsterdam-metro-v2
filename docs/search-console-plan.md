@@ -84,10 +84,68 @@ The queries fall into six groups. The last column says whether the site has a pa
 
 ### Step 0: set up the measurement (no code) 📏
 
+- [x] **Sitemap:** resubmitted on 8 Nov 2026. The one from the week before still had the old 4 URLs; Search Console now finds **82** (39 stations × NL/EN, plus `/`, `/en/`, `/reisinfo`, `/en/reisinfo`). Google rereads it by itself from now on: resubmit only after a big change (the line pages of step 3, say).
 - [ ] Turn on the *Position* column, and export *Pages* as well as *Queries*.
-- [ ] *Pages → Indexing*: are the 78 station pages (39 × NL/EN) indexed? Note how many on the date of the check.
-- [ ] *URL inspection* → *Request indexing* for a few busy stations: Centraal Station, Sloterdijk, Zuid, Bijlmer ArenA (both languages).
+- [ ] Ask Google to index the pages that matter most, in both languages (below).
+- [ ] *Pages → Indexing*: how many of the 82 are indexed? Note it with the date in the check log.
 - [ ] Save this export as the baseline. Next exports: **6 Dec 2026** (4 weeks) and **3 Jan 2027** (8 weeks), the same windows as [Phase 3 of the tidy plan](seo-tidy-plan.md#phase-3-measure-keep-or-roll-back-).
+
+#### 0.1 Requesting indexing, NL and EN 🗂️
+
+**Is it fine to do?** Yes, within Google's limits ([Ask Google to recrawl](https://developers.google.com/search/docs/crawling-indexing/ask-google-to-recrawl), [URL Inspection tool](https://support.google.com/webmasters/answer/9012289)):
+
+- URL Inspection is Google's own tool for single URLs. There is a **daily limit per property**; Google gives no number, so plan on a handful a day.
+- **Once per URL.** Asking again "won't get it crawled any faster".
+- **Many URLs: the sitemap**, not the button. The other stations come that way.
+- **No guarantee:** crawling takes "a few days to a few weeks", and a request doesn't promise a place in the results.
+- **Not the Indexing API:** it's only for job postings and livestreams, not for pages like these.
+
+**Checked on the live site, 8 Nov 2026:** every URL below answers 200, allows indexing, has itself as canonical and links its other language (`hreflang`); `robots.txt` allows everything and names the sitemap.
+
+**Per URL, the same five steps:**
+
+1. Paste the **full URL** into the inspection bar at the top of Search Console, press Enter.
+2. **Test live URL**, wait for the result.
+3. Check: "URL is available to Google", indexing allowed, and under **View tested page** the screenshot shows the right page in the right language.
+4. **Request indexing**, **once**.
+5. Next URL. Don't repeat one.
+
+Already says "URL is on Google"? Nothing to request. A message about the limit? Stop, carry on the next day.
+
+**Day 1: the travel-info pages and Centraal Station**
+
+| | Nederlands | English |
+|---|---|---|
+| Travel info | `https://amsterdammetro.nl/reisinfo` | `https://amsterdammetro.nl/en/reisinfo` |
+| Centraal Station | `https://amsterdammetro.nl/reisinfo/centraal-station/` | `https://amsterdammetro.nl/en/reisinfo/centraal-station/` |
+
+`/reisinfo` comes first because Google still shows an old snapshot of it (see the check log): a station's title on the general page, from before the station pages had their own URLs. The live page has its own title again; a fresh crawl replaces the old one.
+
+**Day 2: busy stations, Dutch**
+
+- `https://amsterdammetro.nl/reisinfo/zuid/`
+- `https://amsterdammetro.nl/reisinfo/sloterdijk/`
+- `https://amsterdammetro.nl/reisinfo/bijlmer-arena/`
+- `https://amsterdammetro.nl/reisinfo/amstelstation/`
+- `https://amsterdammetro.nl/reisinfo/reigersbos/` (in the 24-hour export)
+
+**Day 3: the same stations, English**
+
+- `https://amsterdammetro.nl/en/reisinfo/zuid/`
+- `https://amsterdammetro.nl/en/reisinfo/sloterdijk/`
+- `https://amsterdammetro.nl/en/reisinfo/bijlmer-arena/`
+- `https://amsterdammetro.nl/en/reisinfo/amstelstation/`
+- `https://amsterdammetro.nl/en/reisinfo/reigersbos/`
+
+**Exactly these URLs:** stations end in `/`, `/reisinfo` and `/en/reisinfo` don't. Those are the canonicals; the other spelling points to them, and inspecting it inspects the wrong URL.
+
+**Why English too:** Google finds it through `hreflang`, but shows it in English results only once it's indexed. That's where tourists search ("what time does metro stop", "are metros running today").
+
+**Not needed:** the homepages (`/`, `/en/`) are in Google already, and the other 29 stations come through the sitemap.
+
+**After a week:** *Pages → Indexing*, or *Sitemaps → See index coverage*, for how many of the 82 are in. In Google itself: `site:amsterdammetro.nl/reisinfo/` and `site:amsterdammetro.nl/en/reisinfo/`.
+
+**Your own browser isn't Google's.** The app reopens the station or trip you last looked at, so `/reisinfo` can open on a station for you (Rokin, here). Google has none of that; a private window shows what it sees.
 
 ### Step 1: first and last metro on every station page 🌙
 
@@ -149,3 +207,9 @@ Group 2 is the first sign of demand for line pages, which the tidy plan left out
 | Date | What | Result |
 |---|---|---|
 | 8 Nov 2026 | First export (24 h, 7 d, 28 d), this plan written | Baseline above. Position column still missing. |
+| 8 Nov 2026 | Sitemap resubmitted | Discovered pages 4 → 82. |
+| 8 Nov 2026 | `site:amsterdammetro.nl/reisinfo/` in Google | One result: `/reisinfo` with an old title, "Centraal Station — vertrektijden". The live page has its own title and canonical (checked). No station page indexed yet. |
+| | Indexing requested, day 1 (4 URLs) | |
+| | Indexing requested, day 2 (5 URLs, NL) | |
+| | Indexing requested, day 3 (5 URLs, EN) | |
+| | Pages → Indexing, a week later | … of 82 indexed |
