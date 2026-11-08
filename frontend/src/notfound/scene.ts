@@ -3,7 +3,6 @@ import {
   Box3,
   BoxGeometry,
   Color,
-  CylinderGeometry,
   DirectionalLight,
   Group,
   HemisphereLight,
@@ -22,8 +21,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 /**
- * The 404 page's 3D scene: an S1/S2 metro (retired in 2024) rolls up to the
- * buffer stop at the end of a track and settles with a small bump. Loaded
+ * The 404 page's 3D scene: an S1/S2 metro (retired in 2024) rolls in and
+ * comes to a stop at the end of the track. Loaded
  * only after the page's text, and only where it can run well (see page.ts).
  * Draws a frame only while something moves, and not at all off screen.
  */
@@ -49,7 +48,6 @@ const LINE_COLORS = ["#3CB44B", "#F58231", "#4363D8", "#E6194B", "#FFE119"];
 
 const TRAIN_LENGTH = 10;
 const ARRIVE_MS = 3600;
-const BUMP_MS = 900;
 
 const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
 
@@ -108,26 +106,8 @@ function buildTrack(dark: boolean): { group: Group; stopX: number } {
     group.add(stripe);
   });
 
-  // Buffer stop at the end of the line.
+  // Where the train comes to rest: its nose a little before the rails end.
   const stopX = 1.2;
-  const frame = new MeshStandardMaterial({ color: "#7b2132", roughness: 0.6 });
-  const block = new Mesh(new BoxGeometry(0.5, 1.6, 3.4), frame);
-  block.position.set(stopX + 0.9, 0.7, 0);
-  group.add(block);
-  const bufferMat = new MeshStandardMaterial({ color: "#d9d4c7", metalness: 0.4, roughness: 0.5 });
-  for (const z of [-1.1, 1.1]) {
-    const buffer = new Mesh(new CylinderGeometry(0.22, 0.22, 0.5, 20), bufferMat);
-    buffer.rotation.z = Math.PI / 2;
-    buffer.position.set(stopX + 0.45, 1.0, z);
-    group.add(buffer);
-  }
-  const lamp = new Mesh(
-    new CylinderGeometry(0.18, 0.18, 0.1, 20),
-    new MeshStandardMaterial({ color: "#ff3b30", emissive: new Color("#ff3b30"), emissiveIntensity: 1.6 }),
-  );
-  lamp.rotation.z = Math.PI / 2;
-  lamp.position.set(stopX + 0.62, 1.75, 0);
-  group.add(lamp);
 
   return { group, stopX };
 }
@@ -201,11 +181,6 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
     const t = now - arriveStart;
     if (t < ARRIVE_MS) {
       train.position.x = startX + (restX - startX) * easeOutCubic(Math.max(0, t) / ARRIVE_MS);
-      moving = true;
-    } else if (t < ARRIVE_MS + BUMP_MS) {
-      // A small, damped bump against the buffers.
-      const b = (t - ARRIVE_MS) / BUMP_MS;
-      train.position.x = restX - 0.12 * Math.sin(b * Math.PI * 2.5) * (1 - b) ** 2;
       moving = true;
     } else {
       train.position.x = restX;
