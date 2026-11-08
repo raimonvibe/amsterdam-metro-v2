@@ -73,6 +73,17 @@ export const NOT_FOUND_BOOT = `(function () {
 })();
 `;
 
+/** The rails under the train on the 404 page, and where their credit points. */
+export const RAILS = {
+  url: "/models/rails.glb",
+  title: "Rails",
+  source: "https://sketchfab.com/3d-models/rails-09b595cfd94e45fcae81d247f303f88a",
+  author: "Daniel Yaroshenko",
+  authorUrl: "https://sketchfab.com/yarodan",
+  license: "CC BY 4.0",
+  licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
+} as const;
+
 export interface NotFoundAssets {
   /** The built page script (src/notfound/page.ts), e.g. "/assets/notfound-abc.js". */
   script: string;
@@ -187,8 +198,8 @@ export function notFoundHtml(assets: NotFoundAssets): string {
     : `<svg class="stage-still" viewBox="0 0 640 260" aria-hidden="true">${track}</svg>`;
   const credit = (lang: "nl" | "en") =>
     lang === "nl"
-      ? `3D-model: <a href="${MODEL.source}">${MODEL.title}</a> door <a href="${MODEL.authorUrl}">${MODEL.author}</a>, <a href="${MODEL.licenseUrl}">${MODEL.license}</a>. Aangepast: gecomprimeerd voor het web.`
-      : `3D model: <a href="${MODEL.source}">${MODEL.title}</a> by <a href="${MODEL.authorUrl}">${MODEL.author}</a>, <a href="${MODEL.licenseUrl}">${MODEL.license}</a>. Changed: compressed for the web.`;
+      ? `3D-modellen: <a href="${MODEL.source}">${MODEL.title}</a> door <a href="${MODEL.authorUrl}">${MODEL.author}</a>, <a href="${MODEL.licenseUrl}">${MODEL.license}</a>; <a href="${RAILS.source}">${RAILS.title}</a> door <a href="${RAILS.authorUrl}">${RAILS.author}</a>, <a href="${RAILS.licenseUrl}">${RAILS.license}</a>. Aangepast: gecomprimeerd voor het web, de rails op maat gebracht en herhaald.`
+      : `3D models: <a href="${MODEL.source}">${MODEL.title}</a> by <a href="${MODEL.authorUrl}">${MODEL.author}</a>, <a href="${MODEL.licenseUrl}">${MODEL.license}</a>; <a href="${RAILS.source}">${RAILS.title}</a> by <a href="${RAILS.authorUrl}">${RAILS.author}</a>, <a href="${RAILS.licenseUrl}">${RAILS.license}</a>. Changed: compressed for the web, the rails scaled and repeated.`;
 
   return `<!doctype html>
 <html lang="nl">
@@ -395,7 +406,7 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       </div>
 
       <figure class="stage-wrap">
-        <div class="stage" data-stage data-model="${MODEL.url}" role="group" aria-label="Een S1/S2-metro aan het eind van het spoor / An S1/S2 metro at the end of the track">
+        <div class="stage" data-stage data-model="${MODEL.url}" data-rails="${RAILS.url}" role="group" aria-label="Een S1/S2-metro aan het eind van het spoor / An S1/S2 metro at the end of the track">
           ${still}
           <span class="progress" data-progress aria-hidden="true"></span>
           <button type="button" class="replay" data-replay data-lang="nl">↻ Nog een keer</button>

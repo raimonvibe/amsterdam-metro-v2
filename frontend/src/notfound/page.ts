@@ -227,6 +227,7 @@ function start3d(dark: boolean) {
       .then(({ mount }) =>
         mount(stage, {
           modelUrl,
+          railsUrl: stage.dataset.rails,
           reducedMotion,
           // Over the empty track the train rolls in (once in view); over the
           // still image of the train it starts where that has it. Either
