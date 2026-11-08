@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { Lang } from "../i18n";
 import { type Page, pagePath } from "../i18n/paths";
 import { ROUTE_PAGES, STATION_PAGES, linesHtml, routeDir, routeHtml, sitemapXml, stationBody, stationHtml } from "./routeHtml";
-import { notFoundHtml, NICKNAMES } from "./notFound";
+import { MODEL, NICKNAMES, notFoundHtml } from "./notFound";
 import { STATION_NAMES, stationOfSlug, stationSlug } from "../data/network";
 import { IMAGE_ALT, INDEXED_PAGES, PAGE_META, SITE_NAME } from "./site";
 
@@ -214,12 +214,23 @@ describe("station pages", () => {
 });
 
 describe("404 page", () => {
-  const page = notFoundHtml();
+  const page = notFoundHtml({ script: "/assets/notfound-test.js", hasPoster: false });
 
-  it("is kept out of search results and loads no app", () => {
+  it("is kept out of search results and loads only its own script", () => {
     expect(page).toContain('<meta name="robots" content="noindex" />');
     expect(page).not.toContain("/src/main.tsx");
-    expect(page).toContain('<script src="/404.js"></script>');
+    expect(page).toContain('<script type="module" src="/assets/notfound-test.js"></script>');
+  });
+
+  it("has a language button, hidden until its script runs", () => {
+    // Without JavaScript both languages show, so the button would do nothing.
+    expect(page).toMatch(/<button type="button" class="lang-toggle" data-switch translate="no" hidden>EN<\/button>/);
+  });
+
+  it("says what happened in both languages, with one heading each", () => {
+    expect(page.match(/<h1>/g)).toHaveLength(2);
+    expect(page).toContain("Fout 404 · pagina niet gevonden");
+    expect(page).toContain("Error 404 · page not found");
   });
 
   it("links every station in both languages", () => {
@@ -227,6 +238,23 @@ describe("404 page", () => {
       expect(page).toContain(`href="/reisinfo/${stationSlug(n)}/"`);
       expect(page).toContain(`href="/en/reisinfo/${stationSlug(n)}/"`);
     }
+  });
+
+  it("credits the 3D model as its license asks: title, author, source, license, changes", () => {
+    for (const s of [MODEL.source, MODEL.authorUrl, MODEL.licenseUrl, MODEL.title, MODEL.author, "CC BY-NC-SA 4.0"]) {
+      expect(page).toContain(s);
+    }
+    expect(page).toContain("Aangepast: gecomprimeerd voor het web.");
+    expect(page).toContain("Changed: compressed for the web.");
+  });
+
+  it("shows a still image until the 3D loads, and describes it", () => {
+    expect(page).toContain(`data-model="${MODEL.url}"`);
+    // A group, not an image: it holds the replay button, and an image role
+    // would hide that from screen readers.
+    expect(page).toMatch(/data-stage[^>]*role="group"[^>]*aria-label="[^"]+"/);
+    expect(page).toMatch(/<svg class="stage-still"/);
+    expect(notFoundHtml({ script: "/x.js", hasPoster: true })).toContain(`<img class="stage-still" src="${MODEL.poster}"`);
   });
 
   it("only knows nicknames that point to real stations and aren't real addresses", () => {

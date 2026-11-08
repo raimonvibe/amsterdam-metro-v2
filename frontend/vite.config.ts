@@ -3,7 +3,7 @@ import { join } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { ROUTE_PAGES, STATION_PAGES, routeDir, routeHtml, sitemapXml, stationHtml } from "./src/seo/routeHtml";
-import { notFoundHtml } from "./src/seo/notFound";
+import { MODEL, notFoundHtml } from "./src/seo/notFound";
 import { securityHeaders } from "./src/securityHeaders";
 
 /** After the build, write dist/<page>/index.html for every page besides the
@@ -13,13 +13,24 @@ import { securityHeaders } from "./src/securityHeaders";
  *  running the app. Also the sitemap and the 404 page. */
 function routePages(): Plugin {
   let outDir = "dist";
+  let publicDir = "public";
+  // The 404 page's script, a separate entry (src/notfound/page.ts): its
+  // hashed file name is only known once the bundle is written.
+  let notFoundScript = "";
   return {
     name: "route-pages",
     apply: "build",
     configResolved(config) {
       outDir = config.build.outDir;
+      publicDir = config.publicDir;
+    },
+    generateBundle(_, bundle) {
+      for (const file of Object.values(bundle)) {
+        if (file.type === "chunk" && file.isEntry && file.name === "notfound") notFoundScript = `/${file.fileName}`;
+      }
     },
     closeBundle() {
+      if (!notFoundScript) throw new Error("route-pages: the 404 page's script (entry 'notfound') was not built");
       const index = readFileSync(join(outDir, "index.html"), "utf8");
       const write = (dir: string, html: string) => {
         mkdirSync(join(outDir, dir), { recursive: true });
@@ -30,7 +41,10 @@ function routePages(): Plugin {
       for (const page of STATION_PAGES) write(page.dir, stationHtml(index, page));
       writeFileSync(join(outDir, "sitemap.xml"), sitemapXml());
       // Served with status 404 for every address no file or rule matches.
-      writeFileSync(join(outDir, "404.html"), notFoundHtml());
+      writeFileSync(
+        join(outDir, "404.html"),
+        notFoundHtml({ script: notFoundScript, hasPoster: existsSync(join(publicDir, MODEL.poster)) }),
+      );
     },
   };
 }
@@ -104,6 +118,8 @@ export default defineConfig({
     // across app deploys, so returning visitors re-download only app code.
     chunkSizeWarningLimit: 1200,
     rolldownOptions: {
+      // The app, and the 404 page's own small script (see routePages()).
+      input: { index: "index.html", notfound: "src/notfound/page.ts" },
       output: {
         codeSplitting: {
           groups: [
@@ -112,6 +128,9 @@ export default defineConfig({
             // first lazy import fetched all of deck.gl (240 KB) with it, even
             // for the preview still that never draws the map.
             { name: "preload-helper", test: /preload-helper/, priority: 4 },
+            // three.js is only for the 404 page's train: never in the shared
+            // vendor chunk, which every page of the app loads.
+            { name: "three", test: /node_modules[\\/]three[\\/]/, priority: 5 },
             { name: "maplibre", test: /node_modules[\\/](maplibre-gl|react-map-gl)[\\/]/, priority: 3 },
             { name: "deckgl", test: /node_modules[\\/](@deck\.gl|@luma\.gl|@loaders\.gl|@math\.gl|@probe\.gl)[\\/]/, priority: 2 },
             { name: "vendor", test: /node_modules[\\/]/, priority: 1 },
