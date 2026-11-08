@@ -185,13 +185,14 @@ Done before building, to answer one question: **how do we make the station pages
 
 ## 🧪 Done means
 
-- [ ] `curl -I https://amsterdammetro.nl/does-not-exist` returns **404**, and the page has `noindex`.
-- [ ] `curl https://amsterdammetro.nl/reisinfo/waterlooplein` shows a station-specific `<title>`, description and canonical without JavaScript.
-- [ ] `?station=Waterlooplein&lijn=51` has a canonical to `/reisinfo/waterlooplein`.
-- [ ] The sitemap is generated and lists only real, indexable URLs.
-- [ ] No live times in any prerendered HTML.
-- [ ] `npm test` and `tsc --noEmit` pass in `frontend/`.
+- [ ] `curl -I https://amsterdammetro.nl/does-not-exist` returns **404**, and the page has `noindex`. *Built and checked locally with `npm run preview`; on the live site after deploy and after deleting the `/*` rule in Render's dashboard ([render-deploy-plan.md](render-deploy-plan.md#routing-dashboard)).*
+- [ ] `curl https://amsterdammetro.nl/reisinfo/waterlooplein` shows a station-specific `<title>`, description and canonical without JavaScript. *Built and checked locally; live after deploy.*
+- [x] `?station=Waterlooplein&lijn=51` has a canonical to `/reisinfo/waterlooplein`: the app moves the station into the path and sets the canonical without the query.
+- [x] The sitemap is generated and lists only real, indexable URLs (82, no `lastmod`).
+- [x] No live times in any prerendered HTML (tested in `routeHtml.test.ts`).
+- [x] `npm test` and the type check (`tsc -b`) pass in `frontend/`.
 - [ ] A Search Console check is noted below 4–6 weeks after release.
+- [ ] Wheelchair users (for example via the All Aboard team) have tried a station page.
 
 ## 🗒️ Log
 
@@ -199,3 +200,4 @@ Done before building, to answer one question: **how do we make the station pages
 |---|---|---|
 | 2026-11-07 | Plan written | Nothing built yet |
 | 2026-11-08 | Research added (UX, software, tech), plan refined | See "Changes to the plan from this research" |
+| 2026-11-08 | Phases 1 and 2 built, with research changes 1–12 | Station pages for 39 stations × 2 languages, generated sitemap, standalone 404 page with "did you mean", no catch-all, step-free details on the board (three states, alternatives, reachable stations), pause button, step-free filter. Not yet deployed; 1.4 (titles from Search Console data) still to do. Nicknames are handled by the 404 page's suggestions instead of 301s: no dashboard rules needed. |
