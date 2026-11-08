@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { Lang } from "../i18n";
 import { type Page, pagePath } from "../i18n/paths";
 import { ROUTE_PAGES, STATION_PAGES, linesHtml, routeDir, routeHtml, sitemapXml, stationBody, stationHtml } from "./routeHtml";
-import { MODEL, NICKNAMES, NOT_FOUND_BOOT, notFoundHtml } from "./notFound";
+import { MODEL, NICKNAMES, NOT_FOUND_BOOT, RAILS, notFoundHtml } from "./notFound";
 import { langOfPath, themeFor } from "../notfound/suggest";
 import { STATION_NAMES, stationOfSlug, stationSlug } from "../data/network";
 import { IMAGE_ALT, INDEXED_PAGES, PAGE_META, SITE_NAME } from "./site";
@@ -245,8 +245,15 @@ describe("404 page", () => {
     for (const s of [MODEL.source, MODEL.authorUrl, MODEL.licenseUrl, MODEL.title, MODEL.author, "CC BY-NC-SA 4.0"]) {
       expect(page).toContain(s);
     }
-    expect(page).toContain("Aangepast: gecomprimeerd voor het web.");
-    expect(page).toContain("Changed: compressed for the web.");
+    expect(page).toContain("Aangepast: gecomprimeerd voor het web, de rails op maat gebracht en herhaald.");
+    expect(page).toContain("Changed: compressed for the web, the rails scaled and repeated.");
+  });
+
+  it("credits the rails as CC BY asks: title, author, source, license, changes", () => {
+    for (const s of [RAILS.source, RAILS.authorUrl, RAILS.licenseUrl, RAILS.title, RAILS.author, "CC BY 4.0"]) {
+      expect(page).toContain(s);
+    }
+    expect(page).toContain(`data-rails="${RAILS.url}"`);
   });
 
   it("shows a still image until the 3D loads, and describes it", () => {

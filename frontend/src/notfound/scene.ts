@@ -10,6 +10,7 @@ import {
   Matrix4,
   Mesh,
   MeshStandardMaterial,
+  type Material,
   type Object3D,
   PerspectiveCamera,
   Raycaster,
@@ -39,6 +40,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 export interface SceneOptions {
   modelUrl: string;
+  /** The rails segment (public/models/rails.glb); without it, simple rails. */
+  railsUrl?: string;
   reducedMotion: boolean;
   /** Start with the train at rest (as on the still image) instead of
    *  letting it roll in the first time the stage is in view. */
@@ -68,6 +71,13 @@ export interface SceneHandle {
 const LINE_COLORS = ["#3CB44B", "#F58231", "#4363D8", "#E6194B", "#FFE119"];
 
 const TRAIN_LENGTH = 10;
+/** Where the rails end (the train stops a little before). */
+const TRACK_END = 2;
+const TRACK_LENGTH = 40;
+/** Standard gauge over the S1/S2's width (1,435 mm / 3.0 m): the rails to the train's scale. */
+const GAUGE_PER_WIDTH = 1.435 / 3.0;
+/** The rails segment's length in gauges, if its file doesn't say (extras.segment). */
+const RAILS_SEGMENT = 5.6253;
 const ARRIVE_MS = 3600;
 
 const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
@@ -110,31 +120,88 @@ function placeTrain(model: Object3D): Group {
   return holder;
 }
 
-function buildTrack(dark: boolean): { group: Group; stopX: number } {
+interface Rails {
+  /** One segment: rails along +x ending at x = 0, gauge 1, rail tops at y = 0
+   *  (after `matrix`: the file's positions are quantized). */
+  mesh: Mesh;
+  matrix: Matrix4;
+  /** The segment's bounds, in gauges. */
+  box: Box3;
+  /** Its length in gauges (rail end to rail end, so segments join). */
+  segment: number;
+}
+
+/** The rails segment from its file (see assets-src/models/README.md). */
+function railsFrom(scene: Object3D): Rails | null {
+  let mesh: Mesh | null = null;
+  scene.traverse((o) => {
+    if (!mesh && (o as Mesh).isMesh) mesh = o as Mesh;
+  });
+  if (!mesh) return null;
+  const m = mesh as Mesh;
+  m.updateWorldMatrix(true, false);
+  // Not baked into the geometry: its positions are normalized int16
+  // (KHR_mesh_quantization), which can't hold values past ±1. The node's
+  // transform goes into each instance's matrix instead.
+  const matrix = m.matrixWorld.clone();
+  m.geometry.computeBoundingBox();
+  const box = m.geometry.boundingBox!.clone().applyMatrix4(matrix);
+  const segment = Number(scene.userData.segment) || RAILS_SEGMENT;
+  return { mesh: m, matrix, box, segment };
+}
+
+/**
+ * The track: a ballast bed, the rails (the model, repeated along the bed,
+ * to the train's scale; or simple boxes if it didn't load) and the five
+ * lines as a strip along the far side.
+ */
+function buildTrack(dark: boolean, gauge: number, rails: Rails | null): Group {
   const group = new Group();
+  const length = TRACK_LENGTH;
+  const startX = TRACK_END - length;
+
+  // How deep the sleepers sit, and how wide: from the model, or simple ones.
+  let sleeperBottom = -0.32 * gauge;
+  let sleeperHalf = gauge;
+  if (rails) {
+    const box = rails.box;
+    sleeperBottom = box.min.y * gauge;
+    sleeperHalf = Math.max(-box.min.z, box.max.z) * gauge;
+    const step = rails.segment * gauge;
+    const count = Math.ceil(length / step);
+    const inst = new InstancedMesh(rails.mesh.geometry, rails.mesh.material as Material, count);
+    const m = new Matrix4();
+    for (let i = 0; i < count; i++) {
+      m.makeScale(gauge, gauge, gauge).setPosition(TRACK_END - i * step, 0, 0).multiply(rails.matrix);
+      inst.setMatrixAt(i, m);
+    }
+    inst.computeBoundingSphere();
+    group.add(inst);
+  } else {
+    const sleeperMat = new MeshStandardMaterial({ color: dark ? "#4a4237" : "#8a7458", roughness: 0.9 });
+    const railMat = new MeshStandardMaterial({ color: "#9aa3ad", metalness: 0.8, roughness: 0.35 });
+    const n = Math.round(length / (gauge * 0.6));
+    const sleepers = new InstancedMesh(new BoxGeometry(gauge * 0.25, -sleeperBottom * 0.6, sleeperHalf * 2), sleeperMat, n);
+    const m = new Matrix4();
+    for (let i = 0; i < n; i++) {
+      m.makeTranslation(startX + 0.2 + i * (length / n), sleeperBottom * 0.7, 0);
+      sleepers.setMatrixAt(i, m);
+    }
+    group.add(sleepers);
+    for (const z of [-gauge / 2, gauge / 2]) {
+      const rail = new Mesh(new BoxGeometry(length, gauge * 0.15, gauge * 0.08), railMat);
+      rail.position.set(startX + length / 2, -gauge * 0.075, z);
+      group.add(rail);
+    }
+  }
+
+  // The ballast: up to just above the sleepers' bottom, with a shoulder.
   const ballast = new MeshStandardMaterial({ color: dark ? "#2a2f3a" : "#cfc6b4", roughness: 1 });
-  const sleeperMat = new MeshStandardMaterial({ color: dark ? "#4a4237" : "#8a7458", roughness: 0.9 });
-  const railMat = new MeshStandardMaterial({ color: "#9aa3ad", metalness: 0.8, roughness: 0.35 });
-
-  const length = 40;
-  const startX = -length + 2;
-  const bed = new Mesh(new BoxGeometry(length, 0.3, 4.2), ballast);
-  bed.position.set(startX + length / 2, -0.35, 0);
+  const bedHalf = Math.max(sleeperHalf * 1.6, 0.9);
+  const bedTop = sleeperBottom + gauge * 0.06;
+  const bed = new Mesh(new BoxGeometry(length, 0.3, bedHalf * 2), ballast);
+  bed.position.set(startX + length / 2, bedTop - 0.15, 0);
   group.add(bed);
-
-  const sleepers = new InstancedMesh(new BoxGeometry(0.35, 0.12, 3.6), sleeperMat, 60);
-  const m = new Matrix4();
-  for (let i = 0; i < 60; i++) {
-    m.makeTranslation(startX + 0.4 + i * (length / 60), -0.14, 0);
-    sleepers.setMatrixAt(i, m);
-  }
-  group.add(sleepers);
-
-  for (const z of [-0.72, 0.72]) {
-    const rail = new Mesh(new BoxGeometry(length, 0.14, 0.12), railMat);
-    rail.position.set(startX + length / 2, -0.02, z);
-    group.add(rail);
-  }
 
   // The five lines, as a strip along the far side of the track.
   LINE_COLORS.forEach((c, i) => {
@@ -142,14 +209,11 @@ function buildTrack(dark: boolean): { group: Group; stopX: number } {
       new BoxGeometry(length * (1 - i * 0.08), 0.04, 0.16),
       new MeshStandardMaterial({ color: c, roughness: 0.6, emissive: new Color(c), emissiveIntensity: dark ? 0.35 : 0.05 }),
     );
-    stripe.position.set(startX + (length * (1 - i * 0.08)) / 2, -0.18, -2.3 - i * 0.22);
+    stripe.position.set(startX + (length * (1 - i * 0.08)) / 2, bedTop + 0.01, -bedHalf - 0.25 - i * 0.22);
     group.add(stripe);
   });
 
-  // Where the train comes to rest: its nose a little before the rails end.
-  const stopX = 1.2;
-
-  return { group, stopX };
+  return group;
 }
 
 export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<SceneHandle> {
@@ -172,15 +236,30 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
   fill.position.set(8, 4, -6);
   scene.add(fill);
 
-  const { group: track, stopX } = buildTrack(opts.dark);
-  scene.add(track);
-
+  // The train and the rails, in parallel; one progress bar for both.
   const loader = new GLTFLoader();
-  const gltf = await loader.loadAsync(opts.modelUrl, (e) => {
-    if (e.lengthComputable && e.total > 0) opts.onProgress?.(e.loaded / e.total);
-  });
+  const loaded: number[] = [0, 0];
+  const totals: number[] = [0, 0];
+  const progress = (i: number) => (e: ProgressEvent) => {
+    if (!e.lengthComputable || !e.total) return;
+    loaded[i] = e.loaded;
+    totals[i] = e.total;
+    const total = totals[0] + totals[1];
+    if (total) opts.onProgress?.((loaded[0] + loaded[1]) / total);
+  };
+  const [gltf, railsGltf] = await Promise.all([
+    loader.loadAsync(opts.modelUrl, progress(0)),
+    // The rails are a nice-to-have: if they don't load, simple ones.
+    opts.railsUrl ? loader.loadAsync(opts.railsUrl, progress(1)).catch(() => null) : Promise.resolve(null),
+  ]);
   const train = placeTrain(gltf.scene);
   scene.add(train);
+  const trainWidth = new Box3().setFromObject(train).getSize(new Vector3()).z;
+  const rails = railsGltf ? railsFrom(railsGltf.scene) : null;
+  scene.add(buildTrack(opts.dark, trainWidth * GAUGE_PER_WIDTH, rails));
+
+  // Where the train comes to rest: its nose a little before the rails end.
+  const stopX = TRACK_END - 0.8;
 
   // A three-quarter view from the platform side, looking at the train's nose.
   const homeTarget = new Vector3(stopX - TRAIN_LENGTH * 0.32, 1.1, 0);

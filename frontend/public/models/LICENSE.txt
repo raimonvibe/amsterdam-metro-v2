@@ -7,3 +7,14 @@ Licensed under CC BY-NC-SA 4.0: https://creativecommons.org/licenses/by-nc-sa/4.
 Changes: textures re-encoded as WebP; geometry quantized, with
 glTF-Transform. This adapted file is licensed under the
 same license, CC BY-NC-SA 4.0. Used non-commercially on amsterdammetro.nl.
+
+rails.glb
+
+"Rails" by Daniel Yaroshenko
+https://sketchfab.com/3d-models/rails-09b595cfd94e45fcae81d247f303f88a
+Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+
+Changes: scaled to a unit segment, tangents and the specular map
+dropped, textures re-encoded as WebP, geometry quantized (see
+assets-src/models/README.md). This adapted file is licensed under the
+same license, CC BY 4.0.

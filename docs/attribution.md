@@ -54,13 +54,14 @@ See [legal-compliance.md](./legal-compliance.md) for a full compliance checklist
 
 See `package.json` and `backend/requirements.txt` for full dependency lists.
 
-## 3D model (404 page)
+## 3D models (404 page)
 
 | Model | Author | License | Use |
 |---|---|---|---|
 | [S1/2 Metro for Cities Skylines](https://sketchfab.com/3d-models/s12-metro-for-cities-skylines-e5eef97cc78340d49fb6d4b7f6e77c52) | [accessviolation](https://sketchfab.com/accessviolation) | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) | The S1/S2 metro on the 404 page |
+| [Rails](https://sketchfab.com/3d-models/rails-09b595cfd94e45fcae81d247f303f88a) | [Daniel Yaroshenko](https://sketchfab.com/yarodan) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | The track under the S1/S2 on the 404 page |
 
-**Changes:** textures re-encoded as WebP and geometry quantized ([`assets-src/models/README.md`](../assets-src/models/README.md)). The adapted file `frontend/public/models/s12-metro.glb` is licensed CC BY-NC-SA 4.0 as well, with a notice next to it (`models/LICENSE.txt`). The 404 page credits title, author, source, license and changes under the model and in its footer.
+**Changes:** the metro's textures re-encoded as WebP and its geometry quantized; the rails scaled to a unit segment, repeated along the track, their textures re-encoded as WebP and geometry quantized ([`assets-src/models/README.md`](../assets-src/models/README.md)). The adapted files are licensed like their originals (`s12-metro.glb` CC BY-NC-SA 4.0, `rails.glb` CC BY 4.0), with a notice next to them (`models/LICENSE.txt`). The 404 page credits both models' title, author, source, license and changes in its footer.
 
 **NonCommercial:** the site has no ads, sales or donations. If that changes, check the license or replace the model.
 

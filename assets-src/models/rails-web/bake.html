@@ -1,0 +1,51 @@
+<!doctype html><meta charset="utf-8"><title>Bake the rails</title><body style="margin:0">
+<p id="status" style="font:16px system-ui;margin:1rem">Baking…</p>
+<script type="importmap">{"imports":{"three":"/frontend/node_modules/three/build/three.module.js","three/addons/":"/frontend/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+// Bakes the Sketchfab "Rails" segment into a web copy for the 404 scene:
+// one mesh, rails along +x, gauge (rail centre to centre) = 1, rail tops at
+// y = 0, the segment's rails ending at x = 0 and starting at x = -SEGMENT;
+// no tangents (three.js derives them), WebP textures, no specular map.
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+const g = await new GLTFLoader().loadAsync("/assets-src/models/rails.glb");
+const src = g.scene.getObjectByProperty("type", "Mesh"); g.scene.updateMatrixWorld(true);
+const geo = src.geometry.clone().applyMatrix4(src.matrixWorld);
+// Measured from the source's vertices (world units of the source): the
+// rail heads' centres across, their ends along, and their top.
+const RAIL_X = [0.2694, 8.1578];          // rail head centres across
+const RAIL_Z = [-44.4282, -0.0532];       // rail ends along
+const TOP_Y = 1.8978;                      // rail head top
+const gauge = RAIL_X[1] - RAIL_X[0];
+const m = new THREE.Matrix4()
+  .makeScale(1 / gauge, 1 / gauge, 1 / gauge)
+  .multiply(new THREE.Matrix4().makeRotationY(Math.PI / 2))            // z (along) -> x, ending at 0
+  .multiply(new THREE.Matrix4().makeTranslation(-(RAIL_X[0] + RAIL_X[1]) / 2, -TOP_Y, -RAIL_Z[1]));
+geo.applyMatrix4(m);
+geo.deleteAttribute("tangent");
+geo.computeBoundingBox();
+const s = src.material;
+const webp = (t) => { if (t) t.userData.mimeType = "image/webp"; return t; };
+// Roughness/metalness/occlusion: 512 px is plenty at this size on screen.
+const half = (t, px) => { const c = document.createElement("canvas"); c.width = c.height = px; c.getContext("2d").drawImage(t.image, 0, 0, px, px); const n = t.clone(); n.image = c; n.needsUpdate = true; n.userData.mimeType = "image/webp"; return n; };
+const orm = half(s.roughnessMap, 512);
+const mat = new THREE.MeshStandardMaterial({
+  name: "rails", map: webp(s.map), normalMap: webp(s.normalMap), roughnessMap: orm, metalnessMap: orm, aoMap: orm,
+  metalness: s.metalness, roughness: s.roughness,
+});
+const mesh = new THREE.Mesh(geo, mat); mesh.name = "rails-segment";
+const root = new THREE.Scene(); root.add(mesh);
+const seg = (RAIL_Z[1] - RAIL_Z[0]) / gauge;
+root.userData = { segment: +seg.toFixed(4), note: "Rails along +x, gauge 1, rail tops at y=0, rails from x=-segment to 0" };
+const glb = await new GLTFExporter().parseAsync(root, { binary: true, maxTextureSize: 1024 });
+const b = new Uint8Array(glb); let bin = ""; for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode(...b.subarray(i, i + 0x8000));
+window.__out = { bytes: b.length, segment: seg, bbox: [geo.boundingBox.min.toArray(), geo.boundingBox.max.toArray()], verts: geo.attributes.position.count, b64: btoa(bin) };
+// Then: python3 quantize.py rails-unquantized.glb ../../../frontend/public/models/rails.glb
+const a = document.createElement("a");
+a.href = URL.createObjectURL(new Blob([glb], { type: "model/gltf-binary" }));
+a.download = "rails-unquantized.glb";
+a.textContent = `Download rails-unquantized.glb (${(b.length / 1024).toFixed(0)} KB, segment ${seg.toFixed(4)} gauges)`;
+document.getElementById("status").replaceChildren(a);
+window.__ready = true;
+</script>
