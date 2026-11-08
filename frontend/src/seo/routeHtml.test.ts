@@ -222,6 +222,11 @@ describe("404 page", () => {
     expect(page).toContain('<script src="/404.js"></script>');
   });
 
+  it("has a language button, hidden until its script runs", () => {
+    // Without JavaScript both languages show, so the button would do nothing.
+    expect(page).toMatch(/<button type="button" class="lang-toggle" data-switch translate="no" hidden>EN<\/button>/);
+  });
+
   it("links every station in both languages", () => {
     for (const n of STATION_NAMES) {
       expect(page).toContain(`href="/reisinfo/${stationSlug(n)}/"`);

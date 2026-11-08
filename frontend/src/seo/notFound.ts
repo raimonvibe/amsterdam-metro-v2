@@ -75,15 +75,25 @@ export function notFoundHtml(): string {
       ul.stations a, .actions a, .suggest a { display: inline-block; min-height: 24px; line-height: 24px; }
       .lines { white-space: nowrap; }
       .badge { display: inline-block; min-width: 1.6em; margin-left: 0.15rem; padding: 0 0.25em; border-radius: 0.2rem; background: var(--c); color: #111; font-size: 0.7rem; font-weight: 700; text-align: center; }
+      .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+      .top svg { flex: 1; }
+      .lang-toggle { flex: none; min-width: 2.75rem; min-height: 2.75rem; margin-top: 0.5rem; padding: 0 0.75rem; border: 1px solid var(--muted); border-radius: 0.5rem; background: var(--card); color: var(--ink); font: 600 0.9rem/1 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: 0.05em; cursor: pointer; }
+      .lang-toggle:hover { border-color: var(--ink); }
+      .lang-toggle:focus-visible { outline: 3px solid var(--link); outline-offset: 2px; }
       [hidden] { display: none !important; }
     </style>
   </head>
   <body>
     <main>
-      <svg viewBox="0 0 280 50" role="img" aria-label="Doodlopend spoor / Dead-end track">
-        ${track}
-        <rect class="buffer" x="262" y="4" width="8" height="42" rx="2"/>
-      </svg>
+      <div class="top">
+        <svg viewBox="0 0 280 50" role="img" aria-label="Doodlopend spoor / Dead-end track">
+          ${track}
+          <rect class="buffer" x="262" y="4" width="8" height="42" rx="2"/>
+        </svg>
+        <!-- Shown by /404.js, which switches the page in place: without
+             JavaScript both languages are on the page already. -->
+        <button type="button" class="lang-toggle" data-switch translate="no" hidden>EN</button>
+      </div>
       <div lang="nl" data-lang="nl">
         <p class="code">Fout 404</p>
         <h1>Dit station staat niet op de kaart</h1>

@@ -6,9 +6,35 @@
   var path = window.location.pathname;
   var lang = path === "/en" || path.indexOf("/en/") === 0 ? "en" : "nl";
   var blocks = document.querySelectorAll("[data-lang]");
-  for (var i = 0; i < blocks.length; i++) blocks[i].hidden = blocks[i].getAttribute("data-lang") !== lang;
-  document.documentElement.lang = lang;
-  if (lang === "en") document.title = "Stop not found — Amsterdam Metro Live";
+  var toggle = document.querySelector("[data-switch]");
+  var TITLE = { nl: "Station niet gevonden — Metro Amsterdam Live", en: "Stop not found — Amsterdam Metro Live" };
+  // The button shows the language it switches *to*, in that language's own
+  // code and words, like the app's NL/EN toggle.
+  var SWITCH = { nl: { code: "EN", label: "Switch to English" }, en: { code: "NL", label: "Wissel naar Nederlands" } };
+
+  // Shows the page in one language, in place: the address stays as it is
+  // (it doesn't exist either way). Nothing is stored.
+  function show(l) {
+    for (var i = 0; i < blocks.length; i++) blocks[i].hidden = blocks[i].getAttribute("data-lang") !== l;
+    document.documentElement.lang = l;
+    document.title = TITLE[l];
+    if (toggle) {
+      toggle.textContent = SWITCH[l].code;
+      toggle.setAttribute("aria-label", SWITCH[l].label);
+      toggle.title = SWITCH[l].label;
+      toggle.setAttribute("lang", l === "nl" ? "en" : "nl");
+    }
+  }
+  show(lang);
+  if (toggle) {
+    toggle.hidden = false;
+    toggle.addEventListener("click", function () {
+      var next = document.documentElement.lang === "en" ? "nl" : "en";
+      show(next);
+      // Keep the keyboard where it was, on the button.
+      toggle.focus();
+    });
+  }
 
   var el = document.getElementById("station-data");
   if (!el) return;
@@ -92,16 +118,19 @@
     .filter(Boolean);
   if (!found.length) return;
 
-  var base = lang === "en" ? "/en/reisinfo/" : "/reisinfo/";
-  var box = document.querySelector('[data-lang="' + lang + '"] [data-suggest]');
-  if (!box) return;
-  box.appendChild(document.createTextNode(lang === "en" ? "Did you mean " : "Bedoelde je "));
-  found.forEach(function (st, n) {
-    if (n > 0) box.appendChild(document.createTextNode(n === found.length - 1 ? (lang === "en" ? " or " : " of ") : ", "));
-    var a = document.createElement("a");
-    a.href = base + encodeURIComponent(st.slug) + "/";
-    a.textContent = st.name;
-    box.appendChild(a);
+  // Suggestions in both languages, so switching keeps them.
+  ["nl", "en"].forEach(function (l) {
+    var box = document.querySelector('[data-lang="' + l + '"] [data-suggest]');
+    if (!box) return;
+    var base = l === "en" ? "/en/reisinfo/" : "/reisinfo/";
+    box.appendChild(document.createTextNode(l === "en" ? "Did you mean " : "Bedoelde je "));
+    found.forEach(function (st, n) {
+      if (n > 0) box.appendChild(document.createTextNode(n === found.length - 1 ? (l === "en" ? " or " : " of ") : ", "));
+      var a = document.createElement("a");
+      a.href = base + encodeURIComponent(st.slug) + "/";
+      a.textContent = st.name;
+      box.appendChild(a);
+    });
+    box.appendChild(document.createTextNode("?"));
   });
-  box.appendChild(document.createTextNode("?"));
 })();
