@@ -36,9 +36,10 @@ function routePages(): Plugin {
 }
 
 /**
- * `npm run preview` answers like the live site's routing rules (render.yaml):
- * a page's address serves its built index.html, and an address with no page
- * gets 404.html with status 404. Vite's own fallback would serve the
+ * `npm run preview` answers like the live site's routing (render.yaml, and
+ * Render's own behaviour as tested on 8 Nov 2026): a page's address serves
+ * its built index.html, and an address with no page gets 404.html with
+ * status 404. Vite's own fallback would serve the
  * homepage everywhere, hiding exactly what these rules are for.
  */
 function liveRouting(): Plugin {
@@ -62,8 +63,12 @@ function liveRouting(): Plugin {
           return plainFile ? next() : notFound();
         }
         if (path === "/" || /\.[a-z0-9]+$/i.test(path)) return next();
+        // Like Render: a folder's index.html is served at its address with a
+        // trailing slash (/reisinfo/zuid/), or where a rewrite rule names it
+        // (the site pages: /reisinfo, /en/privacy, …). /reisinfo/zuid is not.
+        const ruled = ROUTE_PAGES.some((r) => `/${routeDir(r)}` === path);
         const page = `${path.replace(/\/+$/, "")}/index.html`;
-        if (existsSync(join(outDir, page))) {
+        if ((path.endsWith("/") || ruled) && existsSync(join(outDir, page))) {
           req.url = page + (query ? `?${query}` : "");
           return next();
         }

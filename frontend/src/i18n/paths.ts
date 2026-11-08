@@ -39,9 +39,12 @@ export function stationSlugOfPath(pathname: string): string | null {
   return /^[a-z0-9-]+$/i.test(slug) ? slug : null;
 }
 
-/** A station page's path in one language: "/reisinfo/zuid", "/en/reisinfo/zuid". */
+/** A station page's path in one language: "/reisinfo/zuid/", "/en/reisinfo/zuid/".
+ *  With the trailing slash: Render serves a built folder's index.html at
+ *  that address by itself, with no routing rule. Without the slash it does
+ *  not (tested on the live site, 8 Nov 2026); the 404 page forwards it. */
 export function stationPath(slug: string, lang: Lang): string {
-  return `${pagePath("/reisinfo", lang)}/${slug}`;
+  return `${pagePath("/reisinfo", lang)}/${slug}/`;
 }
 
 /** The same page in another language, station included. */

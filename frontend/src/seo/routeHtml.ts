@@ -17,7 +17,6 @@ import {
   IMAGE_ALT,
   OG_LOCALE,
   PAGE_META,
-  SEO,
   SITE_NAME,
   alternates,
   listJoin,
@@ -324,7 +323,7 @@ function stationBreadcrumb(name: string, lang: Lang): object {
 export interface StationPage {
   name: string;
   lang: Lang;
-  /** Under dist/: "reisinfo/zuid", "en/reisinfo/zuid". */
+  /** Under dist/: "reisinfo/zuid", "en/reisinfo/zuid" (served at /reisinfo/zuid/). */
   dir: string;
   indexed: boolean;
 }
@@ -334,7 +333,7 @@ export const STATION_PAGES: StationPage[] = STATION_NAMES.flatMap((name) =>
   (["nl", "en"] as const).map((lang) => ({
     name,
     lang,
-    dir: stationPath(stationSlug(name), lang).slice(1),
+    dir: stationPath(stationSlug(name), lang).slice(1, -1),
     indexed: stationIndexable(name),
   })),
 );
@@ -367,7 +366,7 @@ export function stationHtml(indexHtml: string, page: StationPage): string {
 export function sitemapUrls(): string[] {
   return [
     ...INDEXED_PAGES.flatMap((p) => [pageUrl(p, "nl"), pageUrl(p, "en")]),
-    ...STATION_PAGES.filter((p) => p.indexed).map((p) => `${SEO.canonicalBase}/${p.dir}`),
+    ...STATION_PAGES.filter((p) => p.indexed).map((p) => stationUrl(p.name, p.lang)),
   ];
 }
 

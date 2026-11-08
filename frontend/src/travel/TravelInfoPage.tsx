@@ -129,7 +129,10 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
 
   useEffect(() => {
     if (station) setStationMeta(station.name, lang);
-    else setPageMeta("/reisinfo", lang);
+    // A station page's own HTML already names its station: leave its head
+    // tags alone until the station is known (the API may be slow or down,
+    // also when a search engine renders the page).
+    else if (!stationSlugOfPath(window.location.pathname)) setPageMeta("/reisinfo", lang);
   }, [station, lang]);
 
   // Tick just after each whole second, not every 1000 ms from mount: a free

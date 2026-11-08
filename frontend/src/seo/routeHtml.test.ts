@@ -123,14 +123,14 @@ describe("deploy config", () => {
   // Render's dashboard is what production reads; render.yaml mirrors it
   // (docs/render-deploy-plan.md). Without a rewrite, a built page is never
   // served and crawlers get the Dutch homepage's head at its URL.
-  it("has a rewrite for every built page, and no catch-all", () => {
+  it("has a rewrite for every site page, none for stations, and no catch-all", () => {
     for (const route of ROUTE_PAGES) {
       const dir = routeDir(route);
       expect(RENDER_YAML, `rewrite for /${dir}`).toContain(`source: /${dir}\n        destination: /${dir}/index.html\n`);
     }
-    for (const prefix of ["", "/en"]) {
-      expect(RENDER_YAML).toContain(`source: ${prefix}/reisinfo/:station\n        destination: ${prefix}/reisinfo/:station/index.html\n`);
-    }
+    // Station pages are served at /reisinfo/<slug>/ without a rule; a
+    // placeholder rule gave unknown stations an empty 200 page (8 Nov 2026).
+    expect(RENDER_YAML).not.toMatch(/^\s+source: .*:station/m);
     // A catch-all answers every made-up address with the homepage and 200.
     expect(RENDER_YAML).not.toMatch(/source: \/\*\n/);
   });
@@ -148,7 +148,7 @@ describe("deploy config", () => {
     const locs = [...SITEMAP.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]).sort();
     const expected = [
       ...INDEXED_PAGES.flatMap((p) => [`${BASE}${pagePath(p, "nl")}`, `${BASE}${pagePath(p, "en")}`]),
-      ...STATION_PAGES.filter((p) => p.indexed).map((p) => `${BASE}/${p.dir}`),
+      ...STATION_PAGES.filter((p) => p.indexed).map((p) => `${BASE}/${p.dir}/`),
     ].sort();
     expect(locs).toEqual(expected);
     // No lastmod: nothing records when a page changed, and a wrong date is noise.
@@ -174,10 +174,10 @@ describe("station pages", () => {
     const page = html("Amsterdam, Station Zuid", "en");
     expect(page).toContain('<html lang="en">');
     expect(page).toContain("<title>Station Zuid — metro 50, 51, 52: departures &amp; step-free access | Amsterdam Metro Live</title>");
-    expect(page).toContain(`<link rel="canonical" href="${BASE}/en/reisinfo/zuid" />`);
-    expect(hreflangs(page)).toEqual([`nl ${BASE}/reisinfo/zuid`, `en ${BASE}/en/reisinfo/zuid`, `x-default ${BASE}/reisinfo/zuid`]);
+    expect(page).toContain(`<link rel="canonical" href="${BASE}/en/reisinfo/zuid/" />`);
+    expect(hreflangs(page)).toEqual([`nl ${BASE}/reisinfo/zuid/`, `en ${BASE}/en/reisinfo/zuid/`, `x-default ${BASE}/reisinfo/zuid/`]);
     expect(page).toContain('"@type":"BreadcrumbList"');
-    expect(page).toContain(`"item":"${BASE}/en/reisinfo/zuid"`);
+    expect(page).toContain(`"item":"${BASE}/en/reisinfo/zuid/"`);
   });
 
   it("says only stable facts: no live times, no lift faults", () => {
@@ -208,7 +208,7 @@ describe("station pages", () => {
 
   it("links each direction's next station, in the page's language", () => {
     const body = stationBody("Amsterdam, Noord", "en");
-    expect(body).toContain('towards Station Zuid: next station <a href="/en/reisinfo/noorderpark">Noorderpark</a>');
+    expect(body).toContain('towards Station Zuid: next station <a href="/en/reisinfo/noorderpark/">Noorderpark</a>');
     expect(body.match(/<li>/g)).toHaveLength(1);
   });
 });
@@ -224,8 +224,8 @@ describe("404 page", () => {
 
   it("links every station in both languages", () => {
     for (const n of STATION_NAMES) {
-      expect(page).toContain(`href="/reisinfo/${stationSlug(n)}"`);
-      expect(page).toContain(`href="/en/reisinfo/${stationSlug(n)}"`);
+      expect(page).toContain(`href="/reisinfo/${stationSlug(n)}/"`);
+      expect(page).toContain(`href="/en/reisinfo/${stationSlug(n)}/"`);
     }
   });
 

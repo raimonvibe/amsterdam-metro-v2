@@ -51,6 +51,17 @@
   };
   var matches = has(data.nicknames, wanted) ? data.nicknames[wanted] : [];
   if (!matches.length && has(bySlug, wanted)) matches = [wanted];
+
+  // A station address without its trailing slash (/reisinfo/zuid), another
+  // spelling (/reisinfo/Zuid) or an unambiguous nickname (/reisinfo/cs):
+  // go straight to the station's page. Render only serves /reisinfo/zuid/.
+  var stationPath = parts.length === (lang === "en" ? 3 : 2) && parts[parts.length - 2] === "reisinfo";
+  if (stationPath && matches.length === 1 && has(bySlug, matches[0])) {
+    var target = (lang === "en" ? "/en/reisinfo/" : "/reisinfo/") + encodeURIComponent(bySlug[matches[0]].slug) + "/";
+    window.location.replace(target + window.location.search);
+    return;
+  }
+
   if (!matches.length) {
     var flat = wanted.replace(/-/g, "");
     var scored = stations
@@ -88,7 +99,7 @@
   found.forEach(function (st, n) {
     if (n > 0) box.appendChild(document.createTextNode(n === found.length - 1 ? (lang === "en" ? " or " : " of ") : ", "));
     var a = document.createElement("a");
-    a.href = base + encodeURIComponent(st.slug);
+    a.href = base + encodeURIComponent(st.slug) + "/";
     a.textContent = st.name;
     box.appendChild(a);
   });

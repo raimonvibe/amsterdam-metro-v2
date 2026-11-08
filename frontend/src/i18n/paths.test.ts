@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { langOfPath, localizedPath, PAGES, pageOfPath, pagePath, stationSlugOfPath } from "./paths";
+import { langOfPath, localizedPath, PAGES, pageOfPath, pagePath, stationPath, stationSlugOfPath } from "./paths";
 
 describe("language paths", () => {
   it("reads the language from the /en prefix only", () => {
@@ -36,11 +36,20 @@ describe("language paths", () => {
 });
 
 describe("station paths", () => {
-  it("reads the station slug from a station page's path", () => {
+  it("ends station paths in a slash, and still reads them without one", () => {
+    // Render serves reisinfo/zuid/index.html at /reisinfo/zuid/ by itself,
+    // but not at /reisinfo/zuid (live test, 8 Nov 2026).
+    expect(stationPath("zuid", "nl")).toBe("/reisinfo/zuid/");
+    expect(stationPath("zuid", "en")).toBe("/en/reisinfo/zuid/");
     expect(stationSlugOfPath("/reisinfo/zuid")).toBe("zuid");
+    expect(stationSlugOfPath("/reisinfo/zuid/")).toBe("zuid");
+  });
+
+  it("reads the station slug from a station page's path", () => {
+    expect(stationSlugOfPath("/reisinfo/zuid/")).toBe("zuid");
     expect(stationSlugOfPath("/en/reisinfo/bijlmer-arena/")).toBe("bijlmer-arena");
-    expect(pageOfPath("/en/reisinfo/zuid")).toBe("/reisinfo");
-    expect(localizedPath("/reisinfo/zuid", "en")).toBe("/en/reisinfo/zuid");
+    expect(pageOfPath("/en/reisinfo/zuid/")).toBe("/reisinfo");
+    expect(localizedPath("/reisinfo/zuid/", "en")).toBe("/en/reisinfo/zuid/");
   });
 
   // A decoded "../" or "//host" must never come back out into a link or the
