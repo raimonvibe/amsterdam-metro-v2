@@ -48,15 +48,26 @@ function liveRouting(): Plugin {
       const outDir = server.config.build.outDir;
       server.middlewares.use((req, res, next) => {
         const [path, query = ""] = (req.url ?? "/").split("?");
+        const notFound = () => {
+          res.statusCode = 404;
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          res.end(readFileSync(join(outDir, "404.html")));
+        };
+        // Page addresses are plain: letters, digits, dashes, slashes. Anything
+        // else ("..", "%2f", "\\") gets the 404 page without touching the disk,
+        // so the preview can't be used to probe or reach files outside dist.
+        if (!/^[a-z0-9/_-]*$/i.test(path) || path.includes("//")) {
+          // Files (/assets/x.js, /sitemap.xml) may have dots, but no "..".
+          const plainFile = /^[a-z0-9/_.-]*\.[a-z0-9]+$/i.test(path) && !path.includes("..") && !path.includes("//");
+          return plainFile ? next() : notFound();
+        }
         if (path === "/" || /\.[a-z0-9]+$/i.test(path)) return next();
         const page = `${path.replace(/\/+$/, "")}/index.html`;
         if (existsSync(join(outDir, page))) {
           req.url = page + (query ? `?${query}` : "");
           return next();
         }
-        res.statusCode = 404;
-        res.setHeader("Content-Type", "text/html; charset=utf-8");
-        res.end(readFileSync(join(outDir, "404.html")));
+        notFound();
       });
     },
   };

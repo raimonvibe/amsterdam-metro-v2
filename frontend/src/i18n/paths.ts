@@ -24,15 +24,19 @@ export function pageOfPath(pathname: string): Page {
   return (PAGES as readonly string[]).includes(rest) ? (rest as Page) : "/";
 }
 
-/** The station slug in a station page's path, or null: "/en/reisinfo/zuid" → "zuid". */
+/** The station slug in a station page's path, or null: "/en/reisinfo/zuid" → "zuid".
+ *  Only letters, digits and dashes: a decoded "../" or "//host" never comes
+ *  back out of here into a link or the address bar. */
 export function stationSlugOfPath(pathname: string): string | null {
   const m = withoutLang(pathname).match(/^\/reisinfo\/([^/]+)\/?$/);
   if (!m) return null;
+  let slug: string;
   try {
-    return decodeURIComponent(m[1]);
+    slug = decodeURIComponent(m[1]);
   } catch {
-    return m[1];
+    return null;
   }
+  return /^[a-z0-9-]+$/i.test(slug) ? slug : null;
 }
 
 /** A station page's path in one language: "/reisinfo/zuid", "/en/reisinfo/zuid". */
