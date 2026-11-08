@@ -64,7 +64,7 @@ export function notFoundHtml(assets: NotFoundAssets): string {
   ).join("");
   const still = assets.hasPoster
     ? `<img class="stage-still" src="${MODEL.poster}" alt="" width="1280" height="800" decoding="async">`
-    : `<svg class="stage-still" viewBox="0 0 640 260" aria-hidden="true">${track}<rect x="584" y="120" width="16" height="80" rx="3" fill="#7b2132"/><circle cx="592" cy="110" r="7" fill="#ff3b30"/></svg>`;
+    : `<svg class="stage-still" viewBox="0 0 640 260" aria-hidden="true">${track}</svg>`;
   const credit = (lang: "nl" | "en") =>
     lang === "nl"
       ? `3D-model: <a href="${MODEL.source}">${MODEL.title}</a> door <a href="${MODEL.authorUrl}">${MODEL.author}</a>, <a href="${MODEL.licenseUrl}">${MODEL.license}</a>. Aangepast: gecomprimeerd voor het web.`
@@ -186,7 +186,7 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       </div>
 
       <figure class="stage-wrap">
-        <div class="stage" data-stage data-model="${MODEL.url}" role="group" aria-label="Een S1/S2-metro bij het stootblok aan het eind van het spoor / An S1/S2 metro at the buffer stop at the end of the track">
+        <div class="stage" data-stage data-model="${MODEL.url}" role="group" aria-label="Een S1/S2-metro aan het eind van het spoor / An S1/S2 metro at the end of the track">
           ${still}
           <span class="progress" data-progress aria-hidden="true"></span>
           <p class="loading" aria-hidden="true"><span data-lang="nl">De metro komt eraan…</span><span data-lang="en" lang="en">The metro is on its way…</span></p>
