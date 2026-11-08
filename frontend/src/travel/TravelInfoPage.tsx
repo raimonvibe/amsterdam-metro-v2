@@ -101,8 +101,12 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
   // Resolve the link once stations have loaded; never leave the board empty.
   useEffect(() => {
     if (ready || stations.length === 0) return;
+    const linked = resolveStation(initial.station, stations);
+    // A link whose station isn't known (renamed?) shows the fallback, and
+    // the fallback is not the visitor's choice: it must not claim the page.
+    if (initial.station && !linked) setChosen(false);
     const s =
-      resolveStation(initial.station, stations) ??
+      linked ??
       [...loadFavourites(), ...loadRecent()].map((n) => byName.get(n)).find(Boolean) ??
       byName.get(DEFAULT_STATION) ??
       stations[0];
@@ -117,23 +121,26 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
   useEffect(() => {
     if (!ready) return;
     // The station lives in the path, the rest in the query: one address per
-    // station, whose canonical (below) ignores the query.
+    // station, whose canonical (below) ignores the query. Only a station the
+    // visitor chose (or a link named): the fallback shown on plain /reisinfo
+    // (CS for a first visit, as for a search engine) must not turn the
+    // overview into Centraal Station's page.
     const qs = writeParams({ station: null, from, to, line: lineId });
-    const path = station ? stationPath(stationSlug(station.name), getLang()) : pagePath("/reisinfo", getLang());
+    const path = station && chosen ? stationPath(stationSlug(station.name), getLang()) : pagePath("/reisinfo", getLang());
     window.history.replaceState(window.history.state, "", `${path}${qs}`);
-  }, [ready, station, from, to, lineId]);
+  }, [ready, station, chosen, from, to, lineId]);
 
   useEffect(() => {
     if (ready) saveTrip({ from: fromName, to: toName, tab });
   }, [ready, fromName, toName, tab]);
 
   useEffect(() => {
-    if (station) setStationMeta(station.name, lang);
+    if (station && chosen) setStationMeta(station.name, lang);
     // A station page's own HTML already names its station: leave its head
     // tags alone until the station is known (the API may be slow or down,
     // also when a search engine renders the page).
     else if (!stationSlugOfPath(window.location.pathname)) setPageMeta("/reisinfo", lang);
-  }, [station, lang]);
+  }, [station, chosen, lang]);
 
   // Tick just after each whole second, not every 1000 ms from mount: a free
   // interval drifts against the second boundary and the clocks then skip or
@@ -262,8 +269,12 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
     );
   };
 
+  // Shares the board's station, also when it is only the fallback (plain
+  // /reisinfo keeps its own address): the button sits on that station's board.
   const share = async () => {
-    const url = window.location.href;
+    const url = station
+      ? `${window.location.origin}${stationPath(stationSlug(station.name), getLang())}${window.location.search}`
+      : window.location.href;
     if (navigator.share) {
       try {
         await navigator.share({ title: document.title, url });
