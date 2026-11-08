@@ -43,7 +43,7 @@ The proxy serves our HTML from its origin, but the JavaScript modules and their 
   value: https://amsterdammetro-nl.translate.goog
 ```
 
-These are public, fingerprinted, read-only files, so allowing one more origin to read them exposes nothing. Check whether the manifest, icons, fonts or the map posters (`/poster/*`) also fail under the proxy. If they do, add the same header for their paths, never for `/*`.
+These are public, fingerprinted, read-only files, so allowing one more origin to read them exposes nothing. Check whether the manifest, icons or fonts also fail under the proxy. If they do, add the same header for their paths, never for `/*`.
 
 Also add `Vary: Origin` only if we ever allow more than one origin. With one fixed value it isn't needed, and the `immutable` cache on `/assets/*` keeps working.
 

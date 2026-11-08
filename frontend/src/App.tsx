@@ -6,9 +6,8 @@ import { strings, useLang, useT } from "./i18n";
 import { pagePath } from "./i18n/paths";
 import { setPageMeta } from "./seo/site";
 import { NO_HOVER } from "./components/hover";
-import { type Quality, getQualityPref, softwareGL, startQuality, useQualityPref } from "./quality";
+import { type Quality, startQuality, useQualityPref } from "./quality";
 import { carried, carryOver } from "./i18n/translated";
-import { MapPoster } from "./components/MapPoster";
 import { Sidebar } from "./components/Sidebar";
 import { LiveBadge } from "./components/LiveBadge";
 import { EnglishHint } from "./components/EnglishHint";
@@ -35,13 +34,8 @@ const TravelInfoPage = lazy(() => import("./travel/TravelInfoPage"));
 // the menu, its text and the map's background show while it loads.
 const loadMap = () => import("./components/MetroMap");
 const MetroMap = lazy(() => loadMap().then((m) => ({ default: m.MetroMap })));
-// Without a graphics chip the live map blocks the page for 10–17 s compiling
-// its shaders: such a browser opens on a still of the 3D map (MapPoster) and
-// starts the live one on request. Only on "auto": a visitor who picked Full
-// or Light in the menu gets the live map. Everyone else starts the download
-// right away, before React renders.
-const START_WITH_POSTER = typeof window !== "undefined" && getQualityPref() === "auto" && softwareGL();
-if (!START_WITH_POSTER) void loadMap();
+// Start the download right away, before React renders.
+void loadMap();
 
 // Require a few consecutive empty snapshots before actually clearing the
 // map: metro service does legitimately stop overnight, but a single empty
@@ -108,13 +102,11 @@ export default function App() {
   const alerts = useAlerts();
   const txt = useT();
   const lang = useLang();
-  // How much 3D to draw (src/quality.ts). "auto" starts full on any device
-  // with a graphics chip; the map steps down to lite if it can't keep up.
+  // How much 3D to draw (src/quality.ts). "auto" starts full on every device;
+  // the map steps down to lite if it can't keep up.
   const qualityPref = useQualityPref();
   const [autoStart] = useState(() => startQuality("auto"));
   const [slowDevice, setSlowDevice] = useState(false);
-  const [poster, setPoster] = useState(START_WITH_POSTER);
-  const showPoster = poster && qualityPref === "auto";
   const quality: Quality = qualityPref === "auto" ? (slowDevice ? "lite" : autoStart) : qualityPref;
   const page = showTravel ? "/reisinfo" : showPrivacy ? "/privacy" : "/";
   useEffect(() => setPageMeta(page, lang), [page, lang]);
@@ -301,9 +293,6 @@ export default function App() {
           </div>
         )}
         <MapErrorBoundary key={mapKey} onReset={() => setMapKey((k) => k + 1)}>
-        {showPoster ? (
-          <MapPoster mapStyle={mapStyle} backdrop={swatch[0]} onStart={() => setPoster(false)} />
-        ) : (
         <Suspense fallback={<div className="h-full w-full" style={{ backgroundColor: swatch[0] }} />}>
         <MetroMap
           quality={quality}
@@ -336,7 +325,6 @@ export default function App() {
           paused={showTravel}
         />
         </Suspense>
-        )}
         </MapErrorBoundary>
         {mapLost && (
           <div role="status" className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">

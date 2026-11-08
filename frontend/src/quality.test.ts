@@ -1,48 +1,14 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { FRAMES_TO_JUDGE, getQualityPref, setQualityPref, softwareRenderer, startQuality, tooSlow } from "./quality";
-
-const probe = (software: boolean, saveData = false) => ({ software: () => software, saveData: () => saveData });
+import { describe, expect, it } from "vitest";
+import { FRAMES_TO_JUDGE, getQualityPref, setQualityPref, startQuality, tooSlow } from "./quality";
 
 describe("start quality", () => {
-  it("gives every capable device the full 3D map", () => {
-    expect(startQuality("auto", probe(false))).toBe("full");
+  it("gives every visitor the full 3D map", () => {
+    expect(startQuality("auto")).toBe("full");
   });
 
-  it("starts light when the browser draws in software or asks to save data", () => {
-    expect(startQuality("auto", probe(true))).toBe("lite");
-    expect(startQuality("auto", probe(false, true))).toBe("lite");
-  });
-
-  it("follows the visitor's own choice over the device check", () => {
-    expect(startQuality("full", probe(true))).toBe("full");
-    expect(startQuality("lite", probe(false))).toBe("lite");
-  });
-});
-
-describe("software renderer", () => {
-  afterEach(() => vi.restoreAllMocks());
-
-  const renderer = (name: string) => {
-    const gl = {
-      RENDERER: 7937,
-      getExtension: (n: string) => (n === "WEBGL_debug_renderer_info" ? { UNMASKED_RENDERER_WEBGL: 37446 } : null),
-      getParameter: () => name,
-    };
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(gl as never);
-  };
-
-  it("recognises GPU-less renderers", () => {
-    for (const name of ["ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)))", "llvmpipe (LLVM 17.0.6, 256 bits)", "Microsoft Basic Render Driver"]) {
-      renderer(name);
-      expect(softwareRenderer(), name).toBe(true);
-    }
-  });
-
-  it("leaves real GPUs, and browsers without WebGL, to the frame-rate watch", () => {
-    renderer("ANGLE (Apple, ANGLE Metal Renderer: Apple M2, Unspecified Version)");
-    expect(softwareRenderer()).toBe(false);
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
-    expect(softwareRenderer()).toBe(false);
+  it("follows the visitor's own choice", () => {
+    expect(startQuality("full")).toBe("full");
+    expect(startQuality("lite")).toBe("lite");
   });
 });
 
