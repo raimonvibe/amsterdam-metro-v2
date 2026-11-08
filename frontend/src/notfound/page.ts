@@ -59,6 +59,18 @@ function link(st: StationData, lang: Lang): HTMLAnchorElement {
   return a;
 }
 
+/** A station as one big link: its name, its lines, an arrow (CSS). */
+function row(st: StationData, lang: Lang): HTMLAnchorElement {
+  const a = document.createElement("a");
+  a.className = "st-link";
+  a.href = stationHref(st, lang);
+  const name = document.createElement("span");
+  name.className = "st-name";
+  name.textContent = st.name;
+  a.append(name, " ", badges(st));
+  return a;
+}
+
 function badges(st: StationData): HTMLSpanElement {
   const span = document.createElement("span");
   span.className = "lines";
@@ -148,7 +160,7 @@ function init() {
         results.replaceChildren(
           ...hits.map((st) => {
             const li = document.createElement("li");
-            li.append(link(st, l), " ", badges(st));
+            li.append(row(st, l));
             return li;
           }),
         );
@@ -175,7 +187,7 @@ function init() {
       mineList.replaceChildren(
         ...mine.map((st) => {
           const li = document.createElement("li");
-          li.append(link(st, l), " ", badges(st));
+          li.append(row(st, l));
           return li;
         }),
       );

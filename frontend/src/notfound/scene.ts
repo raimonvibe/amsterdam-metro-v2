@@ -2,6 +2,7 @@ import {
   ACESFilmicToneMapping,
   Box3,
   BoxGeometry,
+  CanvasTexture,
   Color,
   DirectionalLight,
   Group,
@@ -9,10 +10,12 @@ import {
   InstancedMesh,
   Matrix4,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   type Material,
   type Object3D,
   PerspectiveCamera,
+  PlaneGeometry,
   Raycaster,
   Scene,
   Spherical,
@@ -151,9 +154,9 @@ function railsFrom(scene: Object3D): Rails | null {
 }
 
 /**
- * The track: a ballast bed, the rails (the model, repeated along the bed,
- * to the train's scale; or simple boxes if it didn't load) and the five
- * lines as a strip along the far side.
+ * The track: the rails (the model, repeated, to the train's scale; or
+ * simple boxes if it didn't load) with no bed under them, a soft shadow
+ * that grounds them, and the five lines as a strip along the far side.
  */
 function buildTrack(dark: boolean, gauge: number, rails: Rails | null): Group {
   const group = new Group();
@@ -195,13 +198,11 @@ function buildTrack(dark: boolean, gauge: number, rails: Rails | null): Group {
     }
   }
 
-  // The ballast: up to just above the sleepers' bottom, with a shoulder.
-  const ballast = new MeshStandardMaterial({ color: dark ? "#2a2f3a" : "#cfc6b4", roughness: 1 });
-  const bedHalf = Math.max(sleeperHalf * 1.6, 0.9);
-  const bedTop = sleeperBottom + gauge * 0.06;
-  const bed = new Mesh(new BoxGeometry(length, 0.3, bedHalf * 2), ballast);
-  bed.position.set(startX + length / 2, bedTop - 0.15, 0);
-  group.add(bed);
+  // A soft shadow under the sleepers (a gradient, no shadow maps): the
+  // track stands on something without a block under it.
+  const bedTop = sleeperBottom;
+  const bedHalf = sleeperHalf * 1.6;
+  group.add(softShadow(startX, length, sleeperHalf * 2.6, bedTop - 0.005, dark));
 
   // The five lines, as a strip along the far side of the track.
   LINE_COLORS.forEach((c, i) => {
@@ -214,6 +215,37 @@ function buildTrack(dark: boolean, gauge: number, rails: Rails | null): Group {
   });
 
   return group;
+}
+
+/** A blurred dark band on the ground, fading out across and at the far end. */
+function softShadow(startX: number, length: number, width: number, y: number, dark: boolean): Mesh {
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 64;
+  const g = c.getContext("2d")!;
+  const across = g.createLinearGradient(0, 0, 0, 64);
+  const ink = dark ? "0, 0, 0" : "60, 45, 25";
+  across.addColorStop(0, `rgba(${ink}, 0)`);
+  across.addColorStop(0.5, `rgba(${ink}, ${dark ? 0.55 : 0.3})`);
+  across.addColorStop(1, `rgba(${ink}, 0)`);
+  g.fillStyle = across;
+  g.fillRect(0, 0, 256, 64);
+  // Fade out along the far end and at the end of the rails.
+  g.globalCompositeOperation = "destination-in";
+  const along = g.createLinearGradient(0, 0, 256, 0);
+  along.addColorStop(0, "rgba(0,0,0,0)");
+  along.addColorStop(0.35, "rgba(0,0,0,1)");
+  along.addColorStop(0.985, "rgba(0,0,0,1)");
+  along.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = along;
+  g.fillRect(0, 0, 256, 64);
+  const tex = new CanvasTexture(c);
+  tex.colorSpace = SRGBColorSpace;
+  const mesh = new Mesh(new PlaneGeometry(length, width), new MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.set(startX + length / 2, y, 0);
+  mesh.renderOrder = -1;
+  return mesh;
 }
 
 export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<SceneHandle> {
