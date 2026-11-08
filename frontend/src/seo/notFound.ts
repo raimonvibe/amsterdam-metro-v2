@@ -188,7 +188,7 @@ export function notFoundHtml(assets: NotFoundAssets): string {
   const data = JSON.stringify({ stations, nicknames: nick }).replace(/</g, "\\u003c");
   const list = (lang: "nl" | "en") =>
     STATION_NAMES.map(
-      (name) => `<li><a href="${stationPath(stationSlug(name), lang)}">${escape(displayName(name))}</a> <span class="lines">${linesAt(name).map(badge).join(" ")}</span></li>`,
+      (name) => `<li><a class="st-link" href="${stationPath(stationSlug(name), lang)}"><span class="st-name">${escape(displayName(name))}</span> <span class="lines">${linesAt(name).map(badge).join(" ")}</span></a></li>`,
     ).join("\n            ");
   const track = METRO_LINES.map(
     ({ line }, i) => `<line x1="10" y1="${150 + i * 9}" x2="${560 - i * 26}" y2="${150 + i * 9}" stroke="${LINE_COLORS[line]}" stroke-width="5" stroke-linecap="round"/>`,
@@ -258,7 +258,7 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       .search-row input { flex: 1; min-width: 0; min-height: 2.75rem; padding: 0 0.85rem; border: 1px solid var(--muted); border-radius: 0.5rem; background: var(--bg); color: var(--ink); font: inherit; }
       .search-row button { min-height: 2.75rem; padding: 0 1rem; border: 0; border-radius: 0.5rem; background: #1f3a68; color: #fff; font: 600 1rem/1 system-ui, sans-serif; cursor: pointer; }
       .results, .mine ul, ul.stations { list-style: none; margin: 0; padding: 0; }
-      .results li, .mine li { padding: 0.15rem 0; }
+      .results li, .mine li { padding: 0; }
       .status { min-height: 1.4em; margin: 0.35rem 0 0; color: var(--muted); font-size: 0.9rem; }
       .mine { margin: 0 0 1.25rem; }
       .mine h2 { margin: 0 0 0.35rem; font-size: 1.05rem; color: var(--accent); }
@@ -359,9 +359,20 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       @media (pointer: fine), (pointer: none) { .coarse { display: none !important; } }
       details.all { margin: 0 0 2rem; }
       details.all > ul.stations { padding: 0.5rem 1rem 1rem; }
-      ul.stations { columns: 3 13rem; column-gap: 1.5rem; padding-bottom: 0.75rem; font-size: 0.95rem; }
-      ul.stations li { break-inside: avoid; }
-      ul.stations a, .results a, .mine a, .suggest a, figcaption a, footer a, .report a { display: inline-block; min-height: 24px; line-height: 24px; }
+      ul.stations { columns: 3 15rem; column-gap: 1.25rem; padding-bottom: 0.75rem; }
+      ul.stations li, .results li, .mine li { break-inside: avoid; }
+      /* A station: the whole row is the link (name, lines, arrow), at least
+         44 px high, so it's easy to hit with a thumb. */
+      .st-link { display: flex; align-items: center; gap: 0.6rem; min-height: 2.75rem; padding: 0.3rem 0.6rem; margin: 0 -0.6rem; border-radius: 0.55rem; color: var(--ink); text-decoration: none; -webkit-tap-highlight-color: transparent; transition: background-color 0.15s ease; }
+      .st-link::after { content: ""; flex: none; width: 0.5rem; height: 0.5rem; margin-left: auto; border: solid var(--muted); border-width: 2px 2px 0 0; transform: rotate(45deg); opacity: 0.6; }
+      .st-name { font-weight: 600; color: var(--link); text-decoration: underline; text-decoration-thickness: 1px; text-decoration-color: color-mix(in srgb, var(--link) 35%, transparent); text-underline-offset: 3px; }
+      .st-link:hover, .st-link:focus-visible { background: var(--bg); }
+      .results .st-link:hover, .mine .st-link:hover, .results .st-link:focus-visible, .mine .st-link:focus-visible { background: var(--card); }
+      .st-link:hover .st-name { text-decoration-color: currentColor; }
+      .st-link:active { background: var(--line); }
+      .st-link:hover::after { opacity: 1; }
+      .suggest a, figcaption a, footer a, .report a { display: inline-block; min-height: 24px; line-height: 24px; }
+      .suggest a { padding: 0.35rem 0; }
       .lines { white-space: nowrap; }
       .badge { display: inline-block; min-width: 1.7em; padding: 0 0.25em; border-radius: 0.2rem; color: #111; font-size: 0.72rem; font-weight: 700; line-height: 1.5; text-align: center; vertical-align: 0.1em; }
       .l50 { background: #3CB44B; } .l51 { background: #F58231; } .l52 { background: #4363D8; color: #fff; } .l53 { background: #E6194B; color: #fff; } .l54 { background: #FFE119; }

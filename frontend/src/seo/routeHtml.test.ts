@@ -241,6 +241,12 @@ describe("404 page", () => {
     }
   });
 
+  it("makes each station one big link, its lines inside it", () => {
+    const rows = page.match(/<a class="st-link" href="[^"]+"><span class="st-name">[^<]+<\/span> <span class="lines">(<span class="badge l5\d">5\d<\/span> ?)+<\/span><\/a>/g);
+    expect(rows).toHaveLength(STATION_NAMES.length * 2);
+    expect(page).toMatch(/\.st-link \{[^}]*min-height: 2\.75rem/);
+  });
+
   it("credits the 3D model as its license asks: title, author, source, license, changes", () => {
     for (const s of [MODEL.source, MODEL.authorUrl, MODEL.licenseUrl, MODEL.title, MODEL.author, "CC BY-NC-SA 4.0"]) {
       expect(page).toContain(s);
