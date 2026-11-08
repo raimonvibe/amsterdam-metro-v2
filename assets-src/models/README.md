@@ -27,3 +27,7 @@ npx @gltf-transform/cli@4.5.1 optimize s12_metro_for_cities_skylines.glb s12-met
 ### The still image: `frontend/public/models/s12-metro-poster.webp`
 
 Shown at once on the 404 page, and kept for visitors who don't get the 3D (no WebGL 2, Data Saver, a 2G connection, little memory). Rendered from the 3D scene itself, so the two match: build, run `npm run preview` in `frontend/`, open `http://localhost:4173/reisinfo/x?poster`, wait for the train, run `__capturePoster()` in the console and save the returned WebP data URL as the file. 1280 × 800, transparent background.
+
+### The empty track: `frontend/public/models/s12-track-poster.webp`
+
+The same view without the train (only the site's own track, no part of the model). Shown first where the 3D will run, so the 3D train can roll in on it without the swap showing. Made the same way with `__capturePoster(false)`; `s12-track-poster-dark.webp` likewise, with a dark map style chosen in the app (dark visitors get that one). The two images were last rendered in headless Chrome with software WebGL (`--use-angle=swiftshader`); a GPU gives the same picture.

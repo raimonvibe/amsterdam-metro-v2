@@ -28,6 +28,9 @@ export const NICKNAMES: Record<string, string[]> = {
 export const MODEL = {
   url: "/models/s12-metro.glb",
   poster: "/models/s12-metro-poster.webp",
+  /** The same view without the train: what the 3D starts from when it rolls in. */
+  trackPoster: "/models/s12-track-poster.webp",
+  trackPosterDark: "/models/s12-track-poster-dark.webp",
   title: "S1/2 Metro for Cities Skylines",
   source: "https://sketchfab.com/3d-models/s12-metro-for-cities-skylines-e5eef97cc78340d49fb6d4b7f6e77c52",
   author: "accessviolation",
@@ -43,15 +46,28 @@ export const MODEL = {
  * Must agree with langOfPath and themeFor (tested).
  */
 export const NOT_FOUND_BOOT = `(function () {
-  var d = document.documentElement, p = location.pathname;
+  var d = document.documentElement, p = location.pathname, dark = false;
   var l = p === "/en" || p.indexOf("/en/") === 0 ? "en" : "nl";
   d.lang = l;
   d.className += " js lang-" + l;
   try {
     if (${JSON.stringify(DARK_STYLES)}.indexOf(localStorage.getItem("metro-live:map-style")) >= 0) {
+      dark = true;
       d.setAttribute("data-theme", "dark");
       var m = document.querySelector('meta[name="color-scheme"]');
       if (m) m.setAttribute("content", "dark");
+    }
+  } catch (e) {}
+  // Will the 3D train come (page.ts checks for real)? Then show the empty
+  // track for it to roll in on, instead of the still image of the train.
+  // Cheap checks only: nothing here may delay the first paint.
+  try {
+    var n = navigator, c = n.connection || {};
+    if ("WebGL2RenderingContext" in window && !c.saveData && !/(^|-)2g$/.test(c.effectiveType || "") &&
+        !(n.deviceMemory < 2) && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      d.className += " will-3d";
+      // Fetch it now, not when the CSS gets to it.
+      new Image().src = dark ? ${JSON.stringify(MODEL.trackPosterDark)} : ${JSON.stringify(MODEL.trackPoster)};
     }
   } catch (e) {}
 })();
@@ -64,6 +80,8 @@ export interface NotFoundAssets {
   boot?: string;
   /** Whether the still image of the train exists (public/models/…-poster.webp). */
   hasPoster: boolean;
+  /** Whether the still image of the empty track exists (MODEL.trackPoster). */
+  hasTrackPoster?: boolean;
 }
 
 /** The 3D view's buttons, one set per language (shown with the 3D only). */
@@ -165,7 +183,7 @@ export function notFoundHtml(assets: NotFoundAssets): string {
     ({ line }, i) => `<line x1="10" y1="${150 + i * 9}" x2="${560 - i * 26}" y2="${150 + i * 9}" stroke="${LINE_COLORS[line]}" stroke-width="5" stroke-linecap="round"/>`,
   ).join("");
   const still = assets.hasPoster
-    ? `<img class="stage-still" src="${MODEL.poster}" alt="" width="1280" height="800" decoding="async">`
+    ? `<img class="stage-still" src="${MODEL.poster}" alt="" width="1280" height="800" decoding="async" loading="lazy">`
     : `<svg class="stage-still" viewBox="0 0 640 260" aria-hidden="true">${track}</svg>`;
   const credit = (lang: "nl" | "en") =>
     lang === "nl"
@@ -258,7 +276,19 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       .stage-canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; opacity: 0; transition: opacity 0.6s ease; cursor: grab; }
       .stage-canvas:active { cursor: grabbing; }
       .stage.is-live .stage-canvas { opacity: 1; }
-      .stage.is-live .stage-still { opacity: 0; transition-delay: 0.6s; }
+      .stage.is-live .stage-still { opacity: 0; transition-delay: 0.6s; }${
+        assets.hasTrackPoster && assets.hasPoster
+          ? `
+      /* The 3D will come (head script, html.will-3d): the empty track, for
+         the train to roll in on. The still image of the train is lazy and
+         hidden, so it isn't even downloaded; page.ts brings it back if the
+         3D doesn't come after all. */
+      html.will-3d .stage-still { display: none; }
+      html.will-3d .stage::before { content: ""; position: absolute; inset: 0; background: url("${MODEL.trackPoster}") center / contain no-repeat; transition: opacity 0.6s ease; }
+      html.will-3d[data-theme="dark"] .stage::before { background-image: url("${MODEL.trackPosterDark}"); }
+      html.will-3d .stage.is-live::before { opacity: 0; transition-delay: 0.6s; }`
+          : ""
+      }
       .progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: linear-gradient(90deg, #3CB44B, #F58231, #4363D8, #E6194B, #FFE119); transform-origin: left; transform: scaleX(var(--p, 0.08)); opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease; }
       .stage.is-loading .progress { opacity: 1; }
       /* Only once the 3D runs (page.ts adds .is-ready): faded in, and their
@@ -315,7 +345,7 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       .keys { margin: 0; padding: 0 1rem 0.85rem; color: var(--muted); font-size: 0.85rem; }
       /* A phone: no keyboard and no mouse wheel to explain. */
       @media (pointer: coarse) { .fine { display: none !important; } }
-      @media not (pointer: coarse) { .coarse { display: none !important; } }
+      @media (pointer: fine), (pointer: none) { .coarse { display: none !important; } }
       details.all { margin: 0 0 2rem; }
       details.all > ul.stations { padding: 0.5rem 1rem 1rem; }
       ul.stations { columns: 3 13rem; column-gap: 1.5rem; padding-bottom: 0.75rem; font-size: 0.95rem; }
@@ -368,8 +398,8 @@ export function notFoundHtml(assets: NotFoundAssets): string {
         <div class="stage" data-stage data-model="${MODEL.url}" role="group" aria-label="Een S1/S2-metro aan het eind van het spoor / An S1/S2 metro at the end of the track">
           ${still}
           <span class="progress" data-progress aria-hidden="true"></span>
-          <button type="button" class="replay" data-replay data-lang="nl">↻ Laat binnenrijden</button>
-          <button type="button" class="replay" data-replay data-lang="en" lang="en">↻ Roll it in</button>
+          <button type="button" class="replay" data-replay data-lang="nl">↻ Nog een keer</button>
+          <button type="button" class="replay" data-replay data-lang="en" lang="en">↻ Once more</button>
           ${viewTools("nl")}
           ${viewTools("en")}
           <p class="wheel-hint" aria-hidden="true"><span data-lang="nl">Ctrl + scroll om te zoomen</span><span data-lang="en" lang="en">Ctrl + scroll to zoom</span></p>

@@ -40,7 +40,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 export interface SceneOptions {
   modelUrl: string;
   reducedMotion: boolean;
-  /** Start with the train at rest (as on the still image) instead of arriving. */
+  /** Start with the train at rest (as on the still image) instead of
+   *  letting it roll in the first time the stage is in view. */
   parked?: boolean;
   dark: boolean;
   /** 0–1 while the model downloads, when the size is known. */
@@ -206,7 +207,9 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
   const restX = stopX;
   const startX = restX - TRAIN_LENGTH * 2.6;
   const parked = opts.reducedMotion || opts.parked;
-  let arriveStart = parked ? -Infinity : performance.now();
+  // Rolling in: waits off screen (Infinity) until the stage is in view, so a
+  // visitor who scrolls to it later still sees the arrival.
+  let arriveStart = parked ? -Infinity : Infinity;
   train.position.x = parked ? restX : startX;
 
   let frame = 0;
@@ -324,7 +327,9 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
       moving = true;
     }
     const t = now - arriveStart;
-    if (t < ARRIVE_MS) {
+    if (arriveStart === Infinity) {
+      train.position.x = startX; // waiting to be in view
+    } else if (t < ARRIVE_MS) {
       train.position.x = startX + (restX - startX) * easeOutCubic(Math.max(0, t) / ARRIVE_MS);
       moving = true;
     } else {
@@ -405,12 +410,18 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
   ro.observe(stage);
   const io = new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting && !document.hidden;
+    // Well in view for the first time: now the train rolls in.
+    if (visible && entry.intersectionRatio >= 0.35 && arriveStart === Infinity) arriveStart = performance.now();
     if (visible) request();
-  });
+  }, { threshold: 0.35 });
   io.observe(stage);
   const onVisibility = () => {
-    visible = !document.hidden;
-    if (visible) request();
+    // A tab in the background: the observer decides again when it's back.
+    if (document.hidden) visible = false;
+    else {
+      io.unobserve(stage);
+      io.observe(stage);
+    }
   };
   document.addEventListener("visibilitychange", onVisibility);
 
@@ -421,13 +432,15 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
   requestAnimationFrame(() => stage.classList.add("is-live"));
   request();
 
-  // Regenerating the still image (public/models/s12-metro-poster.webp):
-  // open the 404 page with ?poster and run __capturePoster() in the
-  // console. Renders the resting train at 1280×800 on a transparent
-  // background. See assets-src/models/README.md.
+  // Regenerating the still images (public/models/s12-metro-poster.webp and
+  // s12-track-poster.webp): open the 404 page with ?poster and run
+  // __capturePoster() (the resting train) or __capturePoster(false) (the
+  // track only) in the console. 1280×800 on a transparent background. See
+  // assets-src/models/README.md.
   if (new URLSearchParams(window.location.search).has("poster")) {
-    (window as Window & { __capturePoster?: () => string }).__capturePoster = () => {
+    (window as Window & { __capturePoster?: (withTrain?: boolean) => string }).__capturePoster = (withTrain = true) => {
       train.position.x = restX;
+      train.visible = withTrain;
       arriveStart = -Infinity;
       const { width, height } = stage.getBoundingClientRect();
       renderer.setPixelRatio(1);
@@ -437,6 +450,7 @@ export async function mount(stage: HTMLElement, opts: SceneOptions): Promise<Sce
       camera.updateProjectionMatrix();
       renderer.render(scene, camera);
       const url = canvas.toDataURL("image/webp", 0.86);
+      train.visible = true;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.setSize(width, height, false);
       resize();

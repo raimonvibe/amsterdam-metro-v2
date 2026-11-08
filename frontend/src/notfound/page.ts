@@ -208,11 +208,14 @@ function start3d(dark: boolean) {
   if (!stage) return;
   const wrap = stage.closest(".stage-wrap");
   const modelUrl = stage.dataset.model;
-  // No 3D here: the still image stays, without the help for its controls.
-  if (!canRun3d() || !modelUrl) {
+  // The head script guessed whether the 3D comes (html.will-3d) and if so
+  // showed the empty track for the train to roll in on. Not after all:
+  // back to the still image of the train, without the controls' help.
+  const noThreeD = () => {
+    document.documentElement.classList.remove("will-3d");
     wrap?.classList.add("no-3d");
-    return;
-  }
+  };
+  if (!canRun3d() || !modelUrl) return noThreeD();
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const bar = $<HTMLElement>("[data-progress]", stage);
 
@@ -225,8 +228,10 @@ function start3d(dark: boolean) {
         mount(stage, {
           modelUrl,
           reducedMotion,
-          // Start where the still image has the train, so the swap is seamless.
-          parked: !!$("img.stage-still", stage),
+          // Over the empty track the train rolls in (once in view); over the
+          // still image of the train it starts where that has it. Either
+          // way the swap from still image to 3D doesn't show.
+          parked: reducedMotion || !document.documentElement.classList.contains("will-3d"),
           dark,
           onProgress: (f) => bar?.style.setProperty("--p", String(f)),
           wheelZooms: () => stage.classList.contains("is-fs"),
@@ -272,7 +277,7 @@ function start3d(dark: boolean) {
       .catch(() => {
         // The still image stays; nothing else to do.
         stage.classList.remove("is-loading");
-        wrap?.classList.add("no-3d");
+        noThreeD();
       });
   };
   // A plain wheel over the train scrolls the page; say once in a while how
@@ -318,18 +323,27 @@ function fullscreenToggle(stage: HTMLElement): { toggle(): void } {
     stage.classList.toggle("is-fs", on);
     stage.classList.toggle("is-fake-fs", fake);
     document.documentElement.classList.toggle("fs-lock", fake);
+    // The name stays ("Volledig scherm"); aria-pressed says whether it's
+    // on. The tooltip says what a click does.
     for (const b of buttons) {
-      const label = (on ? b.dataset.exitLabel : b.dataset.label) ?? "";
       b.setAttribute("aria-pressed", String(on));
-      b.setAttribute("aria-label", label);
-      b.title = label;
+      b.title = (on ? b.dataset.exitLabel : b.dataset.label) ?? "";
     }
   };
 
+  // The fixed layer covers the page: Esc closes it, and Tab stays on the
+  // stage and its buttons (the page's links under it are out of sight).
   const onKey = (e: KeyboardEvent) => {
-    if (e.key === "Escape" && fake) {
+    if (!fake) return;
+    if (e.key === "Escape") {
       e.preventDefault();
       setFake(false);
+    } else if (e.key === "Tab") {
+      const stops = [stage, ...$$<HTMLElement>("button", stage).filter((b) => b.offsetParent && getComputedStyle(b).visibility !== "hidden")];
+      const i = stops.indexOf(document.activeElement as HTMLElement);
+      const next = stops[(i + (e.shiftKey ? -1 : 1) + stops.length) % stops.length];
+      e.preventDefault();
+      next.focus();
     }
   };
   function setFake(on: boolean) {

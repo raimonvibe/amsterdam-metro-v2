@@ -48,7 +48,12 @@ function routePages(): Plugin {
       // Served with status 404 for every address no file or rule matches.
       writeFileSync(
         join(outDir, "404.html"),
-        notFoundHtml({ script: notFoundScript, boot: notFoundBoot, hasPoster: existsSync(join(publicDir, MODEL.poster)) }),
+        notFoundHtml({
+          script: notFoundScript,
+          boot: notFoundBoot,
+          hasPoster: existsSync(join(publicDir, MODEL.poster)),
+          hasTrackPoster: existsSync(join(publicDir, MODEL.trackPoster)),
+        }),
       );
     },
   };

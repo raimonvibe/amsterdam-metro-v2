@@ -322,6 +322,26 @@ describe("404 page head script", () => {
     expect(r.meta).toBe(themeFor(style));
   });
 
+  it("expects the 3D only where page.ts can run it, and never with reduced motion", () => {
+    const run = (win: object, nav: object, reduced: boolean) => {
+      const root = { lang: "", className: "", setAttribute() {} };
+      const doc = { documentElement: root, querySelector: () => null };
+      const mm = () => ({ matches: reduced });
+      new Function("document", "location", "localStorage", "window", "navigator", "matchMedia", NOT_FOUND_BOOT)(
+        doc, { pathname: "/" }, { getItem: () => null }, win, nav, mm,
+      );
+      return root.className.includes("will-3d");
+    };
+    const gl = { WebGL2RenderingContext: class {} };
+    expect(run(gl, {}, false)).toBe(true);
+    expect(run(gl, {}, true)).toBe(false);
+    expect(run({}, {}, false)).toBe(false);
+    expect(run(gl, { connection: { saveData: true } }, false)).toBe(false);
+    expect(run(gl, { connection: { effectiveType: "slow-2g" } }, false)).toBe(false);
+    expect(run(gl, { connection: { effectiveType: "4g" } }, false)).toBe(true);
+    expect(run(gl, { deviceMemory: 1 }, false)).toBe(false);
+  });
+
   it("survives blocked site data", () => {
     const doc = { documentElement: { lang: "", className: "", setAttribute() {} }, querySelector: () => null };
     const storage = { getItem: () => { throw new Error("blocked"); } };
