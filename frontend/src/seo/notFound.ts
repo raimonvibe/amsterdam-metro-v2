@@ -101,8 +101,8 @@ const VIEW_TOOLS = {
   en: { group: "View", zoomIn: "Zoom in", zoomOut: "Zoom out", reset: "Reset view", full: "Full screen", exit: "Exit full screen" },
 } as const;
 
-const icon = (d: string) =>
-  `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="${d}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const icon = (d: string, cls = "") =>
+  `<svg${cls ? ` class="${cls}"` : ""} viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="${d}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 function viewTools(lang: "nl" | "en"): string {
   const t = VIEW_TOOLS[lang];
@@ -123,6 +123,8 @@ const ICON = {
   minus: "M5 12h14",
   reset: "M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5",
   full: "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5",
+  moon: "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z",
+  sun: "M12 8a4 4 0 1 0 0 8a4 4 0 0 0 0-8M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4",
 } as const;
 
 /** A small copy of a toolbar button, for the help. */
@@ -224,8 +226,17 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       header.bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-top: 1rem; padding-bottom: 0.5rem; }
       .brand { display: inline-flex; align-items: center; gap: 0.55rem; min-height: 44px; color: var(--ink); text-decoration: none; font-weight: 700; }
       .brand-mark { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 0.4rem; background: #1f3a68; color: #fff; font: 700 1rem/1 Georgia, serif; }
-      .lang-toggle { margin-left: auto; min-width: 2.75rem; min-height: 2.75rem; padding: 0 0.75rem; border: 1px solid var(--muted); border-radius: 0.5rem; background: var(--card); color: var(--ink); font: 600 0.9rem/1 system-ui, sans-serif; letter-spacing: 0.05em; cursor: pointer; }
-      .lang-toggle:hover { border-color: var(--ink); }
+      .bar-actions { display: flex; gap: 0.5rem; margin-left: auto; }
+      .lang-toggle, .theme-toggle { min-width: 2.75rem; min-height: 2.75rem; padding: 0 0.75rem; border: 1px solid var(--muted); border-radius: 0.5rem; background: var(--card); color: var(--ink); font: 600 0.9rem/1 system-ui, sans-serif; letter-spacing: 0.05em; cursor: pointer; }
+      .lang-toggle:hover, .theme-toggle:hover { border-color: var(--ink); }
+      .theme-toggle { display: grid; place-items: center; padding: 0; }
+      .theme-toggle .i-sun, :root[data-theme="dark"] .theme-toggle .i-moon { display: none; }
+      :root[data-theme="dark"] .theme-toggle .i-sun { display: block; }
+      /* Switching light/dark: colours fade instead of jumping (not with
+         reduced motion). */
+      @media (prefers-reduced-motion: no-preference) {
+        html.theme-anim, html.theme-anim *, html.theme-anim *::before { transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease !important; }
+      }
       main.hero { display: grid; gap: 1.25rem 2.5rem; grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "stage" "intro" "tools"; padding-top: 0.5rem; padding-bottom: 2.5rem; }
       @media (min-width: 60rem) { main.hero { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr); grid-template-areas: "head stage" "intro stage" "tools stage"; grid-template-rows: auto auto 1fr; align-items: start; padding-top: 2rem; } .intro { margin-top: -0.5rem; } }
       /* A phone: the title, then straight away the train, then the rest. */
@@ -388,7 +399,12 @@ export function notFoundHtml(assets: NotFoundAssets): string {
       <a class="brand" href="/en/" data-lang="en" lang="en"><span class="brand-mark" aria-hidden="true">M</span>Amsterdam Metro Live</a>
       <!-- Shown by the page script, which switches the language in place:
            without JavaScript both languages are on the page already. -->
-      <button type="button" class="lang-toggle" data-switch translate="no" hidden>EN</button>
+      <div class="bar-actions">
+        <button type="button" class="lang-toggle" data-switch translate="no" hidden>EN</button>
+        <!-- Light or dark: shown by the page script, which stores the choice
+             as the app does (its map style), so the app follows it. -->
+        <button type="button" class="theme-toggle" data-theme-toggle hidden>${icon(ICON.moon, "i-moon")}${icon(ICON.sun, "i-sun")}</button>
+      </div>
     </header>
 
     <main class="hero wrap">
