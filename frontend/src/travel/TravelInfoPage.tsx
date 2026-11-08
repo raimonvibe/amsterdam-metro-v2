@@ -73,6 +73,14 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
   const [fromName, setFromName] = useState<string | null>(null);
   const [toName, setToName] = useState<string | null>(null);
   const [lineId, setLineId] = useState<string>(initial.line ?? "52");
+  // Whether the visitor picked the line (or a link named it): only then does
+  // it go in the address. The default, or one picked for a station or trip,
+  // would only make shared links longer (?lijn=52 on every page).
+  const [lineChosen, setLineChosen] = useState(Boolean(initial.line));
+  const chooseLine = useCallback((l: string) => {
+    setLineId(l);
+    setLineChosen(true);
+  }, []);
   const [tab, setTab] = useState<Tab>(() =>
     initial.from && initial.to ? "plannen" : TABS.find((t) => t === kept?.tab) ?? "vertrekken",
   );
@@ -125,10 +133,10 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
     // visitor chose (or a link named): the fallback shown on plain /reisinfo
     // (CS for a first visit, as for a search engine) must not turn the
     // overview into Centraal Station's page.
-    const qs = writeParams({ station: null, from, to, line: lineId });
+    const qs = writeParams({ station: null, from, to, line: lineChosen ? lineId : null });
     const path = station && chosen ? stationPath(stationSlug(station.name), getLang()) : pagePath("/reisinfo", getLang());
     window.history.replaceState(window.history.state, "", `${path}${qs}`);
-  }, [ready, station, chosen, from, to, lineId]);
+  }, [ready, station, chosen, from, to, lineId, lineChosen]);
 
   useEffect(() => {
     if (ready) saveTrip({ from: fromName, to: toName, tab });
@@ -347,7 +355,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
               inputRef={searchRef}
               onStation={(s) => selectStation(s.name)}
               onLine={(l) => {
-                setLineId(l);
+                chooseLine(l);
                 setTab("lijnen");
                 document.getElementById("lijnoverzicht")?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
@@ -489,7 +497,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
             <LineDiagram
               network={network}
               lineId={lineId}
-              onLine={setLineId}
+              onLine={chooseLine}
               trains={trains}
               stations={stations}
               colorOf={colorOf}
@@ -539,7 +547,7 @@ export default function TravelInfoPage({ stations, lines, trains, status, theme,
               status={status}
               alerts={alerts}
               onLine={(l) => {
-                setLineId(l);
+                chooseLine(l);
                 setTab("lijnen");
               }}
             />

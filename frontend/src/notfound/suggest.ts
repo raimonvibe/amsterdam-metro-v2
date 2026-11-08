@@ -20,6 +20,13 @@ export interface PageData {
   nicknames: Record<string, string[]>;
 }
 
+/** Light or dark, as in the app: the map style chosen on this site, and
+ *  light (Liberty) for anyone who hasn't chosen one. Following the system
+ *  instead made a first visit flip from a dark 404 page to a light app. */
+export function themeFor(savedStyle: string | null): "dark" | "light" {
+  return savedStyle === "dark" || savedStyle === "fiord" ? "dark" : "light";
+}
+
 export const REPO_ISSUES = "https://github.com/raimonvibe/amsterdam-metro-v2/issues/new";
 
 export const langOfPath = (path: string): Lang => (path === "/en" || path.startsWith("/en/") ? "en" : "nl");

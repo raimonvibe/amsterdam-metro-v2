@@ -3,6 +3,7 @@ import {
   type PageData,
   type StationData,
   forwardTarget,
+  themeFor,
   issueUrl,
   knownStations,
   langOfPath,
@@ -35,16 +36,12 @@ if (forward) {
   init();
 }
 
-/** Light or dark: the map style chosen on this site, else the system's. */
-function theme(): "dark" | "light" {
+function savedStyle(): string | null {
   try {
-    const style = localStorage.getItem("metro-live:map-style");
-    if (style === "dark" || style === "fiord") return "dark";
-    if (style) return "light";
+    return localStorage.getItem("metro-live:map-style");
   } catch {
-    /* site data blocked */
+    return null; // site data blocked
   }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 function readList(key: string): unknown {
@@ -75,8 +72,11 @@ function badges(st: StationData): HTMLSpanElement {
 }
 
 function init() {
-  const dark = theme() === "dark";
-  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  const dark = themeFor(savedStyle()) === "dark";
+  if (dark) {
+    document.documentElement.dataset.theme = "dark";
+    document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", "dark");
+  }
 
   const blocks = $$<HTMLElement>("[data-lang]");
   const toggle = $<HTMLButtonElement>("[data-switch]");

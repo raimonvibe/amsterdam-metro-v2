@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { STATION_NAMES, displayName, linesAt, stationSlug } from "../data/network";
 import { NICKNAMES } from "../seo/notFound";
-import { forwardTarget, issueUrl, knownStations, readPath, searchStations, suggest, toSlug } from "./suggest";
+import { forwardTarget, issueUrl, knownStations, readPath, searchStations, suggest, themeFor, toSlug } from "./suggest";
 
 // The same data notFound.ts embeds in the 404 page.
 const DATA = {
@@ -75,5 +75,12 @@ describe("404 page logic", () => {
     const mine = knownStations(["Amsterdam, Rokin"], ["Amsterdam, Gein", "Amsterdam, Rokin", 42, "Nowhere, Atlantis"], DATA, slugOf);
     expect(names(mine)).toEqual(["Rokin", "Gein"]);
     expect(knownStations(null, "junk", DATA, slugOf)).toEqual([]);
+  });
+
+  it("is light like the app unless a dark map style was chosen", () => {
+    expect(themeFor(null)).toBe("light");
+    expect(themeFor("liberty")).toBe("light");
+    expect(themeFor("dark")).toBe("dark");
+    expect(themeFor("fiord")).toBe("dark");
   });
 });

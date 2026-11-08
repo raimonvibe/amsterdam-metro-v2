@@ -51,7 +51,7 @@ describe("TravelInfoPage", { timeout: PAGE_TEST_TIMEOUT }, () => {
     renderPage();
     await waitFor(() => expect(boardHeading()).toHaveTextContent("Centraal Station"));
     await userEvent.click(screen.getByRole("button", { name: /Deel/ }));
-    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/reisinfo/centraal-station/?lijn=52`);
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/reisinfo/centraal-station/`);
   });
 
   it("gives a station the visitor picks its own address and head tags", async () => {
@@ -202,5 +202,13 @@ describe("TravelInfoPage", { timeout: PAGE_TEST_TIMEOUT }, () => {
     expect(document.title).toBe("Station Zuid — built page");
     expect(canonical.getAttribute("href")).toBe("https://amsterdammetro.nl/reisinfo/zuid/");
     canonical.remove();
+  });
+  it("puts the line in the address only when the visitor chose one", async () => {
+    renderPage("/reisinfo/rokin/");
+    await waitFor(() => expect(boardHeading()).toHaveTextContent("Rokin"));
+    // The default line stays out of the address.
+    expect(window.location.search).toBe("");
+    renderPage("/reisinfo/rokin/?lijn=53");
+    await waitFor(() => expect(window.location.search).toBe("?lijn=53"));
   });
 });
