@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-07",
+  "updated": "2026-11-08",
   "lift_check": "2026-11-08",
   "stations": {
     "Amsterdam, Amstelstation": {
@@ -84,11 +84,12 @@
       ]
     },
     "Amsterdam, Ganzenhoef": {
-      "step_free": "yes",
+      "step_free": "no",
       "source": "checked",
       "osm": "node/4041662264",
-      "note": "GVB station page (CHB), 2026-10-27",
+      "note": "GVB station page (CHB): Rolstoelvriendelijk, 2026-10-27; lift between street and metro platform in GVB's lift faults since 2026-11-08; set back to yes once it is no longer listed",
       "gvb_search": "Ganzenhoef",
+      "lift_out": true,
       "gvb_stops": [
         "NL:S:30009546"
       ]

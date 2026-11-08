@@ -97,7 +97,7 @@ Needs the backend running on `http://localhost:8020` (or pass its URL). It reads
 
 ## Status per station
 
-As of the last full check, **2026-10-27**, and the lift check of **2026-11-08**: 29 step-free, 10 not.
+As of the last full check, **2026-10-27**, and the lift check of **2026-11-08**: 28 step-free, 11 not.
 
 | Station | Status | Why | GVB page |
 |---|---|---|---|
@@ -109,7 +109,7 @@ As of the last full check, **2026-10-27**, and the lift check of **2026-11-08**:
 | De Pijp | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:S:30009581](https://www.gvb.nl/reisinformatie/halte/NL:S:30009581) |
 | Europaplein | ❌ not step-free | GVB: niet rolstoelvriendelijk | [NL:S:30009583](https://www.gvb.nl/reisinformatie/halte/NL:S:30009583) |
 | Gaasperplas | ❌ not step-free | GVB: niet rolstoelvriendelijk | [NL:S:30009550](https://www.gvb.nl/reisinformatie/halte/NL:S:30009550) |
-| Ganzenhoef | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:S:30009546](https://www.gvb.nl/reisinformatie/halte/NL:S:30009546) |
+| Ganzenhoef | ❌ not step-free | lift out of service (GVB lift faults, since 2026-11-08) | [NL:S:30009546](https://www.gvb.nl/reisinformatie/halte/NL:S:30009546) |
 | Gein | ❌ not step-free | GVB: niet rolstoelvriendelijk | [NL:Q:30009531](https://www.gvb.nl/reisinformatie/halte/NL:Q:30009531) |
 | Heemstedestraat | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:Q:30004321](https://www.gvb.nl/reisinformatie/halte/NL:Q:30004321) |
 | Henk Sneevlietweg | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:Q:30004319](https://www.gvb.nl/reisinformatie/halte/NL:Q:30004319) |
@@ -154,6 +154,7 @@ Newest first. One line per check, even when nothing changed.
 
 | Date | Kind | Result | By |
 |---|---|---|---|
+| 2026-11-08 | lift faults | New fault at Ganzenhoef (lift between street and metro platform, updated 8 Nov 12:11) → no, `lift_out`; search term "Ganzenhoef" finds it (1 lift fault, no escalator faults). Waterlooplein (updated 7 Nov 16:49) and Overamstel (updated 6 Nov 10:21) still listed → stay no, `lift_out`. Station Zuid's WTC-side tram/bus lift (updated 2 Nov 21:04) still listed, not a metro-platform lift → stays yes. Escalator faults (Station Noord exit King's Cross, Rokin exit Spui, Rietlandpark) don't change step-free. "Binnenkort": no planned lift or escalator faults. The cookie banner was left for the user. 1 GVB page load, by hand. Now 28 step-free. | maintainer + Claude |
 | 2026-11-08 | search test | Amstelstation's term "Amstel" → 1 resultaat: Overamstel's lift (track 2 and 4, updated 6 Nov 10:21), already no + `lift_out`. No fault at Amstelstation → stays yes; the live station card shows "Rolstoeltoegankelijk" as expected. "Amstel" also matches Overamstel and Amstelveenseweg: a hit there is not an Amstelstation fault. No escalator faults. 1 GVB page load, by the user. Data unchanged, still 29 step-free. | maintainer + Claude |
 | 2026-11-08 | lift faults | No change. Waterlooplein (updated 7 Nov 16:49) and Overamstel (updated 6 Nov 10:21) still listed → stay no, `lift_out`. Station Zuid's WTC-side tram/bus lift (updated 2 Nov 21:04) still listed, not a metro-platform lift → stays yes. Escalator faults (Centraal Station Noord–Oost, Rietlandpark) don't change step-free. "Binnenkort" not checked: the cookie banner was left for the user. 1 GVB page load, by hand. Still 29 step-free. | maintainer + Claude |
 | 2026-11-07 | lift faults | New fault at Waterlooplein (lift between street and station, updated 7 Nov 16:49) → no, `lift_out`; search term "Waterlooplein" finds it (1 resultaat). Lelylaan no longer listed ("Lelylaan" → 0 resultaten); station page NL:S:30004322 still Rolstoelvriendelijk (metro 50/51) → yes, `lift_out` removed. Overamstel (updated 6 Nov 10:21) still listed → stays no. Station Zuid's WTC-side tram/bus lift still listed, not a metro-platform lift → stays yes. Escalator faults (Centraal Station Noord–Oost, Rietlandpark) don't change step-free; nothing under "Binnenkort". 2 GVB page loads, by hand. Still 29 step-free. | maintainer + Claude |
