@@ -2,6 +2,30 @@ import type { Lang } from "../i18n";
 import { type Page, pagePath } from "../i18n/paths";
 import { IMAGE_ALT, OG_LOCALE, PAGE_META, SITE_NAME, alternates, pageUrl } from "./site";
 
+/** GVB's metro lines and their stations in running order, from the GTFS
+ *  timetable (backend/data/cache/gvb_metro.json, Nov 2026). Crawlable text for
+ *  the pages below; index.html's <noscript> carries the Dutch copy. */
+export const METRO_LINES: [line: string, stations: string[]][] = [
+  ["M50", ["Isolatorweg", "Station Sloterdijk", "Burg. De Vlugtlaan", "Jan van Galenstraat", "Postjesweg", "Station Lelylaan", "Heemstedestraat", "Henk Sneevlietweg", "Amstelveenseweg", "Station Zuid", "Station RAI", "Overamstel", "Van der Madeweg", "Station Duivendrecht", "Strandvliet", "Station Bijlmer ArenA", "Bullewijk", "Station Holendrecht", "Reigersbos", "Gein"]],
+  ["M51", ["Centraal Station", "Nieuwmarkt", "Waterlooplein", "Weesperplein", "Wibautstraat", "Amstelstation", "Spaklerweg", "Overamstel", "Station RAI", "Station Zuid", "Amstelveenseweg", "Henk Sneevlietweg", "Heemstedestraat", "Station Lelylaan", "Postjesweg", "Jan van Galenstraat", "Burg. De Vlugtlaan", "Station Sloterdijk", "Isolatorweg"]],
+  ["M52", ["Noord", "Noorderpark", "Centraal Station", "Rokin", "Vijzelgracht", "De Pijp", "Europaplein", "Station Zuid"]],
+  ["M53", ["Centraal Station", "Nieuwmarkt", "Waterlooplein", "Weesperplein", "Wibautstraat", "Amstelstation", "Spaklerweg", "Van der Madeweg", "Venserpolder", "Station Diemen Zuid", "Verrijn Stuartweg", "Ganzenhoef", "Kraaiennest", "Gaasperplas"]],
+  ["M54", ["Centraal Station", "Nieuwmarkt", "Waterlooplein", "Weesperplein", "Wibautstraat", "Amstelstation", "Spaklerweg", "Van der Madeweg", "Station Duivendrecht", "Strandvliet", "Station Bijlmer ArenA", "Bullewijk", "Station Holendrecht", "Reigersbos", "Gein"]],
+];
+
+/** The lines and their stations as a short HTML section, per language. */
+export function linesHtml(lang: Lang): string {
+  const heading = lang === "nl" ? "De metrolijnen van Amsterdam" : "Amsterdam's metro lines";
+  const items = METRO_LINES.map(
+    ([line, stations]) =>
+      `<li><strong>${line}</strong> ${stations[0]} – ${stations[stations.length - 1]}: ${stations.join(", ")}.</li>`,
+  ).join("\n        ");
+  return `<h2>${heading}</h2>
+      <ul>
+        ${items}
+      </ul>`;
+}
+
 export interface RoutePage {
   page: Page;
   lang: Lang;
@@ -25,6 +49,14 @@ export const ROUTE_PAGES: RoutePage[] = [
         metro lines (M50, M51, M52, M53 and M54) on their real tracks, with delays and departures
         for every station. The map needs JavaScript and WebGL.
       </p>
+      <p>
+        Trains ride the real curves of the rails between 3D buildings. Click a station for its
+        next departures, or click a train to follow it and see its next stop, delay, arrival time
+        and platform. GVB's service messages for the metro show on the map, in Dutch or English.
+        Amsterdam's metro publishes no GPS positions, so each train's place is worked out from
+        GVB's live timetable and delay feed, the same data GVB itself uses.
+      </p>
+      ${linesHtml("en")}
       <p><a href="/en/reisinfo">Travel info</a> · <a href="/en/privacy">Privacy policy</a> · <a href="/" hreflang="nl" lang="nl">Nederlands</a></p>`,
   },
   {
@@ -40,6 +72,13 @@ export const ROUTE_PAGES: RoutePage[] = [
         Per lijn een overzicht van alle stations met de metro's die nu rijden, en hoe stipt
         elke lijn rijdt. Deze pagina heeft JavaScript nodig.
       </p>
+      <p>
+        De vertrekstaat toont per station de vertrekken per richting, met vertraging, uitgevallen
+        ritten en aankomsttijd op het eindpunt. Kies "Zonder trappen" in de reisplanner om te zien
+        welke stations op je reis niet stapvrij zijn of een lift buiten gebruik hebben, met een
+        link naar de liftstoringen van GVB. Bewaar favoriete stations en deel een reis met een link.
+      </p>
+      ${linesHtml("nl")}
       <p><a href="/">Live 3D-metrokaart</a> · <a href="/privacy">Privacybeleid</a> · <a href="/en/reisinfo" hreflang="en" lang="en">English</a></p>`,
   },
   {
@@ -55,6 +94,13 @@ export const ROUTE_PAGES: RoutePage[] = [
         For each line, all its stations with the trains running now, and how punctual each line
         is. This page needs JavaScript.
       </p>
+      <p>
+        The departure board shows each station's trains by direction, with delays, cancelled runs
+        and arrival time at the terminus. Choose "Avoid stairs" in the journey planner to see which
+        stations on your trip are not step-free or have a lift out of service, with a link to
+        GVB's lift faults. Save favourite stations and share a journey with a link.
+      </p>
+      ${linesHtml("en")}
       <p><a href="/en/">Live 3D metro map</a> · <a href="/en/privacy">Privacy policy</a> · <a href="/reisinfo" hreflang="nl" lang="nl">Nederlands</a></p>`,
   },
   // Kept out of search results (it would only clutter the site's sitelinks);

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Lang } from "../i18n";
 import { type Page, pagePath } from "../i18n/paths";
-import { ROUTE_PAGES, routeDir, routeHtml } from "./routeHtml";
+import { ROUTE_PAGES, linesHtml, routeDir, routeHtml } from "./routeHtml";
 import { IMAGE_ALT, INDEXED_PAGES, PAGE_META, SITE_NAME } from "./site";
 
 // The real entry page, so a change to its head is caught here too. Vitest
@@ -92,6 +92,21 @@ describe("routeHtml", () => {
         ]);
       }
     }
+  });
+
+  it("gives crawlers enough words: intro plus every metro line and its stations", () => {
+    const words = (html: string) => html.replace(/<[^>]+>/g, " ").split(/\s+/).filter((w) => /\w/.test(w)).length;
+    const home = INDEX.match(/<noscript>([\s\S]*?)<\/noscript>/)![1];
+    expect(home).toContain(linesHtml("nl"));
+    expect(words(home)).toBeGreaterThan(200);
+    for (const route of ROUTE_PAGES.filter((r) => !r.noindex)) {
+      expect(route.body).toContain(linesHtml(route.lang));
+      expect(words(route.body)).toBeGreaterThan(200);
+    }
+  });
+
+  it("claims no app ratings it does not have (SoftwareApplication needs a rating or review)", () => {
+    expect(INDEX).not.toMatch(/"@type":\s*"(SoftwareApplication|WebApplication|MobileApplication)"/);
   });
 
   it("fails loudly when the page no longer has a tag it must rewrite", () => {
