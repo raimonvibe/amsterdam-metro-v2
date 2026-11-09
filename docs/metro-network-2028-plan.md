@@ -6,6 +6,7 @@ Written 9 Nov 2026, before anything is built. This plan covers two changes that 
 
 | When | What | Source |
 |---|---|---|
+| **14–15 Nov 2026** (test) | GVB tests the new network on a busy weekend: **no line 53**; **line 50 runs Isolatorweg – Gaasperplas**; 51, 52 and 54 as usual. From Centraal to Gaasperplas: change to the 50 at Van der Madeweg. A second test weekend follows in **March 2027**. | [AT5](https://www.at5.nl/artikelen/240854/gvb-draait-14-en-15-november-proef-met-nieuw-metronetwerk-metro-53-rijdt-dan-niet), [SpoorPro](https://www.spoorpro.nl/lightrail/2026/11/05/gvb-draait-half-november-proef-met-nieuw-metronetwerk/), [GVB projects page](https://www.gvb.nl/en/more-gvb/projects-in-amsterdam) |
 | **From mid-2027** | GVB starts replacing all 93 lifts and 177 escalators, **line 50 first**. Stations will be without a lift for weeks at a time. | [NH Nieuws](https://www.nhnieuws.nl/nieuws/350636/gvb-gaat-alle-93-liften-en-177-roltrappen-vervangen), also in [step-free-stations.md](step-free-stations.md) |
 | **Mid-December 2027** (one Vervoerregio page names **12 Dec 2027**) | New network with the 2028 timetable. Lines 50 and 53 become one line, Isolatorweg – Gaasperplas. Line 53 as it runs now disappears. Riders from Gaasperplas to Centraal change at **Van der Madeweg**, which gets an upgrade. Trains run 10 times an hour at peak and 8 times an hour during the day. | [GVB](https://over.gvb.nl/nieuws/metro-50-en-53-worden-een-lijn-sneller-reizen-met-de-metro/), [Vervoerregio](https://vervoerregio.nl/artikel/20251120-nieuw-metronetwerk-bekend-metrolijnen-50-en-53-worde), [Gemeente Amsterdam](https://www.amsterdam.nl/nieuws/nieuwsoverzicht/nieuw-metronetwerk/) |
 | **Same moment** (the 2028 timetable) | New line numbers and new colours, chosen so people with low vision or colour blindness can tell them apart. 5 lines become 4, so 5 colours become 4. | [GVB](https://over.gvb.nl/nieuws/nieuwe-lijnnummers-en-kleuren-maken-amsterdamse-metro-overzichtelijker/), [NH Nieuws](https://www.nhnieuws.nl/nieuws/363622/amsterdamse-metros-krijgen-nieuwe-nummers-m1-tm-m4-en-kleuren-makkelijker-onthouden), [Rodi](https://www.rodi.nl/amsterdam-noord/nieuws/507255/amsterdamse-metro-krijgt-nieuwe-lijnnummers-en-kleuren) |
@@ -39,6 +40,23 @@ So **mid-2027 changes only the lifts**. The lines, numbers and colours change in
 
 - [ ] Fill in the unknowns above as GVB and the Vervoerregio publish them.
 - [ ] Keep the step-free checks as they are ([step-free-stations.md](step-free-stations.md)).
+
+### Test weekends: 14–15 Nov 2026 and March 2027 🧪
+
+A free preview of the switch. Checked on 9 Nov 2026 with a dry run of the backend for Sat 14 Nov 12:00, built from the national GTFS of that morning:
+
+- The GTFS already holds the test weekend, **with the old line numbers**: no line 53 trips on 14–15 Nov; line 50 runs Isolatorweg ↔ Gaasperplas (~145 trips each way a day). The backend's `50`–`54` filter keeps working.
+- ✅ Trains: line 50 trains are placed on the Gaasperplas branch (Van der Madeweg → Venserpolder → … → Ganzenhoef), no line 53 trains.
+- ✅ Departures: Venserpolder and Gaasperplas show line 50; Gein and Strandvliet only line 54.
+- ✅ Planner: Gaasperplas → Centraal goes 50 to Van der Madeweg, then 54; Gein → Zuid goes 54, then 50 at Van der Madeweg.
+- ✅ Map: line 50's track reaches Gaasperplas (its geometry takes the test trips because none run to Gein); line 53's track stays drawn from stand-in trips.
+- ⚠️ The line name stays "Gein - Isolatorweg" (`METRO_LINES` in `config.py`) for the weekend. Acceptable for two days; GVB's own message on the map explains the change.
+
+To do:
+
+- [ ] On Sat 14 Nov, look at the live site once: trains on the Gaasperplas branch, line 53 empty, the planner from Gaasperplas.
+- [ ] Note in the log below what went wrong, if anything: the December 2027 switch will look much like this weekend.
+- [ ] Repeat the dry run before the March 2027 test.
 
 ### Phase 1: from mid-2027, lift replacement ♿
 
@@ -93,4 +111,5 @@ Places in the code that name the lines today:
 
 | Date | What |
 |---|---|
+| 9 Nov 2026 | Test weekend of 14–15 Nov added, with a dry run of the backend for that Saturday: trains, departures, planner and map work with the test timetable. |
 | 9 Nov 2026 | Plan written. Colours per line, exact date and GTFS names still unknown. |
