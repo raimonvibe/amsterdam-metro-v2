@@ -86,7 +86,7 @@ The queries fall into six groups. The last column says whether the site has a pa
 
 - [x] **Sitemap:** resubmitted on 8 Nov 2026. The one from the week before still had the old 4 URLs; Search Console now finds **82** (39 stations × NL/EN, plus `/`, `/en/`, `/reisinfo`, `/en/reisinfo`). Google rereads it by itself from now on: resubmit only after a big change (the line pages of step 3, say).
 - [ ] Turn on the *Position* column, and export *Pages* as well as *Queries*.
-- [ ] Ask Google to index the pages that matter most, in both languages (below). Day 1 done on 8 Nov 2026; days 2 and 3 on **9 and 10 Nov**.
+- [ ] Ask Google to index the pages that matter most, in both languages (below). Day 1 done on 8 Nov 2026; day 2 on 9 Nov, 4 of 5 (Reigersbos hit the daily limit); day 3 plus Reigersbos on **10 Nov**, after 09:00.
 - [ ] **About 15 Nov:** check which canonical Google picked for `/reisinfo` and `/reisinfo/centraal-station/` (0.2 below).
 - [ ] *Pages → Indexing*: how many of the 82 are indexed? Note it with the date in the check log.
 - [ ] Save this export as the baseline. Next exports: **6 Dec 2026** (4 weeks) and **3 Jan 2027** (8 weeks), the same windows as [Phase 3 of the tidy plan](seo-tidy-plan.md#phase-3-measure-keep-or-roll-back-).
@@ -111,7 +111,9 @@ The queries fall into six groups. The last column says whether the site has a pa
 4. **Request indexing**, **once**.
 5. Next URL. Don't repeat one.
 
-Already says "URL is on Google"? Nothing to request. A message about the limit? Stop, carry on the next day.
+Already says "URL is on Google"? Nothing to request. A message about the limit? Stop, carry on the next day. On 9 Nov the limit showed as a popup, "Er is iets misgegaan … probeer het over een paar uur opnieuw", after 4 requests and about 6 live tests: Google counts both. The limit resets at midnight Pacific time, 09:00 in Amsterdam.
+
+**Empty screenshot in the live test?** Open *View tested page → More info → Page resources*. If one script shows "Other error" (Andere fout) while it loads fine in a browser, Google skipped it in the test: the page is fine, request indexing anyway. The app needs every script to draw anything, so one skipped file gives a blank screenshot.
 
 **Day 1: the travel-info pages and Centraal Station** ✅ *done 8 Nov 2026*
 
@@ -122,15 +124,17 @@ Already says "URL is on Google"? Nothing to request. A message about the limit? 
 
 `/reisinfo` comes first because Google still shows an old snapshot of it (see the check log): a station's title on the general page, from before the station pages had their own URLs. The live page has its own title again; a fresh crawl replaces the old one.
 
-**Day 2: busy stations, Dutch**
+**Day 2: busy stations, Dutch** ✅ *4 of 5 done 9 Nov 2026; Reigersbos moved to day 3*
 
 - `https://amsterdammetro.nl/reisinfo/zuid/`
 - `https://amsterdammetro.nl/reisinfo/sloterdijk/`
 - `https://amsterdammetro.nl/reisinfo/bijlmer-arena/`
 - `https://amsterdammetro.nl/reisinfo/amstelstation/`
-- `https://amsterdammetro.nl/reisinfo/reigersbos/` (in the 24-hour export)
+- `https://amsterdammetro.nl/reisinfo/reigersbos/` (in the 24-hour export) ⏭️ *daily limit; first on day 3*
 
-**Day 3: the same stations, English**
+**Day 3: the same stations, English** (10 Nov, after 09:00)
+
+- `https://amsterdammetro.nl/reisinfo/reigersbos/` first, left over from day 2
 
 - `https://amsterdammetro.nl/en/reisinfo/zuid/`
 - `https://amsterdammetro.nl/en/reisinfo/sloterdijk/`
@@ -221,7 +225,7 @@ Group 2 is the first sign of demand for line pages, which the tidy plan left out
 | 8 Nov 2026 | Sitemap resubmitted | Discovered pages 4 → 82. |
 | 8 Nov 2026 | `site:amsterdammetro.nl/reisinfo/` in Google | One result: `/reisinfo` with an old title, "Centraal Station — vertrektijden". The live page has its own title and canonical (checked). No station page indexed yet. |
 | 8 Nov 2026 | Indexing requested, day 1 (4 URLs) | `/reisinfo`, `/en/reisinfo`, `/reisinfo/centraal-station/`, `/en/reisinfo/centraal-station/`. Live tests all fine: available to Google, indexing allowed, each its own canonical, the English page in English. Breadcrumbs valid on both station pages, with Dutch ("Reisinformatie") and English ("Travel info") names linking their own language. Before the test, both station pages were "Discovered – currently not indexed" (never crawled). The screenshot of `/reisinfo` shows Centraal Station's board: see 0.2. |
-| | Indexing requested, day 2 (5 URLs, NL) | |
-| | Indexing requested, day 3 (5 URLs, EN) | |
+| 9 Nov 2026 | Indexing requested, day 2 (4 of 5 URLs, NL), 20:30–20:45 | Requested: `/reisinfo/zuid/`, `/reisinfo/sloterdijk/`, `/reisinfo/bijlmer-arena/`, `/reisinfo/amstelstation/`. Zuid and Sloterdijk: screenshot shows the right station in Dutch with its lines (Zuid 50/51/52, Sloterdijk 50/51). Bijlmer ArenA: available to Google but the screenshot was empty; *Page resources* had 1 of 9 not loaded, `assets/i18n-_6BAOzlU.js`, "Other error", and the console only warned that `/api/lines`, `/api/stations` and `/api/shapes` were preloaded but not used (the app never started). The same file answered 200 in 0.56 s with a direct fetch, and the page's head was right (title, canonical), so indexing was requested anyway. Reigersbos: "not known to Google", no referring sitemap; the live test gave "Er is iets misgegaan" (the daily limit), so it moves to day 3. Open question: the maintainer saw Centraal Station in a screenshot; the one shared for Zuid shows Station Zuid, so probably `/reisinfo` from day 1 (expected, 0.2). To confirm on the next check. |
+| | Indexing requested, day 3 (5 URLs, EN, plus Reigersbos NL) | |
 | | Pages → Indexing, a week later | … of 82 indexed |
-| | Canonical check, `/reisinfo` vs `/reisinfo/centraal-station/` (0.2) | |
+| | Canonical check, `/reisinfo` vs `/reisinfo/centraal-station/` (0.2) | Also: *Sitemaps* read? (Reigersbos had no referring sitemap on 9 Nov.) |
