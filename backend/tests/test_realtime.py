@@ -66,6 +66,24 @@ def test_split_languages():
     }
 
 
+def test_split_languages_on_a_single_dash():
+    # GVB's notice of 9 Nov 2026 for the test weekend, as sent.
+    assert _split_languages(
+        "Op 14 en 15 nov. zijn de routes en tijden aangepast. Details: gvb.nl - "
+        "On 14 and 15 Nov. the routes and timetables will be adjusted. Details: gvb.nl"
+    ) == {
+        "nl": "Op 14 en 15 nov. zijn de routes en tijden aangepast. Details: gvb.nl",
+        "en": "On 14 and 15 Nov. the routes and timetables will be adjusted. Details: gvb.nl",
+    }
+    # A dash inside Dutch text is not a language break.
+    for dutch in (
+        "Metro 50 rijdt alleen Isolatorweg - Gaasperplas.",
+        "Werkzaamheden 14 nov. - 15 nov. Details: gvb.nl",
+        "Lift buiten gebruik. - Gebruik de lift aan de overkant.",
+    ):
+        assert _split_languages(dutch) == {"nl": dutch, "en": None}
+
+
 def test_the_same_message_in_kv15_and_siri_is_shown_once(metro, rt):
     text = {"nl": "Rituitval M52.", "en": "Gap in M52 service."}
     base = {"header": text, "description": text, "periods": [], "cause": "", "effect": ""}

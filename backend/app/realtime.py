@@ -12,6 +12,7 @@ Three OVapi feeds, each filtered down to the metro:
 """
 import asyncio
 import logging
+import re
 import time
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
@@ -157,12 +158,28 @@ def _parse_vehicles(feed_bytes: bytes, metro_trip_ids: set) -> Dict[str, dict]:
     return out
 
 
+# GVB sometimes joins the languages with a single " - " instead of "--"
+# ("… Details: gvb.nl - On 14 and 15 Nov. …"). A single dash also sits
+# inside route names ("Isolatorweg - Gaasperplas"), so it only counts after
+# a sentence end or "gvb.nl", and before a word that starts English text.
+_SINGLE_DASH = re.compile(
+    r"(?:(?<=[.!?])|(?<=\bgvb\.nl)) - "
+    r"(?=(?:On|Due|From|Until|The|There|This|Today|Tonight|Between|Because|No|"
+    r"Trains|Please|Travel|Take|Use|Gap|Disruption|Delay|Line|Lines)\b)"
+)
+
+
 def _split_languages(text: str) -> Dict[str, Optional[str]]:
     """GVB puts both languages in one translation tagged "nl", as
     "<Dutch> -- <English>", and uses "|" as a line break, so the separator
-    also comes as "--|". A text without the separator is Dutch only."""
+    also comes as "--|". Some messages use " - " instead (see _SINGLE_DASH).
+    A text without a separator is Dutch only."""
     flat = " ".join(text.replace("|", " ").split())
     nl, sep, en = flat.partition("--")
+    if not sep:
+        parts = _SINGLE_DASH.split(flat, maxsplit=1)
+        if len(parts) == 2:
+            nl, sep, en = parts[0], " - ", parts[1]
     return {"nl": nl.strip(), "en": (en.strip() or None) if sep else None}
 
 
