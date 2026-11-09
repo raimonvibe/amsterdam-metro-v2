@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { TriangleAlert } from "lucide-react";
-import { locale, pick, pickWithLang, useLang, useT } from "../i18n";
+import { type Lang, locale, pick, pickWithLang, useLang, useT } from "../i18n";
 import { ServiceAlert } from "../types";
 import { formatPlaceName } from "../format";
 import { NO_TRANSLATE } from "./Num";
@@ -48,6 +48,27 @@ export function AlertAnnouncer({ alerts }: { alerts: ServiceAlert[] }) {
   );
 }
 
+/** When a message ends: "18:00" today, otherwise with its day ("za 14 nov.,
+ *  01:00"). A bare time five days ahead reads as "tonight". */
+export function alertEnd(endTs: number, lang: Lang, now: number = Date.now()): string {
+  const tz = { timeZone: "Europe/Amsterdam" } as const;
+  const loc = locale(lang);
+  const time = new Intl.DateTimeFormat(loc, { ...tz, hour: "2-digit", minute: "2-digit" }).format(new Date(endTs * 1000));
+  const day = (t: number) => new Intl.DateTimeFormat("en-CA", tz).format(new Date(t));
+  if (day(endTs * 1000) === day(now)) return time;
+  const date = new Intl.DateTimeFormat(loc, { ...tz, weekday: "short", day: "numeric", month: "short" }).format(new Date(endTs * 1000));
+  return `${date}, ${time}`;
+}
+
+/** A message's stations as one list: without any town ("Diemen, Verrijn
+ *  Stuartweg" in a comma list reads as two places), A–Z by that name. */
+export function alertStations(stations: string[]): string {
+  return stations
+    .map((s) => formatPlaceName(s).replace(/^[^,]+, /, ""))
+    .sort((a, b) => a.localeCompare(b, "nl"))
+    .join(", ");
+}
+
 export interface AlertListProps {
   alerts: ServiceAlert[];
   colorOf: (line: string) => string;
@@ -62,7 +83,6 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
   const txt = useT();
   const lang = useLang();
   if (!alerts.length) return null;
-  const hm = new Intl.DateTimeFormat(locale(lang), { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit" });
   return (
     <ul className={`space-y-1.5 ${className}`} aria-label={txt.alertsTitle}>
       {alerts.map((a) => {
@@ -81,7 +101,7 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
               <TriangleAlert size={12} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
               <p className="line-clamp-2 min-w-0 break-words" title={header.text}>
                 <span lang={header.lang}>{header.text}</span>
-                {a.end_ts && <span className="text-amber-700 dark:text-amber-300"> · {txt.alertUntil(hm.format(new Date(a.end_ts * 1000)))}</span>}
+                {a.end_ts && <span className="text-amber-700 dark:text-amber-300"> · {txt.alertUntil(alertEnd(a.end_ts, lang))}</span>}
               </p>
             </li>
           );
@@ -117,7 +137,7 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
                 )}
                 {a.end_ts && (
                   <span className="text-[11px] text-amber-700 dark:text-amber-300">
-                    {txt.alertUntil(hm.format(new Date(a.end_ts * 1000)))}
+                    {txt.alertUntil(alertEnd(a.end_ts, lang))}
                   </span>
                 )}
               </div>
@@ -126,7 +146,7 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
                 // Names and their commas in one untranslated run: a translator
                 // drops the spaces in a lone ", " between two names.
                 <p className={`mt-0.5 text-[11px] text-amber-800 dark:text-amber-200 ${a.whole_line ? "hidden sm:block" : ""}`}>
-                  <span {...NO_TRANSLATE}>{a.stations.map((s) => formatPlaceName(s)).join(", ")}</span>
+                  <span {...NO_TRANSLATE}>{alertStations(a.stations)}</span>
                 </p>
               )}
               {description && (
