@@ -120,6 +120,7 @@ Production domain: **https://amsterdammetro.nl** (API: **https://api.amsterdamme
 | [docs/position-model.md](docs/position-model.md) | How train positions are derived |
 | [docs/step-free-stations.md](docs/step-free-stations.md) | Step-free station data: the rule, sources, regular checks and log |
 | [docs/privacy-policy.md](docs/privacy-policy.md) | Privacy policy (also at `/privacy`) |
+| [docs/metro-network-2028-plan.md](docs/metro-network-2028-plan.md) | Plan: the new network (M1–M4, lines 50 and 53 merged) from December 2027 |
 
 First backend start downloads the national GTFS zip (~240MB, cached) and extracts the GVB metro subset — a few MB, refreshed daily.
 
