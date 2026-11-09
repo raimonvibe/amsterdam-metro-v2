@@ -62,10 +62,15 @@ describe("AlertList", () => {
     expect(screen.getByText("until 18:00")).toBeInTheDocument();
   });
 
-  it("says 'whole line' on phones instead of listing every station", () => {
+  it("says 'whole line' instead of listing every station, on every screen", () => {
     render(<AlertList alerts={[{ ...stationAlert, whole_line: true }]} colorOf={colorOf} />);
-    expect(screen.getByText("Hele lijn")).toHaveClass("sm:hidden");
-    expect(screen.getByText("Wibautstraat").closest("p")).toHaveClass("hidden", "sm:block");
+    expect(screen.getByText("Hele lijnen")).not.toHaveClass("sm:hidden");
+    expect(screen.queryByText("Wibautstraat")).toBeNull();
+  });
+
+  it("says 'whole line' for a single line", () => {
+    render(<AlertList alerts={[{ ...stationAlert, lines: ["53"], whole_line: true }]} colorOf={colorOf} />);
+    expect(screen.getByText("Hele lijn")).toBeInTheDocument();
   });
 
   it("leaves out stations and details when compact", () => {

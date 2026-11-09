@@ -125,14 +125,10 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
                   </span>
                 ))}
                 {a.lines.length > 0 && (!a.stations.length || a.whole_line) && (
-                  // A whole-line message lists its stations on wide screens;
-                  // on a phone that list is long, so the label stands in for it.
-                  <span
-                    className={`text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300 ${
-                      a.stations.length ? "sm:hidden" : ""
-                    }`}
-                  >
-                    {txt.alertLineWide}
+                  // A whole-line message names every station of its lines:
+                  // the badges and this label say that in two words.
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                    {a.lines.length > 1 ? txt.alertLinesWide : txt.alertLineWide}
                   </span>
                 )}
                 {a.end_ts && (
@@ -142,10 +138,10 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
                 )}
               </div>
               <p className="break-words" lang={header.lang}>{header.text}</p>
-              {a.stations.length > 0 && (
+              {a.stations.length > 0 && !a.whole_line && (
                 // Names and their commas in one untranslated run: a translator
                 // drops the spaces in a lone ", " between two names.
-                <p className={`mt-0.5 text-[11px] text-amber-800 dark:text-amber-200 ${a.whole_line ? "hidden sm:block" : ""}`}>
+                <p className="mt-0.5 text-[11px] text-amber-800 dark:text-amber-200">
                   <span {...NO_TRANSLATE}>{alertStations(a.stations)}</span>
                 </p>
               )}

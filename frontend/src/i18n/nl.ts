@@ -71,6 +71,7 @@ export const nl = {
   alertUntil: (time: string) => `tot ${time}`,
   alertMore: "Meer details",
   alertLineWide: "Hele lijn",
+  alertLinesWide: "Hele lijnen",
   alertsSource: "Bron: GVB-reisinformatie (KV15) via OVapi.",
   stepFreeYes: "Rolstoeltoegankelijk",
   stepFreeLimited: "Beperkt rolstoeltoegankelijk",

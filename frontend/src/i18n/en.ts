@@ -73,6 +73,7 @@ export const en: Dict = {
   alertUntil: (time: string) => `until ${time}`,
   alertMore: "More details",
   alertLineWide: "Whole line",
+  alertLinesWide: "Whole lines",
   alertsSource: "Source: GVB travel information (KV15) via OVapi.",
   stepFreeYes: "Step-free access",
   stepFreeLimited: "Partly step-free",
