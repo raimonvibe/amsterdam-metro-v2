@@ -97,7 +97,7 @@ Needs the backend running on `http://localhost:8020` (or pass its URL). It reads
 
 ## Status per station
 
-As of the last full check, **2026-10-27**, and the lift check of **2026-11-08**: 28 step-free, 11 not.
+As of the last full check, **2026-10-27**, and the lift check of **2026-11-09**: 28 step-free, 11 not.
 
 | Station | Status | Why | GVB page |
 |---|---|---|---|
@@ -154,6 +154,7 @@ Newest first. One line per check, even when nothing changed.
 
 | Date | Kind | Result | By |
 |---|---|---|---|
+| 2026-11-09 | lift faults | No change. Ganzenhoef (updated 8 Nov 12:11), Waterlooplein (updated 7 Nov 16:49) and Overamstel (updated 6 Nov 10:21) still listed → stay no, `lift_out`. Station Zuid's WTC-side tram/bus lift (updated 2 Nov 21:04) still listed, not a metro-platform lift → stays yes. Escalator faults (Station Bijlmer ArenA hall–metro platform, new 8 Nov 20:55; Station Noord exit King's Cross; Rokin exit Spui; Rietlandpark) don't change step-free; Bijlmer ArenA is "niet rolstoelvriendelijk" anyway. "Binnenkort" (after the user chose in the cookie banner): no planned lift or escalator faults. 1 GVB page load, by hand. Still 28 step-free. | maintainer + Claude |
 | 2026-11-08 | lift faults | New fault at Ganzenhoef (lift between street and metro platform, updated 8 Nov 12:11) → no, `lift_out`; search term "Ganzenhoef" finds it (1 lift fault, no escalator faults). Waterlooplein (updated 7 Nov 16:49) and Overamstel (updated 6 Nov 10:21) still listed → stay no, `lift_out`. Station Zuid's WTC-side tram/bus lift (updated 2 Nov 21:04) still listed, not a metro-platform lift → stays yes. Escalator faults (Station Noord exit King's Cross, Rokin exit Spui, Rietlandpark) don't change step-free. "Binnenkort": no planned lift or escalator faults. The cookie banner was left for the user. 1 GVB page load, by hand. Now 28 step-free. | maintainer + Claude |
 | 2026-11-08 | search test | Amstelstation's term "Amstel" → 1 resultaat: Overamstel's lift (track 2 and 4, updated 6 Nov 10:21), already no + `lift_out`. No fault at Amstelstation → stays yes; the live station card shows "Rolstoeltoegankelijk" as expected. "Amstel" also matches Overamstel and Amstelveenseweg: a hit there is not an Amstelstation fault. No escalator faults. 1 GVB page load, by the user. Data unchanged, still 29 step-free. | maintainer + Claude |
 | 2026-11-08 | lift faults | No change. Waterlooplein (updated 7 Nov 16:49) and Overamstel (updated 6 Nov 10:21) still listed → stay no, `lift_out`. Station Zuid's WTC-side tram/bus lift (updated 2 Nov 21:04) still listed, not a metro-platform lift → stays yes. Escalator faults (Centraal Station Noord–Oost, Rietlandpark) don't change step-free. "Binnenkort" not checked: the cookie banner was left for the user. 1 GVB page load, by hand. Still 29 step-free. | maintainer + Claude |
