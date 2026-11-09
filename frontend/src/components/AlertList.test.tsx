@@ -1,8 +1,8 @@
 import { act, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setLang } from "../i18n";
 import { ServiceAlert } from "../types";
-import { AlertList, alertsFor, lineWide } from "./AlertList";
+import { AlertList, alertEnd, alertStations, alertsFor, lineWide } from "./AlertList";
 
 const lineAlert: ServiceAlert = {
   id: "a1",
@@ -33,6 +33,13 @@ describe("alertsFor", () => {
 });
 
 describe("AlertList", () => {
+  // The fixtures end on 22 Oct 2026: "today" for these tests.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(Date.UTC(2026, 9, 22, 10, 0)));
+  });
+  afterEach(() => vi.useRealTimers());
+
   it("renders nothing without alerts", () => {
     const { container } = render(<AlertList alerts={[]} colorOf={colorOf} />);
     expect(container).toBeEmptyDOMElement();
@@ -65,5 +72,35 @@ describe("AlertList", () => {
     render(<AlertList alerts={[stationAlert]} colorOf={colorOf} compact />);
     expect(screen.queryByText("Wibautstraat")).toBeNull();
     expect(screen.queryByText("Meer details")).toBeNull();
+  });
+});
+
+describe("alertEnd", () => {
+  const now = Date.UTC(2026, 10, 9, 12, 0); // Mon 9 Nov 2026, 13:00 in Amsterdam
+  it("gives the time alone when the message ends today", () => {
+    expect(alertEnd(Date.UTC(2026, 10, 9, 17, 0) / 1000, "nl", now)).toBe("18:00");
+  });
+  it("names the day when it ends on another day (GVB's notice for 14-15 Nov)", () => {
+    const end = Date.UTC(2026, 10, 14, 0, 0) / 1000; // 14 Nov, 01:00 in Amsterdam
+    expect(alertEnd(end, "nl", now)).toMatch(/^za 14 nov\.?, 01:00$/);
+    expect(alertEnd(end, "en", now)).toMatch(/Sat.*14 Nov.*01:00/);
+  });
+  it("counts the day in Amsterdam, not in UTC", () => {
+    // 23:30 UTC on 9 Nov is already 00:30 on 10 Nov in Amsterdam.
+    expect(alertEnd(Date.UTC(2026, 10, 9, 23, 30) / 1000, "nl", now)).toMatch(/^di 10 nov/);
+  });
+});
+
+describe("alertStations", () => {
+  it("drops every town, so a comma list reads as stations, and sorts by name", () => {
+    expect(
+      alertStations([
+        "Amsterdam, Wibautstraat",
+        "Diemen, Station Diemen Zuid",
+        "Diemen, Verrijn Stuartweg",
+        "Amsterdam, Centraal Station",
+        "Duivendrecht, Station Duivendrecht",
+      ]),
+    ).toBe("CS, Station Diemen Zuid, Station Duivendrecht, Verrijn Stuartweg, Wibautstraat");
   });
 });

@@ -9,7 +9,8 @@ import {
   shortDate,
   stepFree,
 } from "../data/accessibility";
-import { locale, pickWithLang, useLang, useT } from "../i18n";
+import { pickWithLang, useLang, useT } from "../i18n";
+import { alertEnd } from "../components/AlertList";
 import { delayLabel } from "../format";
 import { CopyTerm } from "../components/CopyTerm";
 import { Place } from "../components/Place";
@@ -371,7 +372,6 @@ function AlertToggle({ count, open, controls, onToggle }: { count: number; open:
 function AlertNotes({ id, alerts }: { id: string; alerts: ServiceAlert[] }) {
   const t = useT();
   const lang = useLang();
-  const hm = new Intl.DateTimeFormat(locale(lang), { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit" });
   return (
     <ul id={id} className="mt-1 space-y-0.5 text-[11px] leading-snug text-amber-800 dark:text-amber-200">
       {alerts.map((a) => {
@@ -382,7 +382,7 @@ function AlertNotes({ id, alerts }: { id: string; alerts: ServiceAlert[] }) {
         return (
           <li key={a.id} className="break-words">
             <span lang={header.lang}>{header.text}</span>
-            {a.end_ts && <> · {t.alertUntil(hm.format(new Date(a.end_ts * 1000)))}</>}
+            {a.end_ts && <> · {t.alertUntil(alertEnd(a.end_ts, lang))}</>}
           </li>
         );
       })}

@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { STATIONS } from "../test/fixtures";
 import { LIFT_CHECK, gvbSearch, shortDate } from "../data/accessibility";
 import { AnimatedTrain, ServiceAlert } from "../types";
@@ -528,6 +528,11 @@ describe("JourneyPlanner", () => {
   });
 
   it("marks the options a line's message touches with a ! that unfolds it", async () => {
+    // "Today" is the fixtures' day, so the end shows as a bare time.
+    vi.useFakeTimers({ toFake: ["Date"], now: NOW });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
     const onRoute = vi.fn();
     renderPlanner([journey(3, 30, 1), journey(8, 25, 0)], onRoute, {
       alerts: [alert("delay54", { header: { nl: "Metro 54 rijdt met vertraging", en: "Metro 54 is delayed" }, lines: ["54"], end_ts: s(60) })],
