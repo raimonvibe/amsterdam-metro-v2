@@ -86,7 +86,7 @@ The queries fall into six groups. The last column says whether the site has a pa
 
 - [x] **Sitemap:** resubmitted on 8 Nov 2026. The one from the week before still had the old 4 URLs; Search Console now finds **82** (39 stations × NL/EN, plus `/`, `/en/`, `/reisinfo`, `/en/reisinfo`). Google rereads it by itself from now on: resubmit only after a big change (the line pages of step 3, say).
 - [ ] Turn on the *Position* column, and export *Pages* as well as *Queries*.
-- [ ] Ask Google to index the pages that matter most, in both languages (below). Day 1 done on 8 Nov 2026; day 2 on 9 Nov, 4 of 5 (Reigersbos hit the daily limit); day 3 plus Reigersbos on **10 Nov**, after 09:00.
+- [x] Ask Google to index the pages that matter most, in both languages (below). Day 1 done on 8 Nov 2026; day 2 on 9 Nov, 4 of 5 (Reigersbos hit the daily limit); day 3 plus Reigersbos on 11 Nov. All 15 requested.
 - [ ] **About 15 Nov:** check which canonical Google picked for `/reisinfo` and `/reisinfo/centraal-station/` (0.2 below).
 - [ ] *Pages → Indexing*: how many of the 82 are indexed? Note it with the date in the check log.
 - [ ] Save this export as the baseline. Next exports: **6 Dec 2026** (4 weeks) and **3 Jan 2027** (8 weeks), the same windows as [Phase 3 of the tidy plan](seo-tidy-plan.md#phase-3-measure-keep-or-roll-back-).
@@ -130,9 +130,9 @@ Already says "URL is on Google"? Nothing to request. A message about the limit? 
 - `https://amsterdammetro.nl/reisinfo/sloterdijk/`
 - `https://amsterdammetro.nl/reisinfo/bijlmer-arena/`
 - `https://amsterdammetro.nl/reisinfo/amstelstation/`
-- `https://amsterdammetro.nl/reisinfo/reigersbos/` (in the 24-hour export) ⏭️ *daily limit; first on day 3*
+- `https://amsterdammetro.nl/reisinfo/reigersbos/` (in the 24-hour export) ⏭️ *daily limit; done on day 3*
 
-**Day 3: the same stations, English** (10 Nov, after 09:00)
+**Day 3: the same stations, English** ✅ *all 6 done 11 Nov 2026, Reigersbos NL included*
 
 - `https://amsterdammetro.nl/reisinfo/reigersbos/` first, left over from day 2
 
@@ -226,6 +226,6 @@ Group 2 is the first sign of demand for line pages, which the tidy plan left out
 | 8 Nov 2026 | `site:amsterdammetro.nl/reisinfo/` in Google | One result: `/reisinfo` with an old title, "Centraal Station — vertrektijden". The live page has its own title and canonical (checked). No station page indexed yet. |
 | 8 Nov 2026 | Indexing requested, day 1 (4 URLs) | `/reisinfo`, `/en/reisinfo`, `/reisinfo/centraal-station/`, `/en/reisinfo/centraal-station/`. Live tests all fine: available to Google, indexing allowed, each its own canonical, the English page in English. Breadcrumbs valid on both station pages, with Dutch ("Reisinformatie") and English ("Travel info") names linking their own language. Before the test, both station pages were "Discovered – currently not indexed" (never crawled). The screenshot of `/reisinfo` shows Centraal Station's board: see 0.2. |
 | 9 Nov 2026 | Indexing requested, day 2 (4 of 5 URLs, NL), 20:30–20:45 | Requested: `/reisinfo/zuid/`, `/reisinfo/sloterdijk/`, `/reisinfo/bijlmer-arena/`, `/reisinfo/amstelstation/`. Zuid and Sloterdijk: screenshot shows the right station in Dutch with its lines (Zuid 50/51/52, Sloterdijk 50/51). Bijlmer ArenA: available to Google but the screenshot was empty; *Page resources* had 1 of 9 not loaded, `assets/i18n-_6BAOzlU.js`, "Other error", and the console only warned that `/api/lines`, `/api/stations` and `/api/shapes` were preloaded but not used (the app never started). The same file answered 200 in 0.56 s with a direct fetch, and the page's head was right (title, canonical), so indexing was requested anyway. Reigersbos: "not known to Google", no referring sitemap; the live test gave "Er is iets misgegaan" (the daily limit), so it moves to day 3. Open question: the maintainer saw Centraal Station in a screenshot; the one shared for Zuid shows Station Zuid, so probably `/reisinfo` from day 1 (expected, 0.2). To confirm on the next check. |
-| | Indexing requested, day 3 (5 URLs, EN, plus Reigersbos NL) | |
+| 11 Nov 2026 | Indexing requested, day 3 (6 URLs: 5 EN, plus Reigersbos NL) | Requested: `/reisinfo/reigersbos/` (left over from day 2), `/en/reisinfo/zuid/`, `/en/reisinfo/bijlmer-arena/`, `/en/reisinfo/sloterdijk/`, `/en/reisinfo/amstelstation/`, `/en/reisinfo/reigersbos/`. All six went through without hitting the daily limit. Reigersbos NL and EN are two separate URLs, each requested once. The live sitemap was checked the same day: 82 URLs, both Reigersbos pages listed. All 15 planned indexing requests are now done. |
 | | Pages → Indexing, a week later | … of 82 indexed |
 | | Canonical check, `/reisinfo` vs `/reisinfo/centraal-station/` (0.2) | Also: *Sitemaps* read? (Reigersbos had no referring sitemap on 9 Nov.) |
