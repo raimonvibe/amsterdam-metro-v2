@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { LIFT_CHECK } from "./accessibility";
 import {
   METRO_LINES,
@@ -11,6 +11,15 @@ import {
   stepFreeAlternatives,
   stepFreeReachable,
 } from "./network";
+
+// The lift-fault tests use Overamstel with its lift out. The real data changes
+// with every weekly lift check, so pin that one station here.
+vi.mock("./accessibility.json", async (importOriginal) => {
+  const real = (await importOriginal<{ default: typeof import("./accessibility.json") }>()).default;
+  const name = "Amsterdam, Overamstel";
+  const stations = { ...real.stations, [name]: { ...real.stations[name], step_free: "no", lift_out: true } };
+  return { default: { ...real, stations } };
+});
 
 // A day after the last lift check, and long after it (a missed weekly check).
 const SOON = Date.parse(`${LIFT_CHECK}T12:00:00Z`) + 86_400_000;
@@ -41,7 +50,7 @@ describe("step-free states", () => {
   it("has three states, and a lift fault fades after a missed check", () => {
     expect(accessState("Amsterdam, Rokin", SOON)).toBe("step-free");
     expect(accessState("Amsterdam, Gein", SOON)).toBe("not-step-free");
-    // Overamstel's lift was out at the last check.
+    // Overamstel's lift is out in the mocked data above.
     expect(accessState("Amsterdam, Overamstel", SOON)).toBe("lift-out");
     expect(accessState("Amsterdam, Overamstel", LATE)).toBe("not-step-free");
   });
