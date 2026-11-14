@@ -246,12 +246,12 @@ describe("StationBoard", () => {
 
   it("with a lift out, names where to board step-free instead, as links", async () => {
     vi.mocked(api.fetchBoard).mockResolvedValue([]);
-    const { props } = renderBoard({ station: byName("Amsterdam, Overamstel") });
+    const { props } = renderBoard({ station: byName("Amsterdam, Centraal Station") });
     const box = (await screen.findByText("Stapvrij in- of uitstappen kan wel in:")).parentElement!;
-    const amstel = within(box).getByRole("link", { name: "Amstelstation" });
-    expect(amstel).toHaveAttribute("href", "/reisinfo/amstelstation/");
-    await userEvent.click(amstel);
-    expect(props.onStation).toHaveBeenCalledWith("Amsterdam, Amstelstation");
+    const [nieuwmarkt] = within(box).getAllByRole("link", { name: "Nieuwmarkt" });
+    expect(nieuwmarkt).toHaveAttribute("href", "/reisinfo/nieuwmarkt/");
+    await userEvent.click(nieuwmarkt);
+    expect(props.onStation).toHaveBeenCalledWith("Amsterdam, Nieuwmarkt");
   });
 
   it("says why a station is not step-free", async () => {
@@ -612,11 +612,11 @@ describe("JourneyPlanner", () => {
     vi.useFakeTimers({ toFake: ["Date"], now: Date.parse(`${LIFT_CHECK}T12:00:00Z`) });
     try {
       const j = journey(3, 30, 0);
-      j.legs[0] = { ...j.legs[0], to: "Amsterdam, Overamstel" };
+      j.legs[0] = { ...j.legs[0], to: "Amsterdam, Centraal Station" };
       renderPlanner([j], vi.fn(), { avoidStairs: true, onAvoidStairs: vi.fn() });
       const warning = (await screen.findByText(/Niet zeker zonder trappen/)).closest("p")!;
-      expect(warning).toHaveTextContent(`Overamstel (lift buiten gebruik, ${shortDate(LIFT_CHECK, "nl")})`);
-      expect(screen.getByRole("button", { name: 'Kopieer "Overamstel"' })).toBeInTheDocument();
+      expect(warning).toHaveTextContent(`CS (lift buiten gebruik, ${shortDate(LIFT_CHECK, "nl")})`);
+      expect(screen.getByRole("button", { name: 'Kopieer "Centraal"' })).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }

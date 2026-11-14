@@ -1,6 +1,6 @@
 {
-  "updated": "2026-11-14",
-  "lift_check": "2026-11-14",
+  "updated": "2026-11-13",
+  "lift_check": "2026-11-13",
   "stations": {
     "Amsterdam, Amstelstation": {
       "step_free": "yes",
@@ -46,7 +46,7 @@
       "step_free": "no",
       "source": "checked",
       "osm": "node/5424713348",
-      "note": "GVB station pages NL:S:30009500 (metro 51/53/54) and NL:S:30009575 (metro 52) (CHB): Rolstoelvriendelijk, 2026-11-02. Lift to the metro on the Prins Hendrikkade side in GVB's lift faults since 2026-11-14 (updated 11 Nov 11:53); set back to yes once it is no longer listed",
+      "note": "GVB station pages NL:S:30009500 (metro 51/53/54) and NL:S:30009575 (metro 52) (CHB): Rolstoelvriendelijk, 2026-11-02. Lift to the metro on the Prins Hendrikkade side in GVB's lift faults since 2026-11-11; set back to yes once it is no longer listed",
       "gvb_search": "Centraal",
       "lift_out": true,
       "gvb_stops": [
@@ -88,7 +88,7 @@
       "step_free": "yes",
       "source": "checked",
       "osm": "node/4041662264",
-      "note": "GVB station page NL:S:30009546 (CHB, metro 50): Rolstoelvriendelijk, 2026-11-14; its lift (street–metro platform, listed since 2026-11-08) no longer in GVB's lift faults, 2026-11-14",
+      "note": "GVB station page (CHB): Rolstoelvriendelijk, 2026-11-13; lift between street and metro platform no longer in GVB's lift faults, 2026-11-13",
       "gvb_search": "Ganzenhoef",
       "gvb_stops": [
         "NL:S:30009546"
@@ -188,7 +188,7 @@
       "step_free": "yes",
       "source": "checked",
       "osm": "node/427565080",
-      "note": "GVB station page NL:Q:30009563 (CHB, metro 50/51): Rolstoelvriendelijk, 2026-11-14; its lift (street–platform towards Isolatorweg, listed since 2026-11-02) no longer in GVB's lift faults, 2026-11-14",
+      "note": "GVB station page (CHB): Rolstoelvriendelijk, 2026-11-13; lift street–platform towards Isolatorweg (track 2 and 4) no longer in GVB's lift faults, 2026-11-13",
       "gvb_search": "Overamstel",
       "gvb_stops": [
         "NL:Q:30009563"
@@ -338,7 +338,7 @@
       "step_free": "yes",
       "source": "checked",
       "osm": "way/268782305",
-      "note": "GVB station page NL:S:30009508 (CHB, metro 51/54): Rolstoelvriendelijk, 2026-11-14; its lift (street–station, listed since 2026-11-07) no longer in GVB's lift faults, 2026-11-14",
+      "note": "GVB station page (CHB): Rolstoelvriendelijk, 2026-11-13; lift between street and station no longer in GVB's lift faults, 2026-11-13",
       "gvb_search": "Waterlooplein",
       "gvb_stops": [
         "NL:S:30009508"
