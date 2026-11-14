@@ -18,10 +18,10 @@ describe("security headers", () => {
     expect(csp).not.toContain("unsafe-eval");
   });
 
-  it("starts as report-only, so nothing is blocked yet", () => {
+  it("is enforced, not report-only", () => {
     const h = securityHeaders(PROD_API);
-    expect(h["Content-Security-Policy-Report-Only"]).toBe(csp);
-    expect(h).not.toHaveProperty("Content-Security-Policy");
+    expect(h["Content-Security-Policy"]).toBe(csp);
+    expect(h).not.toHaveProperty("Content-Security-Policy-Report-Only");
   });
 
   it("is mirrored exactly in render.yaml", () => {
