@@ -62,4 +62,7 @@ export interface Journey {
   duration_s: number;
   transfers: number;
   legs: JourneyLeg[];
+  /** No metro leaves within the planner's 90 minutes (the night break):
+   *  these are the journeys from the first one that does. */
+  first_metro?: boolean;
 }

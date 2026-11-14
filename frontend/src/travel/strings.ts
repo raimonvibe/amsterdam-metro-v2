@@ -104,6 +104,7 @@ const nl = {
   departuresFrom: "Vertrektijden vanaf",
   sameStation: "Vertrek- en aankomststation zijn hetzelfde.",
   plannerUnavailable: "Reisadvies is even niet beschikbaar — we proberen het opnieuw.",
+  firstMetro: "De metro rijdt nu niet. Dit zijn de eerste reizen zodra hij weer rijdt:",
   noConnection:
     "Geen metroverbinding in de komende anderhalf uur. Mogelijk rijdt de metro nu niet (nacht) of is een overstap nodig die meer dan één keer wisselen vraagt.",
   direct: "direct",
@@ -297,6 +298,7 @@ const en: TravelStrings = {
   departuresFrom: "Departures from",
   sameStation: "Departure and arrival station are the same.",
   plannerUnavailable: "Journey advice is briefly unavailable — retrying.",
+  firstMetro: "The metro isn't running now. These are the first trips once it starts again:",
   noConnection:
     "No metro connection in the next hour and a half. The metro may not be running now (night), or the trip needs more than one change.",
   direct: "direct",

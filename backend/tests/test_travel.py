@@ -137,3 +137,23 @@ def test_train_platform_is_where_it_stands_or_arrives_next(metro, rt):
     assert to_b.next_station == "B" and to_b.platform is None
     to_c = _train(metro, rt, "50f0", NOW + 5 * 60)
     assert to_c.status == "moving" and to_c.next_station == "C" and to_c.platform == "1"
+
+
+# --- the first metro after the night break ------------------------------------
+
+def test_at_night_the_planner_gives_the_first_metro_of_the_morning(metro, rt):
+    # Line 50 starts at 12:00 in the fixture; at 08:00 nothing leaves within
+    # the 90-minute horizon, so the journeys from the first run, marked.
+    js = travel.journeys(metro, rt, "A", "C", now=NOW - 4 * 3600)
+    assert js and all(j["first_metro"] for j in js)
+    assert js[0]["departure_ts"] == NOW
+
+
+def test_within_the_horizon_journeys_are_not_marked(metro, rt):
+    js = travel.journeys(metro, rt, "A", "C", now=NOW - 3600)
+    assert js and not any(j.get("first_metro") for j in js)
+
+
+def test_after_the_last_metro_with_none_in_sight_there_is_nothing(metro, rt):
+    # The fixture's last run leaves A at 12:50; nothing follows within 8 hours.
+    assert travel.journeys(metro, rt, "A", "C", now=NOW + 2 * 3600) == []

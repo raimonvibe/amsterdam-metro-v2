@@ -24,6 +24,9 @@ MIN_TRANSFER_S = 120
 JOURNEY_HORIZON_S = 90 * 60
 # Transfer legs may leave a while after the first leg's window ends.
 TRANSFER_SLACK_S = 45 * 60
+# With nothing leaving within the horizon (night), how far ahead to look for
+# the first metro: past the ~5 hour night break, with room to spare.
+FIRST_METRO_LOOKAHEAD_S = 8 * 3600
 
 
 def _service_day(now: float) -> str:
@@ -175,11 +178,35 @@ def _leg(metro, t, trip_id, times, i, j, live) -> dict:
 def journeys(metro: MetroData, rt: RealtimeState, origin: str, dest: str,
              now: Optional[float] = None, limit: int = 5) -> List[dict]:
     """Direct and one-transfer journeys from origin to dest, leaving within
-    JOURNEY_HORIZON_S. An option is dropped when another leaves no earlier,
-    arrives no later and transfers no more often."""
+    JOURNEY_HORIZON_S. When no metro leaves origin that soon (the night
+    break), the journeys from the first one that does, marked first_metro,
+    so the planner can say when the metro starts instead of "nothing"."""
     now = now or time.time()
     if origin == dest:
         return []
+    found = _journeys_from(metro, rt, origin, dest, now, limit)
+    if found:
+        return found
+    first = min(
+        (dep for dep, *_ in _runs_from(
+            metro, rt, origin, metro._trips_by_station.get(origin, ()), now, now + FIRST_METRO_LOOKAHEAD_S,
+        )),
+        default=None,
+    )
+    if first is None or first <= now + JOURNEY_HORIZON_S:
+        # Trains do leave soon, but none gets there with one change: say so.
+        return []
+    later = _journeys_from(metro, rt, origin, dest, first, limit)
+    for o in later:
+        o["first_metro"] = True
+    return later
+
+
+def _journeys_from(metro: MetroData, rt: RealtimeState, origin: str, dest: str,
+                   now: float, limit: int) -> List[dict]:
+    """journeys() for runs leaving origin from now to now + JOURNEY_HORIZON_S.
+    An option is dropped when another leaves no earlier, arrives no later
+    and transfers no more often."""
     by_station = metro._trips_by_station
     options: List[dict] = []
     # Per transfer station: runs from there that later reach dest, by departure.

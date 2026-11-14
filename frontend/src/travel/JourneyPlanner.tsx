@@ -254,6 +254,9 @@ export function JourneyPlanner(props: JourneyPlannerProps) {
             {txt.noConnection}
           </p>
         )}
+        {upcoming[0]?.first_metro && (
+          <p className="text-xs font-semibold text-[#5b5446] dark:text-[#a9b0c2]">{txt.firstMetro}</p>
+        )}
         {props.avoidStairs && upcoming.length > 0 && <LiftSearch journeys={upcoming} />}
         <ol className="space-y-2">
           {upcoming.map((j, i) => {
