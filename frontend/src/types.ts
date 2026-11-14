@@ -76,6 +76,10 @@ export interface ServiceAlert {
   start_ts?: number | null;
   end_ts?: number | null;
   effect: string;
+  /** Who says so: GVB's own message (KV15), the timetable (a line with no
+   *  trips today), or a notice set by hand on this site. Older backends
+   *  send none: GVB. */
+  source?: "gvb" | "timetable" | "site";
 }
 
 export interface ShapeGeom {

@@ -40,6 +40,15 @@ describe("AlertList", () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  it("says whose words a message is when they are not GVB's", () => {
+    const timetable: ServiceAlert = { ...lineAlert, id: "t1", source: "timetable" };
+    const site: ServiceAlert = { ...lineAlert, id: "s1", lines: ["50"], source: "site" };
+    render(<AlertList alerts={[lineAlert, timetable, site]} colorOf={colorOf} />);
+    expect(screen.getAllByText("Volgens de dienstregeling")).toHaveLength(1);
+    expect(screen.getAllByText("Melding van amsterdammetro.nl")).toHaveLength(1);
+    expect(screen.getByRole("list", { name: "Meldingen voor de metro" })).toBeInTheDocument();
+  });
+
   it("renders nothing without alerts", () => {
     const { container } = render(<AlertList alerts={[]} colorOf={colorOf} />);
     expect(container).toBeEmptyDOMElement();
