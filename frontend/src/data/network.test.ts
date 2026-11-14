@@ -50,9 +50,9 @@ describe("step-free states", () => {
   it("has three states, and a lift fault fades after a missed check", () => {
     expect(accessState("Amsterdam, Rokin", SOON)).toBe("step-free");
     expect(accessState("Amsterdam, Gein", SOON)).toBe("not-step-free");
-    // Centraal Station's lift was out at the last check.
-    expect(accessState("Amsterdam, Centraal Station", SOON)).toBe("lift-out");
-    expect(accessState("Amsterdam, Centraal Station", LATE)).toBe("not-step-free");
+    // Overamstel's lift is out in the mocked data above.
+    expect(accessState("Amsterdam, Overamstel", SOON)).toBe("lift-out");
+    expect(accessState("Amsterdam, Overamstel", LATE)).toBe("not-step-free");
   });
 
   it("names the nearest step-free station each way when a lift is out", () => {
