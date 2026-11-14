@@ -87,6 +87,20 @@ describe("AlertList", () => {
     expect(screen.queryByText("Wibautstraat")).toBeNull();
     expect(screen.queryByText("Meer details")).toBeNull();
   });
+
+  it("opens a compact message in full with a tap, phones having no hover", () => {
+    render(<AlertList alerts={[{ ...stationAlert, source: "site" }]} colorOf={colorOf} compact />);
+    const row = screen.getByRole("button", { name: /Lift buiten gebruik/ });
+    expect(row).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("Lift buiten gebruik.")).toHaveClass("line-clamp-2");
+    expect(screen.queryByText("De lift naar perron 2 is buiten gebruik.")).toBeNull();
+    act(() => row.click());
+    expect(row).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Lift buiten gebruik.")).not.toHaveClass("line-clamp-2");
+    expect(screen.getByText("De lift naar perron 2 is buiten gebruik.")).toBeInTheDocument();
+    expect(screen.getByText("tot 18:00")).toBeInTheDocument();
+    expect(screen.getByText("Melding van amsterdammetro.nl")).toBeInTheDocument();
+  });
 });
 
 describe("alertEnd", () => {
