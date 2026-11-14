@@ -28,6 +28,16 @@ describe("NetworkStatus", () => {
     expect(screen.getAllByLabelText("Storingsmelding van GVB")).toHaveLength(1);
   });
 
+  it("lists our own notices and the timetable's, but keeps red for GVB's", () => {
+    const site: ServiceAlert = { ...fault, id: "s", lines: ["52", "53"], source: "site" };
+    const timetable: ServiceAlert = { ...fault, id: "t", lines: ["53"], source: "timetable" };
+    render(<NetworkStatus lines={lines} trains={trains} status={null} onLine={() => {}} alerts={[site, timetable]} />);
+    expect(barOf("52").className).not.toContain("bg-[#b42335]");
+    expect(barOf("53").className).not.toContain("bg-[#b42335]");
+    expect(screen.queryByLabelText("Storingsmelding van GVB")).toBeNull();
+    expect(screen.getByText("Melding van amsterdammetro.nl")).toBeInTheDocument();
+  });
+
   it("shows no red at all without a fault", () => {
     render(<NetworkStatus lines={lines} trains={trains} status={null} onLine={() => {}} />);
     expect(barOf("52").className).not.toContain("bg-[#b42335]");
