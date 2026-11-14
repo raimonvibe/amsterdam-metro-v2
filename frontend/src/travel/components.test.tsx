@@ -548,7 +548,7 @@ describe("JourneyPlanner", () => {
     });
     await screen.findAllByText(/Overstappen op/);
     // Only the option on the 54 gets one, folded.
-    const toggle = screen.getByRole("button", { name: "Meldingen van GVB: 1 melding" });
+    const toggle = screen.getByRole("button", { name: "Meldingen voor de metro: 1 melding" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByText(/Metro 54 rijdt met vertraging/)).not.toBeInTheDocument();
     await waitFor(() => expect(onRoute).toHaveBeenCalled());

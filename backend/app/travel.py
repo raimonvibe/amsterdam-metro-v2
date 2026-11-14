@@ -3,10 +3,12 @@ as the map: per-station service info, a journey planner (direct and one
 transfer) and the line network. Read-only over MetroData; nothing here changes
 the cached subset, so adding features never forces a GTFS re-download.
 """
+import json
 import statistics
 import time
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from .config import METRO_LINES
@@ -273,9 +275,94 @@ def _stations_by_line(metro: MetroData) -> Dict[str, set]:
     return _stations_cache[key]
 
 
-def alerts(metro: MetroData, rt: RealtimeState, now: Optional[float] = None) -> List[dict]:
+# Notices set by hand (planned works GVB's feed does not carry yet). See
+# docs/service-notices.md for the format and when to use it.
+NOTICES_FILE = Path(__file__).resolve().parent / "notices.json"
+
+
+def load_notices(path: Path = NOTICES_FILE) -> List[dict]:
+    """The hand-set notices, as written in the file. Missing or broken file:
+    none, so a typo never takes GVB's own messages down with it."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8")).get("notices", [])
+    except (OSError, ValueError):
+        return []
+
+
+def _local_epoch(iso: str) -> int:
+    """'2026-11-14T04:00' in Amsterdam time -> epoch seconds."""
+    return int(datetime.fromisoformat(iso).replace(tzinfo=TZ).timestamp())
+
+
+def site_notices(notices: List[dict], now: float) -> List[dict]:
+    """Hand-set notices in force now, shaped like GVB's alerts."""
+    out = []
+    for n in notices:
+        start, end = _local_epoch(n["start"]), _local_epoch(n["end"])
+        if not start <= now <= end:
+            continue
+        lines = sorted(l for l in n.get("lines", []) if l in METRO_LINES)
+        stations = sorted(n.get("stations", []))
+        out.append({
+            "id": f"site:{n['id']}",
+            "header": n["header"],
+            "description": n.get("description"),
+            "lines": lines,
+            "stations": stations,
+            "whole_line": bool(lines) and not stations,
+            "start_ts": start,
+            "end_ts": end,
+            "effect": n.get("effect", "OTHER_EFFECT"),
+            "source": "site",
+        })
+    return out
+
+
+def lines_not_running(metro: MetroData, now: float) -> List[dict]:
+    """A line with no trips at all on today's service day, though it has
+    trips the day before or after: a test weekend, works, a switch-over.
+    Needing trips on another day keeps a line that is gone for good (after
+    the 2027 renumbering) from being reported every day."""
+    day = _service_day(now)
+    dates_by_line: Dict[str, set] = defaultdict(set)
+    for t in metro.trips.values():
+        dates_by_line[t["line"]].update(metro.service_dates.get(t["service_id"], ()))
+    known = set().union(*dates_by_line.values()) if dates_by_line else set()
+    if day not in known:
+        return []  # the subset does not cover today: say nothing rather than guess
+    out = []
+    for line in sorted(METRO_LINES):
+        dates = dates_by_line.get(line, set())
+        if day in dates or not dates:
+            continue
+        out.append({
+            "id": f"timetable:no-service:{line}:{day}",
+            "header": {
+                "nl": f"Metro {line} rijdt vandaag niet volgens de dienstregeling.",
+                "en": f"Metro {line} does not run today, according to the timetable.",
+            },
+            "description": None,
+            "lines": [line],
+            "stations": [],
+            "whole_line": True,
+            "start_ts": None,
+            "end_ts": None,
+            "effect": "NO_SERVICE",
+            "source": "timetable",
+        })
+    return out
+
+
+def alerts(
+    metro: MetroData,
+    rt: RealtimeState,
+    now: Optional[float] = None,
+    notices: Optional[List[dict]] = None,
+) -> List[dict]:
     """Metro service alerts in force now, mapped to line ids and station
-    names. An alert naming a route but no stop concerns the whole line."""
+    names. An alert naming a route but no stop concerns the whole line.
+    Besides GVB's own (source "gvb"): lines the timetable has not running
+    today ("timetable") and notices set by hand ("site")."""
     now = now or time.time()
     route_to_line = metro.subset.get("route_to_line", {})
     # GVB publishes one message twice, as KV15 and as SIRI-GM, with the same
@@ -305,6 +392,7 @@ def alerts(metro: MetroData, rt: RealtimeState, now: Optional[float] = None) -> 
             "start_ts": period[0] or None,
             "end_ts": period[1] or None,
             "effect": a["effect"],
+            "source": "gvb",
         }
     out = list(by_text.values())
     # A message naming every station of its lines is about the line as a
@@ -314,6 +402,8 @@ def alerts(metro: MetroData, rt: RealtimeState, now: Optional[float] = None) -> 
         a["whole_line"] = bool(a["lines"]) and all(
             on_line.get(line, set()) <= set(a["stations"]) for line in a["lines"]
         )
+    out += lines_not_running(metro, now)
+    out += site_notices(load_notices() if notices is None else notices, now)
     # Line-wide first, then by line, so a network-wide failure leads.
     out.sort(key=lambda x: (bool(x["stations"]), x["lines"], x["id"]))
     return out

@@ -1,0 +1,19 @@
+{
+  "notices": [
+    {
+      "id": "testweekend-2026-11",
+      "start": "2026-11-14T04:00",
+      "end": "2026-11-16T04:00",
+      "lines": ["50", "51", "52", "53", "54"],
+      "stations": [],
+      "header": {
+        "nl": "Testweekend nieuw metronet: metro's rijden dit weekend anders dan normaal. Kijk bij GVB voor je route.",
+        "en": "Test weekend for the new metro network: trains run differently from normal this weekend. Check GVB for your route."
+      },
+      "description": null,
+      "effect": "MODIFIED_SERVICE",
+      "source_url": "https://www.gvb.nl/reisinformatie/halte/NL:S:30009508",
+      "added": "2026-11-14"
+    }
+  ]
+}

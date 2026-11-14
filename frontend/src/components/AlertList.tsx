@@ -91,6 +91,8 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
         // language they are in, since English falls back to GVB's Dutch.
         const header = pickWithLang(a.header, lang);
         const description = a.description ? pickWithLang(a.description, lang) : null;
+        // Not GVB's words: say whose, so ours are never taken for GVB's.
+        const from = a.source === "timetable" ? txt.alertFromTimetable : a.source === "site" ? txt.alertFromSite : null;
         if (compact) {
           // One quiet row: the message itself, cut to two lines.
           return (
@@ -138,6 +140,7 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
                 )}
               </div>
               <p className="break-words" lang={header.lang}>{header.text}</p>
+              {from && <p className="mt-0.5 text-[11px] italic text-amber-800 dark:text-amber-200">{from}</p>}
               {a.stations.length > 0 && !a.whole_line && (
                 // Names and their commas in one untranslated run: a translator
                 // drops the spaces in a lone ", " between two names.

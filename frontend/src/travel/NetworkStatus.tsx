@@ -21,7 +21,11 @@ export function NetworkStatus({ lines, trains, status, onLine, alerts = [] }: Ne
   const txt = useTravelT();
   const health = useMemo(() => lineHealth(lines.map((l) => l.id), trains), [lines, trains]);
   // Red is for a GVB fault only; a late train or two is amber at worst.
-  const faulty = useMemo(() => new Set(alerts.flatMap((a) => a.lines)), [alerts]);
+  // Our own notices and the timetable's "does not run today" are listed, not red.
+  const faulty = useMemo(
+    () => new Set(alerts.filter((a) => (a.source ?? "gvb") === "gvb").flatMap((a) => a.lines)),
+    [alerts],
+  );
   const total = trains.length;
   const live = trains.filter((t) => t.realtime).length;
 
