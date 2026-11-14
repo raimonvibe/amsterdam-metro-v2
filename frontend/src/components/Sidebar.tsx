@@ -10,8 +10,8 @@ import { locale, useLang, useT } from "../i18n";
 import { LanguageToggle } from "./LanguageToggle";
 import { pagePath } from "../i18n/paths";
 import { Place } from "./Place";
-import { formatPlaceName } from "../format";
 import { stepFree } from "../data/accessibility";
+import { displayName } from "../data/network";
 import { SocialIcons } from "./SocialIcons";
 import { Credits } from "./Credits";
 import { NO_TRANSLATE, Num } from "./Num";
@@ -119,13 +119,13 @@ export function Sidebar({
               {txt.pickStationPrompt}
             </option>
             {[...stations]
-              .sort((a, b) => formatPlaceName(a.name).localeCompare(formatPlaceName(b.name), "nl"))
+              .sort((a, b) => displayName(a.name).localeCompare(displayName(b.name), "nl"))
               .map((s) => (
                 // Station names and line numbers stay as on the signs.
                 <option key={s.name} value={s.name} {...NO_TRANSLATE}>
                   {/* Options hold text only, so the mark is the character;
                       screen readers say "wheelchair symbol". */}
-                  {formatPlaceName(s.name)}{stepFree(s.name) === "yes" ? " ♿" : ""} ({s.lines.join(", ")})
+                  {displayName(s.name)}{stepFree(s.name) === "yes" ? " ♿" : ""} ({s.lines.join(", ")})
                 </option>
               ))}
           </select>

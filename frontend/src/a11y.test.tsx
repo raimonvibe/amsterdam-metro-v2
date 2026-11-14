@@ -39,6 +39,24 @@ describe("station picker", () => {
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Station kiezen" }), "Amsterdam, De Pijp");
     expect(onPick).toHaveBeenCalledWith(stations[1]);
   });
+
+  it("names stations as the travel page does: in full, without their town", () => {
+    const more: Station[] = [
+      ...stations,
+      { id: "3", name: "Amsterdam, Centraal Station", latitude: 0, longitude: 0, lines: ["51", "52", "53", "54"] },
+      { id: "4", name: "Diemen, Station Diemen Zuid", latitude: 0, longitude: 0, lines: ["50", "53"] },
+    ];
+    render(
+      <Sidebar
+        lines={[]} visibleLines={[]} onToggleLine={() => {}} trains={[]} status={null}
+        hoveredStation={null} lastUpdated={null} mapStyle="liberty" onMapStyleChange={() => {}}
+        onOpenPrivacy={() => {}} onOpenTravel={() => {}} onClose={() => {}}
+        stations={more} onPickStation={() => {}}
+      />,
+    );
+    const names = screen.getAllByRole("option").slice(1).map((o) => o.textContent!.replace(/ ♿/, "").replace(/ \(.*\)$/, ""));
+    expect(names).toEqual(["Centraal Station", "De Pijp", "Station Diemen Zuid", "Waterlooplein"]);
+  });
 });
 
 describe("departure card", () => {
