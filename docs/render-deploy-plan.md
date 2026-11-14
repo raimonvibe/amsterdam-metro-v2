@@ -221,7 +221,7 @@ Render reads these only from the dashboard (**amsterdam-metro → Settings → H
 | `/assets/*` | `Cache-Control` | `public, max-age=31536000, immutable` |
 | `/`, `/index.html`, `/reisinfo`, `/privacy`, `/en`, `/en/`, `/en/reisinfo`, `/en/privacy`, `/reisinfo/*`, `/en/reisinfo/*` | `Cache-Control` | `no-cache` (one row per path) |
 | `/*` | `Referrer-Policy` | `strict-origin-when-cross-origin` |
-| `/*` | `Content-Security-Policy-Report-Only` | the CSP from `render.yaml` (one line; the single quotes around `'self'`, `'none'` and `'unsafe-inline'` are part of the value) |
+| `/*` | `Content-Security-Policy` | the CSP from `render.yaml` (one line; the single quotes around `'self'`, `'none'` and `'unsafe-inline'` are part of the value) |
 | `/*` | `Strict-Transport-Security` | `max-age=31536000` |
 | `/*` | `X-Frame-Options` | `DENY` |
 | `/*` | `X-Content-Type-Options` | `nosniff` |
@@ -230,7 +230,7 @@ Render reads these only from the dashboard (**amsterdam-metro → Settings → H
 
 **Changing a header:** edit `securityHeaders.ts`, update `render.yaml` (the test fails until you do), then type the same value into the dashboard.
 
-**Enforcing the CSP:** it starts as report-only (warns in the console, blocks nothing). When a week of browsing shows no "Content Security Policy" warnings, rename the header to `Content-Security-Policy` in all three places.
+**Enforcing the CSP:** it ran as report-only from 24 Oct 2026 and is enforced from 14 Nov 2026 (code and `render.yaml`; the dashboard row is renamed by hand). If a page ever breaks with a "Content Security Policy" error in the console, add the missing source in `securityHeaders.ts`, then `render.yaml`, then the dashboard.
 
 The API's security headers are set in code (`backend/app/security.py`) and need nothing in the dashboard.
 

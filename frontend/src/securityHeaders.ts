@@ -2,8 +2,9 @@
  * Security headers for the static site (audit M1). One source: Vite's preview
  * server sends them, so a local production build behaves like the live site,
  * and the same values go in the Render dashboard (which does not read
- * render.yaml). The CSP starts as Report-Only: violations show in the console
- * without blocking anything, until a clean run allows enforcing it.
+ * render.yaml). The CSP ran as Report-Only from 24 Oct 2026 and is enforced
+ * from 14 Nov 2026, after a production build blocked nothing on the map,
+ * the travel page, a station page, the 404 page and privacy.
  */
 export const TILE_ORIGIN = "https://tiles.openfreemap.org";
 
@@ -30,7 +31,7 @@ export function contentSecurityPolicy(apiOrigin: string): string {
 
 export function securityHeaders(apiOrigin: string): Record<string, string> {
   return {
-    "Content-Security-Policy-Report-Only": contentSecurityPolicy(apiOrigin),
+    "Content-Security-Policy": contentSecurityPolicy(apiOrigin),
     // No includeSubDomains: other subdomains may not all be on HTTPS.
     "Strict-Transport-Security": "max-age=31536000",
     "X-Frame-Options": "DENY",
