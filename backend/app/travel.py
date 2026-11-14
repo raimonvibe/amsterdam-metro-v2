@@ -402,7 +402,11 @@ def alerts(
         a["whole_line"] = bool(a["lines"]) and all(
             on_line.get(line, set()) <= set(a["stations"]) for line in a["lines"]
         )
-    out += lines_not_running(metro, now)
+    # GVB's own word on a line beats ours: once GVB posts about it (its test
+    # weekend messages name the line, with no usable effect), the timetable's
+    # "does not run today" would only repeat it. Lift messages don't count.
+    gvb_lines = {l for a in out if a["effect"] != "ACCESSIBILITY_ISSUE" for l in a["lines"]}
+    out += [a for a in lines_not_running(metro, now) if a["lines"][0] not in gvb_lines]
     out += site_notices(load_notices() if notices is None else notices, now)
     # Line-wide first, then by line, so a network-wide failure leads.
     out.sort(key=lambda x: (bool(x["stations"]), x["lines"], x["id"]))
