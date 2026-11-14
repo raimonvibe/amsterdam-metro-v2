@@ -54,7 +54,7 @@ A free preview of the switch. Checked on 9 Nov 2026 with a dry run of the backen
 
 To do:
 
-- [ ] On Sat 14 Nov, look at the live site once: trains on the Gaasperplas branch, line 53 empty, the planner from Gaasperplas.
+- [x] On Sat 14 Nov, look at the live site once: the maintainer saw the map update for the test weekend (14–16 Nov). The Gaasperplas branch, an empty line 53 and the planner from Gaasperplas were not checked one by one.
 - [ ] Note in the log below what went wrong, if anything: the December 2027 switch will look much like this weekend.
 - [ ] Repeat the dry run before the March 2027 test.
 
@@ -111,5 +111,6 @@ Places in the code that name the lines today:
 
 | Date | What |
 |---|---|
+| 14 Nov 2026 | Test weekend live: the map updated for the test timetable, as the dry run predicted. GVB's alerts feed had no message for the weekend at 03:24, though GVB's station pages announce it. |
 | 9 Nov 2026 | Test weekend of 14–15 Nov added, with a dry run of the backend for that Saturday: trains, departures, planner and map work with the test timetable. |
 | 9 Nov 2026 | Plan written. Colours per line, exact date and GTFS names still unknown. |
