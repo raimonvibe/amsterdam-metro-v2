@@ -23,6 +23,15 @@ vi.mock("../api", async (importOriginal) => ({
 }));
 import * as api from "../api";
 
+// The lift-fault tests use Overamstel with its lift out. The real data changes
+// with every weekly lift check, so pin that one station here.
+vi.mock("../data/accessibility.json", async (importOriginal) => {
+  const real = (await importOriginal<{ default: typeof import("../data/accessibility.json") }>()).default;
+  const name = "Amsterdam, Overamstel";
+  const stations = { ...real.stations, [name]: { ...real.stations[name], step_free: "no", lift_out: true } };
+  return { default: { ...real, stations } };
+});
+
 const NOW = Date.UTC(2026, 9, 22, 10, 0, 0); // 12:00 Amsterdam
 const s = (offsetMin: number) => NOW / 1000 + offsetMin * 60;
 const colorOf = () => "#4363D8";

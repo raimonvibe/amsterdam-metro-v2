@@ -139,7 +139,7 @@ As of the last full check, **2026-10-27**, and the lift check of **2026-11-13**:
 | Vijzelgracht | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:Q:30009579](https://www.gvb.nl/reisinformatie/halte/NL:Q:30009579) |
 | Waterlooplein | ✅ step-free | GVB: Rolstoelvriendelijk; lift fault gone 2026-11-13 | [NL:S:30009508](https://www.gvb.nl/reisinformatie/halte/NL:S:30009508) |
 | Weesperplein | ✅ step-free | GVB: Rolstoelvriendelijk; lift fault gone 2026-11-01 | [NL:S:30009510](https://www.gvb.nl/reisinformatie/halte/NL:S:30009510) |
-| Wibautstraat | ✅ step-free | GVB: Rolstoelvriendelijk | [NL:S:30009512](https://www.gvb.nl/reisinformatie/halte/NL:S:30009512) |
+| Wibautstraat | ❌ not step-free | lift out of service (GVB lift faults, since 2026-11-14) | [NL:S:30009512](https://www.gvb.nl/reisinformatie/halte/NL:S:30009512) |
 
 Keep this table in step with `accessibility.json` when a station changes.
 
