@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { TriangleAlert } from "lucide-react";
+import { ChevronDown, TriangleAlert } from "lucide-react";
 import { type Lang, locale, pick, pickWithLang, useLang, useT } from "../i18n";
 import { ServiceAlert } from "../types";
 import { formatPlaceName } from "../format";
@@ -69,6 +69,45 @@ export function alertStations(stations: string[]): string {
     .join(", ");
 }
 
+/** One quiet row for small cards: the message cut to two lines, and a tap
+ *  (or Enter) opens it in full, with when it ends, GVB's details and whose
+ *  words they are. A phone has no hover, so a title tooltip is no way in. */
+function CompactAlert({ alert: a }: { alert: ServiceAlert }) {
+  const txt = useT();
+  const lang = useLang();
+  const [open, setOpen] = useState(false);
+  const header = pickWithLang(a.header, lang);
+  const description = a.description ? pickWithLang(a.description, lang) : null;
+  const from = a.source === "timetable" ? txt.alertFromTimetable : a.source === "site" ? txt.alertFromSite : null;
+  return (
+    <li className="rounded-md bg-amber-50 text-[11px] leading-snug text-amber-950 dark:bg-amber-950/40 dark:text-amber-100">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        className="flex w-full items-start gap-1.5 rounded-md px-2 py-1.5 text-left hover:bg-amber-100 dark:hover:bg-amber-900/40"
+      >
+        <TriangleAlert size={12} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
+        <span className={`min-w-0 flex-1 break-words ${open ? "" : "line-clamp-2"}`} lang={header.lang}>
+          {header.text}
+        </span>
+        <ChevronDown
+          size={12}
+          className={`mt-0.5 shrink-0 text-amber-700 transition-transform dark:text-amber-300 ${open ? "rotate-180" : ""}`}
+          aria-hidden
+        />
+      </button>
+      {open && (a.end_ts || description || from) && (
+        <div className="space-y-1 px-2 pb-1.5 pl-[26px]">
+          {a.end_ts && <p className="text-amber-700 dark:text-amber-300">{txt.alertUntil(alertEnd(a.end_ts, lang))}</p>}
+          {description && <p className="whitespace-pre-line break-words" lang={description.lang}>{description.text}</p>}
+          {from && <p className="italic text-amber-800 dark:text-amber-200">{from}</p>}
+        </div>
+      )}
+    </li>
+  );
+}
+
 export interface AlertListProps {
   alerts: ServiceAlert[];
   colorOf: (line: string) => string;
@@ -93,21 +132,7 @@ export function AlertList({ alerts, colorOf, compact = false, className = "" }: 
         const description = a.description ? pickWithLang(a.description, lang) : null;
         // Not GVB's words: say whose, so ours are never taken for GVB's.
         const from = a.source === "timetable" ? txt.alertFromTimetable : a.source === "site" ? txt.alertFromSite : null;
-        if (compact) {
-          // One quiet row: the message itself, cut to two lines.
-          return (
-            <li
-              key={a.id}
-              className="flex items-start gap-1.5 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] leading-snug text-amber-950 dark:bg-amber-950/40 dark:text-amber-100"
-            >
-              <TriangleAlert size={12} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
-              <p className="line-clamp-2 min-w-0 break-words" title={header.text}>
-                <span lang={header.lang}>{header.text}</span>
-                {a.end_ts && <span className="text-amber-700 dark:text-amber-300"> · {txt.alertUntil(alertEnd(a.end_ts, lang))}</span>}
-              </p>
-            </li>
-          );
-        }
+        if (compact) return <CompactAlert key={a.id} alert={a} />;
         return (
           <li
             key={a.id}
