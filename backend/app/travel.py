@@ -338,8 +338,8 @@ def lines_not_running(metro: MetroData, now: float) -> List[dict]:
         out.append({
             "id": f"timetable:no-service:{line}:{day}",
             "header": {
-                "nl": f"Metro {line} rijdt vandaag niet volgens de dienstregeling.",
-                "en": f"Metro {line} does not run today, according to the timetable.",
+                "nl": f"Metro {line} rijdt vandaag niet.",
+                "en": f"Metro {line} does not run today.",
             },
             "description": None,
             "lines": [line],

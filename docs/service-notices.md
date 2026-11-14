@@ -10,7 +10,7 @@ The map, the station cards and the travel page show GVB's own service messages (
 
 ## "Metro 53 rijdt vandaag niet"
 
-Worked out by the backend (`lines_not_running` in [`travel.py`](../backend/app/travel.py)) from the static timetable it already holds: yesterday, today and tomorrow. Nothing to maintain.
+"Metro 53 rijdt vandaag niet." The label under it says where it comes from. Worked out by the backend (`lines_not_running` in [`travel.py`](../backend/app/travel.py)) from the static timetable it already holds: yesterday, today and tomorrow. Nothing to maintain.
 
 - The service day starts at 04:00, as for first and last trains: at 02:00 on Saturday it is still Friday.
 - A line needs trips on another of those days. A line that is gone for good (the old numbers after the switch of December 2027) is not reported every day.
