@@ -97,7 +97,7 @@ Needs the backend running on `http://localhost:8020` (or pass its URL). It reads
 
 ## Status per station
 
-As of the last full check, **2026-10-27**, and the lift check of **2026-11-13**: 30 step-free, 9 not.
+As of the last full check, **2026-10-27**, and the lift check of **2026-11-14**: 29 step-free, 10 not.
 
 | Station | Status | Why | GVB page |
 |---|---|---|---|
@@ -146,8 +146,9 @@ Keep this table in step with `accessibility.json` when a station changes.
 ## Open items
 
 - **Centraal Station**: set back to "yes" and remove `lift_out` once GVB's lift faults no longer list the Prins Hendrikkade-side metro lift.
-- **Binnenkort** (planned faults) not checked on 2026-11-13: GVB's cookie banner was left for the user.
-- **Search terms**: checked against a live fault for Weesperplein, Diemen Zuid, Lelylaan, Centraal, Station Zuid, Overamstel, Waterlooplein and Ganzenhoef. The others are GVB's station names, shortened; confirm each when it first shows a fault.
+- **Wibautstraat**: set back to "yes" and remove `lift_out` once GVB's lift faults no longer list the Grensstraat–hall lift.
+- **Binnenkort** (planned faults) not checked on 2026-11-13 or 2026-11-14: GVB's cookie banner was left for the user.
+- **Search terms**: checked against a live fault for Weesperplein, Diemen Zuid, Lelylaan, Centraal, Station Zuid, Overamstel, Waterlooplein, Ganzenhoef and Wibautstraat. The others are GVB's station names, shortened; confirm each when it first shows a fault.
 
 ## Check log
 
@@ -155,6 +156,7 @@ Newest first. One line per check, even when nothing changed.
 
 | Date | Kind | Result | By |
 |---|---|---|---|
+| 2026-11-14 | lift faults | Ganzenhoef, Waterlooplein and Overamstel still not listed → stay yes. Centraal Station's Prins Hendrikkade-side metro lift (updated 11 Nov 11:53) still listed → stays no, `lift_out`; search term "Centraal" finds it (1 resultaat). New fault at Wibautstraat (lift between Grensstraat and the hall, updated 13 Nov 16:39) → no, `lift_out`; search term "Wibautstraat" finds it (1 resultaat). Isolatorweg's lift no longer listed (it is "niet rolstoelvriendelijk" anyway). Escalator faults (Rokin exit Spui, Ganzenhoef hall–metro platform, Rietlandpark) don't change step-free. "Binnenkort" not checked: the cookie banner was left for the user. GVB's station pages announce the test weekend for the new metro network (14–16 Nov, all lines); the alerts feed had no message for it at 03:24. 4 GVB page loads, by Claude in the browser pane. Now 29 step-free. | maintainer + Claude |
 | 2026-11-13 | lift faults | Ganzenhoef, Waterlooplein and Overamstel no longer listed; their station pages (NL:S:30009546, NL:S:30009508, NL:Q:30009563) still Rolstoelvriendelijk → yes, `lift_out` removed. New fault at Centraal Station: lift to the metro on the Prins Hendrikkade side (updated 11 Nov 11:53) → no, `lift_out`; search term "Centraal" not re-tested (cookie banner), it found Centraal's faults on 2026-11-02. New fault at Isolatorweg (lift street–platform, updated 10 Nov 07:57), but it is "niet rolstoelvriendelijk" anyway → stays no, no `lift_out`. Station Zuid's WTC-side tram/bus lift no longer listed. Escalator faults (Ganzenhoef hall–metro platform, Rietlandpark) don't change step-free. "Binnenkort" not checked: the cookie banner was left for the user. 4 GVB page loads, by Claude in the browser pane. Now 30 step-free. | maintainer + Claude |
 | 2026-11-09 | lift faults | No change. Ganzenhoef (updated 8 Nov 12:11), Waterlooplein (updated 7 Nov 16:49) and Overamstel (updated 6 Nov 10:21) still listed → stay no, `lift_out`. Station Zuid's WTC-side tram/bus lift (updated 2 Nov 21:04) still listed, not a metro-platform lift → stays yes. Escalator faults (Station Bijlmer ArenA hall–metro platform, new 8 Nov 20:55; Station Noord exit King's Cross; Rokin exit Spui; Rietlandpark) don't change step-free; Bijlmer ArenA is "niet rolstoelvriendelijk" anyway. "Binnenkort" (after the user chose in the cookie banner): no planned lift or escalator faults. 1 GVB page load, by hand. Still 28 step-free. | maintainer + Claude |
 | 2026-11-08 | lift faults | New fault at Ganzenhoef (lift between street and metro platform, updated 8 Nov 12:11) → no, `lift_out`; search term "Ganzenhoef" finds it (1 lift fault, no escalator faults). Waterlooplein (updated 7 Nov 16:49) and Overamstel (updated 6 Nov 10:21) still listed → stay no, `lift_out`. Station Zuid's WTC-side tram/bus lift (updated 2 Nov 21:04) still listed, not a metro-platform lift → stays yes. Escalator faults (Station Noord exit King's Cross, Rokin exit Spui, Rietlandpark) don't change step-free. "Binnenkort": no planned lift or escalator faults. The cookie banner was left for the user. 1 GVB page load, by hand. Now 28 step-free. | maintainer + Claude |
