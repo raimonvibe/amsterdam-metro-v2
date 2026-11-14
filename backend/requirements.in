@@ -1,6 +1,6 @@
 # Direct dependencies, as ranges. Edit this file, then regenerate the pinned
 # requirements.txt (see its header). Render and CI install requirements.txt.
-fastapi>=0.162.2
+fastapi>=0.162.4
 uvicorn[standard]>=0.54.0
 httpx>=0.28.1
 idna>=3.20
