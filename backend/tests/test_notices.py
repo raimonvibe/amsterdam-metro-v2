@@ -25,7 +25,7 @@ def test_a_line_running_on_another_day_but_not_today_is_named(subset):
     assert [a["lines"] for a in out] == [["52"]]
     a = out[0]
     assert a["source"] == "timetable" and a["whole_line"] and a["stations"] == []
-    assert a["header"]["nl"] == "Metro 52 rijdt vandaag niet volgens de dienstregeling."
+    assert a["header"]["nl"] == "Metro 52 rijdt vandaag niet."
     assert a["id"] == "timetable:no-service:52:20261022"
 
 
