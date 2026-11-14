@@ -15,6 +15,7 @@ The map, the station cards and the travel page show GVB's own service messages (
 - The service day starts at 04:00, as for first and last trains: at 02:00 on Saturday it is still Friday.
 - A line needs trips on another of those days. A line that is gone for good (the old numbers after the switch of December 2027) is not reported every day.
 - If the timetable does not cover today, it says nothing rather than guess.
+- Once GVB posts its own message naming that line, ours is left out: GVB's word comes first and says more (where to change). Lift and accessibility messages don't count. GVB's test-weekend messages carry no usable effect and name only some stations, so naming the line is what counts.
 
 ## Setting a notice by hand
 

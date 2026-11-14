@@ -98,3 +98,33 @@ def test_the_real_notices_file_is_valid():
         assert n["header"]["nl"].strip() and n["header"]["en"].strip(), n["id"]
         assert set(n.get("lines", [])) <= set(METRO_LINES), n["id"]
         assert n.get("source_url", "").startswith("https://"), "say where the notice comes from"
+
+
+def _gvb(line_route: str, effect: str = "UNKNOWN_EFFECT") -> dict:
+    """One alert as _parse_alerts gives it, in force now."""
+    return {
+        "id": f"KV15:{line_route}", "header": {"nl": "M52 rijdt niet. Stap over.", "en": None},
+        "description": {}, "route_ids": [line_route], "stop_ids": [], "periods": [],
+        "cause": "UNKNOWN_CAUSE", "effect": effect,
+    }
+
+
+def test_gvb_reporting_the_line_hides_the_timetable_message(subset):
+    rt = RealtimeState()
+    rt.alerts = [_gvb("r52")]
+    out = alerts(_with_line_52_tomorrow_only(subset), rt, now=NOW, notices=[])
+    assert [a["source"] for a in out] == ["gvb"]
+
+
+def test_a_gvb_lift_message_does_not_hide_it(subset):
+    rt = RealtimeState()
+    rt.alerts = [_gvb("r52", effect="ACCESSIBILITY_ISSUE")]
+    out = alerts(_with_line_52_tomorrow_only(subset), rt, now=NOW, notices=[])
+    assert sorted(a["source"] for a in out) == ["gvb", "timetable"]
+
+
+def test_gvb_on_another_line_leaves_it(subset):
+    rt = RealtimeState()
+    rt.alerts = [_gvb("r50")]
+    out = alerts(_with_line_52_tomorrow_only(subset), rt, now=NOW, notices=[])
+    assert sorted(a["source"] for a in out) == ["gvb", "timetable"]
